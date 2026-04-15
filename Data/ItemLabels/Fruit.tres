@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ItemTag" format=3 uid="uid://cmyu4gu3ci8ea"]
+
+[ext_resource type="Script" uid="uid://yrmp5d5nc6bo" path="res://Data/Items/ItemTag.gd" id="1_1n0ip"]
+
+[resource]
+script = ExtResource("1_1n0ip")
+id = &"labels_fruit"
+display_name = "果物"
+category = &"trait"
+metadata/_custom_type_script = "uid://yrmp5d5nc6bo"

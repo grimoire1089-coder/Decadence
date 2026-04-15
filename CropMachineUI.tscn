@@ -1,0 +1,104 @@
+[gd_scene format=3 uid="uid://c0st7x5p7t6xf"]
+
+[ext_resource type="Script" uid="uid://s8piawmi021i" path="res://Scripts/CropMachineUI.gd" id="1_script"]
+
+[node name="CropMachineUI" type="Control" unique_id=1968814147]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_script")
+
+[node name="Panel" type="Panel" parent="." unique_id=614423666]
+custom_minimum_size = Vector2(600, 500)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -300.0
+offset_top = -250.0
+offset_right = 300.0
+offset_bottom = 250.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Panel" unique_id=2025041661]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = 16.0
+offset_right = -16.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 10
+
+[node name="TitleLabel" type="Label" parent="Panel/VBoxContainer" unique_id=168122307]
+layout_mode = 2
+text = "栽培機"
+horizontal_alignment = 1
+
+[node name="RecipeOptionButton" type="OptionButton" parent="Panel/VBoxContainer" unique_id=830877783]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="PlantCountHBox" type="HBoxContainer" parent="Panel/VBoxContainer" unique_id=1882455059]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="PlantCountLabel" type="Label" parent="Panel/VBoxContainer/PlantCountHBox" unique_id=750206406]
+layout_mode = 2
+text = "植える回数"
+
+[node name="PlantCountSpinBox" type="SpinBox" parent="Panel/VBoxContainer/PlantCountHBox" unique_id=1081747971]
+custom_minimum_size = Vector2(140, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 1.0
+max_value = 999.0
+value = 1.0
+rounded = true
+
+[node name="GridContainer" type="GridContainer" parent="Panel/VBoxContainer" unique_id=749152774]
+layout_mode = 2
+size_flags_vertical = 3
+columns = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Panel/VBoxContainer" unique_id=247305261]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="PlantButton" type="Button" parent="Panel/VBoxContainer/HBoxContainer" unique_id=301890830]
+layout_mode = 2
+text = "植え付け"
+
+[node name="HarvestButton" type="Button" parent="Panel/VBoxContainer/HBoxContainer" unique_id=29442106]
+layout_mode = 2
+text = "収穫"
+
+[node name="CancelButton" type="Button" parent="Panel/VBoxContainer/HBoxContainer" unique_id=1402850060]
+layout_mode = 2
+text = "キャンセル"
+
+[node name="InfoLabel" type="Label" parent="Panel/VBoxContainer" unique_id=779010426]
+custom_minimum_size = Vector2(1, 1)
+layout_mode = 2
+autowrap_mode = 2
+
+[node name="CloseButton" type="Button" parent="Panel/VBoxContainer" unique_id=1588408607]
+layout_mode = 2
+text = "閉じる"
+
+[node name="CancelConfirmDialog" type="ConfirmationDialog" parent="." unique_id=406966138]
+title = "栽培キャンセル確認"
+initial_position = 1
+ok_button_text = "キャンセルする"
+cancel_button_text = "戻る"

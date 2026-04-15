@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ItemTag" format=3 uid="uid://crm4kgmhfcccv"]
+
+[ext_resource type="Script" uid="uid://yrmp5d5nc6bo" path="res://Data/Items/ItemTag.gd" id="1_b2480"]
+
+[resource]
+script = ExtResource("1_b2480")
+id = &"Ingredients"
+display_name = "食材"
+category = &"tag"
+metadata/_custom_type_script = "uid://yrmp5d5nc6bo"

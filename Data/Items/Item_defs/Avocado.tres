@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ItemData" format=3 uid="uid://e5radprra2oy"]
+
+[ext_resource type="Texture2D" uid="uid://c52aar6pib3q1" path="res://Image/Crops/Avocado.png" id="1_qvi10"]
+[ext_resource type="Script" uid="uid://dljnvja3myc3c" path="res://Data/Items/ItemData.gd" id="1_xwg2o"]
+[ext_resource type="Script" uid="uid://yrmp5d5nc6bo" path="res://Data/Items/ItemTag.gd" id="2_4j8f2"]
+[ext_resource type="Resource" uid="uid://ba8sdgxk1enj8" path="res://Data/ItemTags/Drink.tres" id="3_4j8f2"]
+[ext_resource type="Resource" uid="uid://crm4kgmhfcccv" path="res://Data/ItemTags/Ingredients.tres" id="4_plcqc"]
+
+[resource]
+script = ExtResource("1_xwg2o")
+id = &"avocado"
+item_name = "アボカド"
+icon = ExtResource("1_qvi10")
+price = 10
+fullness_restore = 10
+tags = 133
+labels = Array[ExtResource("2_4j8f2")]([ExtResource("3_4j8f2"), ExtResource("4_plcqc")])
+metadata/_custom_type_script = "uid://dljnvja3myc3c"

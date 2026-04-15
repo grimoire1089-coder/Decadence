@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="ItemData" format=3 uid="uid://cet8cbio224g3"]
+
+[ext_resource type="Texture2D" uid="uid://crug1agp3eg60" path="res://Image/Food/Water_Bottle.png" id="1_ouwmy"]
+[ext_resource type="Script" uid="uid://yrmp5d5nc6bo" path="res://Data/Items/ItemTag.gd" id="2_an810"]
+[ext_resource type="Resource" uid="uid://ba8sdgxk1enj8" path="res://Data/ItemTags/Drink.tres" id="3_k2qi1"]
+[ext_resource type="Resource" uid="uid://e57lsje8cm1t" path="res://Data/ItemTags/Food.tres" id="3_sdvox"]
+[ext_resource type="Resource" uid="uid://b3268itfk72pd" path="res://Data/ItemLabels/L_Water.tres" id="4_ouwmy"]
+[ext_resource type="Resource" uid="uid://crm4kgmhfcccv" path="res://Data/ItemTags/Ingredients.tres" id="5_ouwmy"]
+[ext_resource type="Script" uid="uid://dljnvja3myc3c" path="res://Data/Items/ItemData.gd" id="6_arlol"]
+
+[resource]
+script = ExtResource("6_arlol")
+id = &"clean_water"
+item_name = "綺麗な水"
+description = "綺麗に濾過された安全な水。"
+icon = ExtResource("1_ouwmy")
+price = 10
+buy_price = 20
+fullness_restore = 5
+tags = 129
+traits = 513
+labels = Array[ExtResource("2_an810")]([ExtResource("3_sdvox"), ExtResource("4_ouwmy"), ExtResource("5_ouwmy"), ExtResource("3_k2qi1")])
+metadata/_custom_type_script = "uid://dljnvja3myc3c"

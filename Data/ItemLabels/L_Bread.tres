@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ItemTag" format=3 uid="uid://cfojom76k2o4e"]
+
+[ext_resource type="Script" uid="uid://yrmp5d5nc6bo" path="res://Data/Items/ItemTag.gd" id="1_00kq1"]
+
+[resource]
+script = ExtResource("1_00kq1")
+id = &"labels_bread"
+display_name = "パン類"
+category = &"trait"
+metadata/_custom_type_script = "uid://yrmp5d5nc6bo"

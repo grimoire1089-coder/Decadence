@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ItemTag" format=3 uid="uid://dvdfftmxf006x"]
+
+[ext_resource type="Script" uid="uid://yrmp5d5nc6bo" path="res://Data/Items/ItemTag.gd" id="1_iha3w"]
+
+[resource]
+script = ExtResource("1_iha3w")
+id = &"labels_not_for_sale"
+display_name = "売却不可"
+category = &"trait"
+metadata/_custom_type_script = "uid://yrmp5d5nc6bo"

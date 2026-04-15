@@ -1,0 +1,39 @@
+[gd_scene format=3 uid="uid://ufqrur381hty"]
+
+[ext_resource type="Script" uid="uid://dymegn6c7shvl" path="res://Player.gd" id="1_ux4uq"]
+[ext_resource type="Texture2D" uid="uid://ds21da0vhr7bf" path="res://Image/Player/Robin_Game_002.png" id="2_ux4uq"]
+[ext_resource type="Texture2D" uid="uid://dctnicvhwohuv" path="res://Image/Player/Robin_Game_004.png" id="3_tqq74"]
+[ext_resource type="Texture2D" uid="uid://bb4d84om17c41" path="res://Image/Player/Robin_Game_003.png" id="4_rxaeq"]
+[ext_resource type="Script" uid="uid://dkhlppyn1e054" path="res://UI/Active_Skills/SkillCaster.gd" id="5_kbytb"]
+[ext_resource type="Script" uid="uid://6uuw2beg8gd6" path="res://UI/Active_Skills/PlayerSkillController.gd" id="6_jiwum"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ux4uq"]
+size = Vector2(240, 486.66663)
+
+[node name="Node2D" type="Node2D" unique_id=1622569430]
+y_sort_enabled = true
+scale = Vector2(0.15, 0.15)
+
+[node name="CharacterBody2D" type="CharacterBody2D" parent="." unique_id=783613640]
+motion_mode = 1
+script = ExtResource("1_ux4uq")
+front_texture = ExtResource("2_ux4uq")
+back_texture = ExtResource("3_tqq74")
+side_texture = ExtResource("4_rxaeq")
+
+[node name="Sprite2D" type="Sprite2D" parent="CharacterBody2D" unique_id=1417043241]
+texture = ExtResource("2_ux4uq")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="CharacterBody2D" unique_id=1347376614]
+position = Vector2(0, 250)
+shape = SubResource("RectangleShape2D_ux4uq")
+
+[node name="Camera2D" type="Camera2D" parent="CharacterBody2D" unique_id=1856173972]
+zoom = Vector2(2, 2)
+
+[node name="SkillCaster" type="Node2D" parent="." unique_id=1051362412]
+script = ExtResource("5_kbytb")
+
+[node name="PlayerSkillController" type="Node2D" parent="." unique_id=1016286863]
+script = ExtResource("6_jiwum")
+skill_caster_path = NodePath("../SkillCaster")

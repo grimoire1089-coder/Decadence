@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="ShopData" format=3 uid="uid://crmyohhi1jd03"]
+
+[ext_resource type="Script" uid="uid://c6pfvcblsisnu" path="res://Data/Object/ShopDeliveryBox/ShopProduct.gd" id="1_wxk4d"]
+[ext_resource type="Resource" uid="uid://cyoif53etg7fb" path="res://Data/Items/Item_defs/Seed/Seed_Wheat.tres" id="2_ivgxs"]
+[ext_resource type="Script" uid="uid://w652pbh12dac" path="res://Data/Object/ShopDeliveryBox/ShopData.gd" id="3_b7cnk"]
+[ext_resource type="Resource" uid="uid://bkh23jdefwtbg" path="res://Data/Items/Item_defs/Seed/Seed_Potato.tres" id="3_ivgxs"]
+
+[sub_resource type="Resource" id="Resource_0gefq"]
+script = ExtResource("1_wxk4d")
+item_data = ExtResource("2_ivgxs")
+price_override = 5
+
+[sub_resource type="Resource" id="Resource_b7cnk"]
+script = ExtResource("1_wxk4d")
+item_data = ExtResource("3_ivgxs")
+metadata/_custom_type_script = "uid://c6pfvcblsisnu"
+
+[resource]
+script = ExtResource("3_b7cnk")
+store_name = "カプセルファーム　個人農業支援店"
+products = Array[ExtResource("1_wxk4d")]([SubResource("Resource_0gefq"), SubResource("Resource_b7cnk")])

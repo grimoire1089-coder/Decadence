@@ -1,0 +1,40 @@
+[gd_scene format=3 uid="uid://dnovnatyiscdl"]
+
+[ext_resource type="Script" uid="uid://denllqquju77h" path="res://UI/BuffStatusUI.gd" id="1_bv7ui"]
+
+[node name="BuffStatusUI" type="CanvasLayer" unique_id=288770742]
+layer = 5
+script = ExtResource("1_bv7ui")
+
+[node name="TopRightMargin" type="MarginContainer" parent="." unique_id=429326433]
+offset_left = -520.0
+offset_top = 16.0
+offset_right = -16.0
+offset_bottom = 236.0
+
+[node name="Panel" type="PanelContainer" parent="TopRightMargin" unique_id=1784825026]
+layout_mode = 2
+
+[node name="Margin" type="MarginContainer" parent="TopRightMargin/Panel" unique_id=1218119807]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="VBox" type="VBoxContainer" parent="TopRightMargin/Panel/Margin" unique_id=1567701934]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="Title" type="Label" parent="TopRightMargin/Panel/Margin/VBox" unique_id=1479608224]
+layout_mode = 2
+text = "バフ"
+horizontal_alignment = 1
+
+[node name="BuffGrid" type="GridContainer" parent="TopRightMargin/Panel/Margin/VBox" unique_id=1807760299]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 8
+columns = 6

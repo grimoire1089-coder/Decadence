@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="ItemData" format=3 uid="uid://tn5q8wdmu2wy"]
+
+[ext_resource type="Texture2D" uid="uid://blnmdn8qdno3e" path="res://Image/Crops/Navel_Orange.png" id="1_em6o0"]
+[ext_resource type="Script" uid="uid://dljnvja3myc3c" path="res://Data/Items/ItemData.gd" id="2_68dpl"]
+[ext_resource type="Script" uid="uid://yrmp5d5nc6bo" path="res://Data/Items/ItemTag.gd" id="2_wqg71"]
+[ext_resource type="Resource" uid="uid://ba8sdgxk1enj8" path="res://Data/ItemTags/Drink.tres" id="3_gysyj"]
+[ext_resource type="Resource" uid="uid://bhjvcbmbpm1f5" path="res://Data/ItemLabels/Salty.tres" id="4_s5e22"]
+[ext_resource type="Resource" uid="uid://cmyu4gu3ci8ea" path="res://Data/ItemLabels/Fruit.tres" id="5_ctum2"]
+
+[resource]
+script = ExtResource("2_68dpl")
+id = &"orange"
+item_name = "オレンジ"
+icon = ExtResource("1_em6o0")
+price = 10
+fullness_restore = 10
+tags = 133
+labels = Array[ExtResource("2_wqg71")]([ExtResource("3_gysyj"), ExtResource("4_s5e22"), ExtResource("5_ctum2")])
+metadata/_custom_type_script = "uid://dljnvja3myc3c"

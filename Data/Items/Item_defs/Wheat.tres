@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ItemData" format=3 uid="uid://cc7c31ecbf5iu"]
+
+[ext_resource type="Texture2D" uid="uid://kcir06pkune8" path="res://Image/Crops/Wheat.png" id="1_7rpu0"]
+[ext_resource type="Script" uid="uid://dljnvja3myc3c" path="res://Data/Items/ItemData.gd" id="2_cqlwe"]
+[ext_resource type="Script" uid="uid://yrmp5d5nc6bo" path="res://Data/Items/ItemTag.gd" id="2_dc2lj"]
+[ext_resource type="Resource" uid="uid://crm4kgmhfcccv" path="res://Data/ItemTags/Ingredients.tres" id="3_p6jnu"]
+
+[resource]
+script = ExtResource("2_cqlwe")
+id = &"wheat"
+item_name = "小麦"
+icon = ExtResource("1_7rpu0")
+price = 10
+buy_price = 20
+tags = 128
+labels = Array[ExtResource("2_dc2lj")]([ExtResource("3_p6jnu")])
+metadata/_custom_type_script = "uid://dljnvja3myc3c"

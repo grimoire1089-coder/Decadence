@@ -1,0 +1,192 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Data/Object/UniversalCooker/UniversalCookerUI.gd" id="1"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+content_margin_left = 18.0
+content_margin_top = 18.0
+content_margin_right = 18.0
+content_margin_bottom = 18.0
+bg_color = Color(0.0431373, 0.0627451, 0.0941176, 0.94)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.298039, 0.74902, 1, 0.65)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+
+[node name="UniversalCookerUI" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1")
+
+[node name="Panel" type="Panel" parent="."]
+clip_contents = true
+custom_minimum_size = Vector2(960, 800)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -480.0
+offset_top = -400.0
+offset_right = 480.0
+offset_bottom = 400.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 18.0
+offset_top = 18.0
+offset_right = -18.0
+offset_bottom = -18.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 8
+
+[node name="TitleLabel" type="Label" parent="Panel/VBoxContainer"]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+text = "万能調理器"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="RecipeOptionButton" type="OptionButton" parent="Panel/VBoxContainer"]
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="CraftCountHBox" type="HBoxContainer" parent="Panel/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="CraftCountLabel" type="Label" parent="Panel/VBoxContainer/CraftCountHBox"]
+layout_mode = 2
+text = "調理回数"
+vertical_alignment = 1
+
+[node name="CraftCountSpinBox" type="SpinBox" parent="Panel/VBoxContainer/CraftCountHBox"]
+custom_minimum_size = Vector2(140, 38)
+layout_mode = 2
+value = 1.0
+
+[node name="SlotsCenter" type="CenterContainer" parent="Panel/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="GridContainer" type="GridContainer" parent="Panel/VBoxContainer/SlotsCenter"]
+custom_minimum_size = Vector2(0, 268)
+layout_mode = 2
+theme_override_constants/h_separation = 12
+theme_override_constants/v_separation = 12
+columns = 2
+
+[node name="IngredientSection" type="VBoxContainer" parent="Panel/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="IngredientLabel" type="Label" parent="Panel/VBoxContainer/IngredientSection"]
+custom_minimum_size = Vector2(0, 26)
+layout_mode = 2
+text = "材料投入"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="IngredientSlotsCenter" type="CenterContainer" parent="Panel/VBoxContainer/IngredientSection"]
+custom_minimum_size = Vector2(0, 128)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="IngredientSlotsContainer" type="HBoxContainer" parent="Panel/VBoxContainer/IngredientSection/IngredientSlotsCenter"]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Panel/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="StartButton" type="Button" parent="Panel/VBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(180, 42)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "調理開始"
+
+[node name="CollectButton" type="Button" parent="Panel/VBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(180, 42)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "受け取り"
+
+[node name="DiscardButton" type="Button" parent="Panel/VBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(180, 42)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "破棄"
+
+[node name="InfoLabel" type="Label" parent="Panel/VBoxContainer"]
+custom_minimum_size = Vector2(0, 74)
+layout_mode = 2
+size_flags_vertical = 3
+text = "レシピを選んでスロットを押す。"
+autowrap_mode = 3
+
+[node name="CloseButton" type="Button" parent="Panel/VBoxContainer"]
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "閉じる"
+
+[node name="DiscardConfirmDialog" type="ConfirmationDialog" parent="."]
+title = "破棄確認"
+initial_position = 1
+size = Vector2i(420, 220)
+min_size = Vector2i(420, 220)
+ok_button_text = "破棄する"
+dialog_text = "本当に破棄していいか？"
+
+[node name="ConditionPickerDialog" type="ConfirmationDialog" parent="."]
+title = "材料選択"
+initial_position = 1
+size = Vector2i(560, 520)
+min_size = Vector2i(560, 520)
+ok_button_text = "投入する"
+cancel_button_text = "キャンセル"
+
+[node name="VBoxContainer" type="VBoxContainer" parent="ConditionPickerDialog"]
+custom_minimum_size = Vector2(520, 420)
+offset_left = 12.0
+offset_top = 12.0
+offset_right = 548.0
+offset_bottom = 468.0
+theme_override_constants/separation = 8
+
+[node name="ConditionPickerLabel" type="Label" parent="ConditionPickerDialog/VBoxContainer"]
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+text = "条件に合う材料を選ぶ"
+autowrap_mode = 3
+
+[node name="ConditionPickerItemList" type="ItemList" parent="ConditionPickerDialog/VBoxContainer"]
+custom_minimum_size = Vector2(0, 340)
+layout_mode = 2
+size_flags_vertical = 3
+icon_mode = 0
+same_column_width = true
+select_mode = 0

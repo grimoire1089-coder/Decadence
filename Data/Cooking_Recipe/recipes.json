@@ -1,0 +1,64 @@
+[
+	{
+		"base_quality_multiplier": 1.0,
+		"cook_minutes": 10,
+		"cooking_exp": 1,
+		"description": "",
+		"id": "CR_Flatbread",
+		"ingredients": [
+			{
+				"consume_on_cook": true,
+				"count": 1,
+				"item_id": "flour",
+				"slot_name": "小麦粉"
+			},
+			{
+				"consume_on_cook": true,
+				"count": 1,
+				"item_id": "clean_water",
+				"slot_name": "綺麗な水"
+			},
+			{
+				"consume_on_cook": true,
+				"count": 1,
+				"item_id": "rock_salt",
+				"slot_name": "岩塩"
+			},
+			{
+				"consume_on_cook": true,
+				"count": 1,
+				"item_id": "rapeseed_oil",
+				"slot_name": "なたね油"
+			}
+		],
+		"recipe_name": "フラットブレッド",
+		"required_upgrade_level": 1,
+		"result_count": 1,
+		"result_item_id": "flatbread",
+		"station_flags": [
+			"bake"
+		]
+	},
+	{
+		"base_quality_multiplier": 1.0,
+		"cook_minutes": 1,
+		"cooking_exp": 1,
+		"description": "",
+		"id": "CR_TEST_1",
+		"ingredients": [
+			{
+				"consume_on_cook": true,
+				"count": 1,
+				"item_id": "potato",
+				"slot_name": "ジャガイモ"
+			}
+		],
+		"recipe_name": "テスト用レシピ 1",
+		"required_upgrade_level": 1,
+		"result_count": 1,
+		"result_item_id": "potato",
+		"station_flags": [
+			"any"
+		]
+	}
+]

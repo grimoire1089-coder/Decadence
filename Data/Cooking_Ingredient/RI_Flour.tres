@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="RecipeIngredient" format=3 uid="uid://c635iweftp2yp"]
+
+[ext_resource type="Script" uid="uid://cmenkom871qfi" path="res://Data/Object/UniversalCooker/RecipeIngredient.gd" id="1_xfc3c"]
+[ext_resource type="Resource" uid="uid://dsclvslwg2s1s" path="res://Data/Items/Item_defs/Flour.tres" id="2_eremi"]
+
+[resource]
+script = ExtResource("1_xfc3c")
+slot_name = "小麦粉"
+specific_item = ExtResource("2_eremi")
+metadata/_custom_type_script = "uid://cmenkom871qfi"

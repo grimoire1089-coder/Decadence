@@ -1,0 +1,47 @@
+[gd_scene format=3 uid="uid://bvsjq05oj2p6t"]
+
+[ext_resource type="Script" uid="uid://da1dmbnumhyws" path="res://Data/EnemyNPC/EnemyNPC.gd" id="1_enemy_script"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
+size = Vector2(490, 275.00027)
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_search"]
+radius = 1285.7876
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_attack"]
+radius = 521.1765
+
+[node name="EnemyNPC" type="CharacterBody2D" unique_id=1240293277]
+script = ExtResource("1_enemy_script")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=91303980]
+position = Vector2(0, -16)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1738335301]
+shape = SubResource("RectangleShape2D_body")
+
+[node name="SearchArea" type="Area2D" parent="." unique_id=1362383086]
+collision_layer = 0
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="SearchArea" unique_id=1575329570]
+shape = SubResource("CircleShape2D_search")
+
+[node name="SearchRing" type="Line2D" parent="SearchArea" unique_id=551926467]
+points = PackedVector2Array(160, 0, 147.82072, 61.22935, 113.137085, 113.137085, 61.22935, 147.82072, 0, 160, -61.22935, 147.82072, -113.137085, 113.137085, -147.82072, 61.22935, -160, 0, -147.82072, -61.22935, -113.137085, -113.137085, -61.22935, -147.82072, 0, -160, 61.22935, -147.82072, 113.137085, -113.137085, 147.82072, -61.22935, 160, 0)
+width = 2.0
+default_color = Color(1, 0.843137, 0, 0.28)
+
+[node name="AttackArea" type="Area2D" parent="." unique_id=1671626836]
+collision_layer = 0
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="AttackArea" unique_id=1503536159]
+shape = SubResource("CircleShape2D_attack")
+
+[node name="AttackRing" type="Line2D" parent="AttackArea" unique_id=1178009679]
+points = PackedVector2Array(28, 0, 25.868626, 10.715137, 19.79899, 19.79899, 10.715137, 25.868626, 0, 28, -10.715137, 25.868626, -19.79899, 19.79899, -25.868626, 10.715137, -28, 0, -25.868626, -10.715137, -19.79899, -19.79899, -10.715137, -25.868626, 0, -28, 10.715137, -25.868626, 19.79899, -19.79899, 25.868626, -10.715137, 28, 0)
+width = 2.0
+default_color = Color(1, 0.2, 0.2, 0.36)
+
+[node name="AttackTimer" type="Timer" parent="." unique_id=156826876]

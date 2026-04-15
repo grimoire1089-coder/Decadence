@@ -1,0 +1,353 @@
+[gd_scene load_steps=3 format=3 uid="uid://cv123k8nsa277"]
+
+[ext_resource type="Script" uid="uid://x1xfl4e77yec" path="res://Data/Object/UniversalCooker/RecipeJsonEditor.gd" id="1_script"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0.06, 0.07, 0.09, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.22, 0.26, 0.32, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+shadow_color = Color(0, 0, 0, 0.35)
+shadow_size = 8
+
+[node name="RecipeJsonEditor" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="Backdrop" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.02, 0.02, 0.03, 0.78)
+mouse_filter = 2
+
+[node name="Panel" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 12.0
+offset_top = 12.0
+offset_right = -12.0
+offset_bottom = -12.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 12.0
+offset_top = 12.0
+offset_right = -12.0
+offset_bottom = -12.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PathsVBox" type="VBoxContainer" parent="Panel/VBoxContainer"]
+layout_mode = 2
+
+[node name="JsonPathEdit" type="LineEdit" parent="Panel/VBoxContainer/PathsVBox"]
+layout_mode = 2
+placeholder_text = "JSONパス"
+
+[node name="ItemFolderEdit" type="LineEdit" parent="Panel/VBoxContainer/PathsVBox"]
+layout_mode = 2
+placeholder_text = "アイテムフォルダ"
+
+[node name="ConditionFolderEdit" type="LineEdit" parent="Panel/VBoxContainer/PathsVBox"]
+layout_mode = 2
+placeholder_text = "条件フォルダ"
+
+[node name="TopButtonsHBox" type="HBoxContainer" parent="Panel/VBoxContainer"]
+layout_mode = 2
+
+[node name="LoadButton" type="Button" parent="Panel/VBoxContainer/TopButtonsHBox"]
+layout_mode = 2
+text = "読み込み"
+
+[node name="ApplyJsonButton" type="Button" parent="Panel/VBoxContainer/TopButtonsHBox"]
+layout_mode = 2
+text = "JSON反映"
+
+[node name="ValidateButton" type="Button" parent="Panel/VBoxContainer/TopButtonsHBox"]
+layout_mode = 2
+text = "検証"
+
+[node name="PrettyButton" type="Button" parent="Panel/VBoxContainer/TopButtonsHBox"]
+layout_mode = 2
+text = "整形"
+
+[node name="SaveButton" type="Button" parent="Panel/VBoxContainer/TopButtonsHBox"]
+layout_mode = 2
+text = "保存"
+
+[node name="HSplitContainer" type="HSplitContainer" parent="Panel/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+split_offset = -530
+
+[node name="LeftVBox" type="VBoxContainer" parent="Panel/VBoxContainer/HSplitContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(220, 0)
+
+[node name="RecipeSearchEdit" type="LineEdit" parent="Panel/VBoxContainer/HSplitContainer/LeftVBox"]
+layout_mode = 2
+placeholder_text = "レシピ検索"
+
+[node name="RecipeList" type="ItemList" parent="Panel/VBoxContainer/HSplitContainer/LeftVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+select_mode = 1
+
+[node name="RecipeButtonsHBox" type="HBoxContainer" parent="Panel/VBoxContainer/HSplitContainer/LeftVBox"]
+layout_mode = 2
+
+[node name="NewRecipeButton" type="Button" parent="Panel/VBoxContainer/HSplitContainer/LeftVBox/RecipeButtonsHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "新規"
+
+[node name="AddRecipeButton" type="Button" parent="Panel/VBoxContainer/HSplitContainer/LeftVBox/RecipeButtonsHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "追加"
+
+[node name="UpdateRecipeButton" type="Button" parent="Panel/VBoxContainer/HSplitContainer/LeftVBox/RecipeButtonsHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "上書き"
+
+[node name="DeleteRecipeButton" type="Button" parent="Panel/VBoxContainer/HSplitContainer/LeftVBox/RecipeButtonsHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "削除"
+
+[node name="CenterVBox" type="VBoxContainer" parent="Panel/VBoxContainer/HSplitContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(460, 0)
+
+[node name="FormGrid" type="GridContainer" parent="Panel/VBoxContainer/HSplitContainer/CenterVBox"]
+layout_mode = 2
+columns = 2
+
+[node name="RecipeIdLabel" type="Label" parent="Panel/VBoxContainer/HSplitContainer/CenterVBox/FormGrid"]
+layout_mode = 2
+text = "レシピID"
+
+[node name="RecipeIdEdit" type="LineEdit" parent="Panel/VBoxContainer/HSplitContainer/CenterVBox/FormGrid"]
+layout_mode = 2
+placeholder_text = "boiled_egg_salad_recipe"
+
+[node name="RecipeNameLabel" type="Label" parent="Panel/VBoxContainer/HSplitContainer/CenterVBox/FormGrid"]
+layout_mode = 2
+text = "レシピ名"
+
+[node name="RecipeNameEdit" type="LineEdit" parent="Panel/VBoxContainer/HSplitContainer/CenterVBox/FormGrid"]
+layout_mode = 2
+placeholder_text = "ゆでたまごサラダ"
+
+[node name="DescriptionLabel" type="Label" parent="Panel/VBoxContainer/HSplitContainer/CenterVBox/FormGrid"]
+layout_mode = 2
+text = "説明"
+
+[node name="DescriptionEdit" type="TextEdit" parent="Panel/VBoxContainer/HSplitContainer/CenterVBox/FormGrid"]
+custom_minimum_size = Vector2(0, 68)
+layout_mode = 2
+
+[node name="ResultItemLabel" type="Label" parent="Panel/VBoxContainer/HSplitContainer/CenterVBox/FormGrid"]
+layout_mode = 2
+text = "完成品"
+
+[node name="ResultItemOption" type="OptionButton" parent="Panel/VBoxContainer/HSplitContainer/CenterVBox/FormGrid"]
+layout_mode = 2
+
+[node name="ResultCountLabel" type="Label" parent="Panel/VBoxContainer/HSplitContainer/CenterVBox/FormGrid"]
+layout_mode = 2
+text = "完成数"
+
+[node name="ResultCountSpin" type="SpinBox" parent="Panel/VBoxContainer/HSplitContainer/CenterVBox/FormGrid"]
+layout_mode = 2
+min_value = 1.0
+max_value = 999.0
+value = 1.0
+
+[node name="CookMinutesLabel" type="Label" parent="Panel/VBoxContainer/HSplitContainer/CenterVBox/FormGrid"]
+layout_mode = 2
+text = "時間"
+
+[node name="CookMinutesSpin" type="SpinBox" parent="Panel/VBoxContainer/HSplitContainer/CenterVBox/FormGrid"]
+layout_mode = 2
+min_value = 1.0
+max_value = 9999.0
+value = 10.0
+
+[node name="StationLabel" type="Label" parent="Panel/VBoxContainer/HSplitContainer/CenterVBox/FormGrid"]
+layout_mode = 2
+text = "方式"
+
+[node name="StationOption" type="OptionButton" parent="Panel/VBoxContainer/HSplitContainer/CenterVBox/FormGrid"]
+layout_mode = 2
+
+[node name="UpgradeLevelLabel" type="Label" parent="Panel/VBoxContainer/HSplitContainer/CenterVBox/FormGrid"]
+layout_mode = 2
+text = "必要Lv"
+
+[node name="UpgradeLevelSpin" type="SpinBox" parent="Panel/VBoxContainer/HSplitContainer/CenterVBox/FormGrid"]
+layout_mode = 2
+min_value = 1.0
+max_value = 99.0
+value = 1.0
+
+[node name="QualityMultiplierLabel" type="Label" parent="Panel/VBoxContainer/HSplitContainer/CenterVBox/FormGrid"]
+layout_mode = 2
+text = "品質倍率"
+
+[node name="QualityMultiplierSpin" type="SpinBox" parent="Panel/VBoxContainer/HSplitContainer/CenterVBox/FormGrid"]
+layout_mode = 2
+min_value = 0.1
+max_value = 99.0
+step = 0.1
+value = 1.0
+
+[node name="CookingExpLabel" type="Label" parent="Panel/VBoxContainer/HSplitContainer/CenterVBox/FormGrid"]
+layout_mode = 2
+text = "EXP"
+
+[node name="CookingExpSpin" type="SpinBox" parent="Panel/VBoxContainer/HSplitContainer/CenterVBox/FormGrid"]
+layout_mode = 2
+min_value = 0.0
+max_value = 9999.0
+value = 1.0
+
+[node name="CandidateSplit" type="HSplitContainer" parent="Panel/VBoxContainer/HSplitContainer/CenterVBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 220)
+split_offset = -60
+
+[node name="FoodVBox" type="VBoxContainer" parent="Panel/VBoxContainer/HSplitContainer/CenterVBox/CandidateSplit"]
+layout_mode = 2
+custom_minimum_size = Vector2(200, 0)
+
+[node name="FoodSearchEdit" type="LineEdit" parent="Panel/VBoxContainer/HSplitContainer/CenterVBox/CandidateSplit/FoodVBox"]
+layout_mode = 2
+placeholder_text = "食品候補検索"
+
+[node name="FoodItemList" type="ItemList" parent="Panel/VBoxContainer/HSplitContainer/CenterVBox/CandidateSplit/FoodVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+select_mode = 1
+
+[node name="FoodButtonsHBox" type="HBoxContainer" parent="Panel/VBoxContainer/HSplitContainer/CenterVBox/CandidateSplit/FoodVBox"]
+layout_mode = 2
+
+[node name="SetResultButton" type="Button" parent="Panel/VBoxContainer/HSplitContainer/CenterVBox/CandidateSplit/FoodVBox/FoodButtonsHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "完成品に設定"
+
+[node name="AddItemIngredientButton" type="Button" parent="Panel/VBoxContainer/HSplitContainer/CenterVBox/CandidateSplit/FoodVBox/FoodButtonsHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "食材追加"
+
+[node name="LabelVBox" type="VBoxContainer" parent="Panel/VBoxContainer/HSplitContainer/CenterVBox/CandidateSplit"]
+layout_mode = 2
+custom_minimum_size = Vector2(200, 0)
+
+[node name="LabelSearchEdit" type="LineEdit" parent="Panel/VBoxContainer/HSplitContainer/CenterVBox/CandidateSplit/LabelVBox"]
+layout_mode = 2
+placeholder_text = "ラベル候補検索"
+
+[node name="LabelList" type="ItemList" parent="Panel/VBoxContainer/HSplitContainer/CenterVBox/CandidateSplit/LabelVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+select_mode = 1
+
+[node name="AddLabelIngredientButton" type="Button" parent="Panel/VBoxContainer/HSplitContainer/CenterVBox/CandidateSplit/LabelVBox"]
+layout_mode = 2
+text = "ラベル食材追加"
+
+[node name="IngredientVBox" type="VBoxContainer" parent="Panel/VBoxContainer/HSplitContainer/CenterVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="IngredientList" type="ItemList" parent="Panel/VBoxContainer/HSplitContainer/CenterVBox/IngredientVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+select_mode = 1
+
+[node name="IngredientEditHBox" type="HBoxContainer" parent="Panel/VBoxContainer/HSplitContainer/CenterVBox/IngredientVBox"]
+layout_mode = 2
+
+[node name="IngredientSlotNameEdit" type="LineEdit" parent="Panel/VBoxContainer/HSplitContainer/CenterVBox/IngredientVBox/IngredientEditHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "表示名"
+
+[node name="IngredientCountSpin" type="SpinBox" parent="Panel/VBoxContainer/HSplitContainer/CenterVBox/IngredientVBox/IngredientEditHBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(110, 0)
+min_value = 1.0
+max_value = 999.0
+value = 1.0
+
+[node name="IngredientButtonsHBox" type="HBoxContainer" parent="Panel/VBoxContainer/HSplitContainer/CenterVBox/IngredientVBox"]
+layout_mode = 2
+
+[node name="ApplyIngredientButton" type="Button" parent="Panel/VBoxContainer/HSplitContainer/CenterVBox/IngredientVBox/IngredientButtonsHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "個数/表示更新"
+
+[node name="RemoveIngredientButton" type="Button" parent="Panel/VBoxContainer/HSplitContainer/CenterVBox/IngredientVBox/IngredientButtonsHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "削除"
+
+[node name="MoveUpIngredientButton" type="Button" parent="Panel/VBoxContainer/HSplitContainer/CenterVBox/IngredientVBox/IngredientButtonsHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "↑"
+
+[node name="MoveDownIngredientButton" type="Button" parent="Panel/VBoxContainer/HSplitContainer/CenterVBox/IngredientVBox/IngredientButtonsHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "↓"
+
+[node name="RightVBox" type="VBoxContainer" parent="Panel/VBoxContainer/HSplitContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(340, 0)
+
+[node name="StatusLabel" type="Label" parent="Panel/VBoxContainer/HSplitContainer/RightVBox"]
+layout_mode = 2
+text = "状態表示"
+autowrap_mode = 3
+
+[node name="DetailLabel" type="RichTextLabel" parent="Panel/VBoxContainer/HSplitContainer/RightVBox"]
+custom_minimum_size = Vector2(0, 220)
+layout_mode = 2
+size_flags_vertical = 3
+bbcode_enabled = true
+fit_content = false
+scroll_following = false
+
+[node name="TextEdit" type="TextEdit" parent="Panel/VBoxContainer/HSplitContainer/RightVBox"]
+layout_mode = 2
+size_flags_vertical = 3

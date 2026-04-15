@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ItemData" format=3 uid="uid://bkh23jdefwtbg"]
+
+[ext_resource type="Texture2D" uid="uid://dyuc6kidd8jep" path="res://Image/Seed/Seed_Potato.png" id="1_8ogsj"]
+[ext_resource type="Script" uid="uid://yrmp5d5nc6bo" path="res://Data/Items/ItemTag.gd" id="2_12dqa"]
+[ext_resource type="Script" uid="uid://dljnvja3myc3c" path="res://Data/Items/ItemData.gd" id="2_116v4"]
+[ext_resource type="Resource" uid="uid://7nrdx7jclmh3" path="res://Data/ItemTags/Seed.tres" id="3_hhtf8"]
+
+[resource]
+script = ExtResource("2_116v4")
+id = &"seed_potato"
+item_name = "ジャガイモの種"
+icon = ExtResource("1_8ogsj")
+price = 1
+buy_price = 5
+tags = 8
+labels = Array[ExtResource("2_12dqa")]([ExtResource("3_hhtf8")])
+metadata/_custom_type_script = "uid://dljnvja3myc3c"

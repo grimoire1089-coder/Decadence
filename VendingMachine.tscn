@@ -1,0 +1,30 @@
+[gd_scene format=3 uid="uid://3r8u7etfs67j"]
+
+[ext_resource type="Script" uid="uid://dgf8bv27bv878" path="res://VendingMachine.gd" id="1_3aj2u"]
+[ext_resource type="Texture2D" uid="uid://pnptrwpd2g61" path="res://Image/Vending_Machine.png" id="1_y6tu7"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_3aj2u"]
+size = Vector2(597, 461)
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_y6tu7"]
+radius = 640.0703
+
+[node name="VendingMachine" type="StaticBody2D" unique_id=662696366]
+script = ExtResource("1_3aj2u")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=152595600]
+texture = ExtResource("1_y6tu7")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1988847712]
+position = Vector2(1.5, 171.5)
+shape = SubResource("RectangleShape2D_3aj2u")
+
+[node name="InteractArea" type="Area2D" parent="." unique_id=1908230111]
+
+[node name="CollisionShape2D2" type="CollisionShape2D" parent="InteractArea" unique_id=806004090]
+position = Vector2(0, 168)
+shape = SubResource("CircleShape2D_y6tu7")
+debug_color = Color(0.97572905, 0, 0.420763, 0.41960785)
+
+[node name="CustomerTimer" type="Timer" parent="." unique_id=1694629702]
+wait_time = 8.0

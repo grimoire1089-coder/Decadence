@@ -1,0 +1,246 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://UI/PauseMenuUI.gd" id="1_script"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+content_margin_left = 22.0
+content_margin_top = 20.0
+content_margin_right = 22.0
+content_margin_bottom = 20.0
+bg_color = Color(0.0431373, 0.0627451, 0.0941176, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.298039, 0.74902, 1, 0.65)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+shadow_color = Color(0, 0, 0, 0.35)
+shadow_size = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_audio_panel"]
+content_margin_left = 14.0
+content_margin_top = 12.0
+content_margin_right = 14.0
+content_margin_bottom = 12.0
+bg_color = Color(0.10, 0.14, 0.20, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.30, 0.48, 0.66, 0.70)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button"]
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 8.0
+bg_color = Color(0.16, 0.20, 0.28, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.40, 0.60, 0.82, 0.75)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[node name="PauseMenuUI" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+script = ExtResource("1_script")
+
+[node name="Backdrop" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.02, 0.02, 0.03, 0.78)
+mouse_filter = 1
+
+[node name="CenterContainer" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel" type="Panel" parent="CenterContainer"]
+custom_minimum_size = Vector2(560, 470)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer/Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 22.0
+offset_top = 20.0
+offset_right = -22.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 12
+
+[node name="TitleLabel" type="Label" parent="CenterContainer/Panel/VBoxContainer"]
+custom_minimum_size = Vector2(0, 34)
+layout_mode = 2
+text = "メニュー"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="DescriptionLabel" type="Label" parent="CenterContainer/Panel/VBoxContainer"]
+layout_mode = 2
+text = "ESCで閉じる / ゲームに戻る / BGM音量とボイス音量の調整"
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="AudioSection" type="PanelContainer" parent="CenterContainer/Panel/VBoxContainer"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_audio_panel")
+
+[node name="AudioVBox" type="VBoxContainer" parent="CenterContainer/Panel/VBoxContainer/AudioSection"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="AudioTitleLabel" type="Label" parent="CenterContainer/Panel/VBoxContainer/AudioSection/AudioVBox"]
+layout_mode = 2
+text = "音量設定"
+
+[node name="BgmRow" type="HBoxContainer" parent="CenterContainer/Panel/VBoxContainer/AudioSection/AudioVBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="BgmLabel" type="Label" parent="CenterContainer/Panel/VBoxContainer/AudioSection/AudioVBox/BgmRow"]
+custom_minimum_size = Vector2(90, 0)
+layout_mode = 2
+text = "BGM音量"
+vertical_alignment = 1
+
+[node name="BgmSlider" type="HSlider" parent="CenterContainer/Panel/VBoxContainer/AudioSection/AudioVBox/BgmRow"]
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 100.0
+step = 1.0
+value = 70.0
+
+[node name="BgmPercentLabel" type="Label" parent="CenterContainer/Panel/VBoxContainer/AudioSection/AudioVBox/BgmRow"]
+custom_minimum_size = Vector2(54, 0)
+layout_mode = 2
+text = "70%"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="VoiceRow" type="HBoxContainer" parent="CenterContainer/Panel/VBoxContainer/AudioSection/AudioVBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="VoiceLabel" type="Label" parent="CenterContainer/Panel/VBoxContainer/AudioSection/AudioVBox/VoiceRow"]
+custom_minimum_size = Vector2(90, 0)
+layout_mode = 2
+text = "ボイス音量"
+vertical_alignment = 1
+
+[node name="VoiceSlider" type="HSlider" parent="CenterContainer/Panel/VBoxContainer/AudioSection/AudioVBox/VoiceRow"]
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 100.0
+step = 1.0
+value = 100.0
+
+[node name="VoicePercentLabel" type="Label" parent="CenterContainer/Panel/VBoxContainer/AudioSection/AudioVBox/VoiceRow"]
+custom_minimum_size = Vector2(54, 0)
+layout_mode = 2
+text = "100%"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="AudioButtonsRow" type="HBoxContainer" parent="CenterContainer/Panel/VBoxContainer/AudioSection/AudioVBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="BgmResetButton" type="Button" parent="CenterContainer/Panel/VBoxContainer/AudioSection/AudioVBox/AudioButtonsRow"]
+custom_minimum_size = Vector2(160, 40)
+layout_mode = 2
+text = "BGMを初期値に戻す"
+theme_override_styles/normal = SubResource("StyleBoxFlat_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button")
+theme_override_styles/focus = SubResource("StyleBoxFlat_button")
+
+[node name="VoiceResetButton" type="Button" parent="CenterContainer/Panel/VBoxContainer/AudioSection/AudioVBox/AudioButtonsRow"]
+custom_minimum_size = Vector2(170, 40)
+layout_mode = 2
+text = "ボイスを初期値に戻す"
+theme_override_styles/normal = SubResource("StyleBoxFlat_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button")
+theme_override_styles/focus = SubResource("StyleBoxFlat_button")
+
+[node name="AudioStatusLabel" type="Label" parent="CenterContainer/Panel/VBoxContainer/AudioSection/AudioVBox"]
+custom_minimum_size = Vector2(0, 22)
+layout_mode = 2
+text = "現在のBGM音量: 70% / ボイス音量: 100%"
+autowrap_mode = 3
+
+[node name="ButtonRow" type="HBoxContainer" parent="CenterContainer/Panel/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="ResumeButton" type="Button" parent="CenterContainer/Panel/VBoxContainer/ButtonRow"]
+custom_minimum_size = Vector2(200, 46)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "ゲームに戻る"
+theme_override_styles/normal = SubResource("StyleBoxFlat_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button")
+theme_override_styles/focus = SubResource("StyleBoxFlat_button")
+
+[node name="QuitButton" type="Button" parent="CenterContainer/Panel/VBoxContainer/ButtonRow"]
+custom_minimum_size = Vector2(200, 46)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "ゲーム終了"
+theme_override_styles/normal = SubResource("StyleBoxFlat_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button")
+theme_override_styles/focus = SubResource("StyleBoxFlat_button")
+
+[node name="CloseHintLabel" type="Label" parent="CenterContainer/Panel/VBoxContainer"]
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+text = "作業UIが開いていない時に ESC でこのメニューを開ける"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="QuitConfirmDialog" type="ConfirmationDialog" parent="."]
+title = "ゲーム終了確認"
+initial_position = 1
+size = Vector2i(420, 220)
+min_size = Vector2i(420, 220)
+ok_button_text = "終了する"
+dialog_text = "ゲームを終了していいか？"

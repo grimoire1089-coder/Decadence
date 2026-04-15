@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="ItemData" format=3 uid="uid://djh1su57jicj8"]
+
+[ext_resource type="Texture2D" uid="uid://5ylvnk7cfy2j" path="res://Image/Crops/Potato.png" id="1_ebmt3"]
+[ext_resource type="Script" uid="uid://yrmp5d5nc6bo" path="res://Data/Items/ItemTag.gd" id="2_as57q"]
+[ext_resource type="Script" uid="uid://dljnvja3myc3c" path="res://Data/Items/ItemData.gd" id="2_yv3jq"]
+[ext_resource type="Resource" uid="uid://ba8sdgxk1enj8" path="res://Data/ItemTags/Drink.tres" id="3_dnu6e"]
+[ext_resource type="Resource" uid="uid://8l0bovle1svd" path="res://Data/ItemLabels/Vegetable.tres" id="4_dnu6e"]
+[ext_resource type="Resource" uid="uid://crm4kgmhfcccv" path="res://Data/ItemTags/Ingredients.tres" id="5_rf3te"]
+
+[resource]
+script = ExtResource("2_yv3jq")
+id = &"potato"
+item_name = "ジャガイモ"
+icon = ExtResource("1_ebmt3")
+price = 10
+buy_price = 20
+fullness_restore = 5
+tags = 131
+labels = Array[ExtResource("2_as57q")]([ExtResource("3_dnu6e"), ExtResource("4_dnu6e"), ExtResource("5_rf3te")])
+metadata/_custom_type_script = "uid://dljnvja3myc3c"

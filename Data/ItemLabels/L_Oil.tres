@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ItemTag" format=3 uid="uid://br1kkn8xvhg30"]
+
+[ext_resource type="Script" uid="uid://yrmp5d5nc6bo" path="res://Data/Items/ItemTag.gd" id="1_lwsws"]
+
+[resource]
+script = ExtResource("1_lwsws")
+id = &"labels_oil"
+display_name = "油"
+category = &"trait"
+metadata/_custom_type_script = "uid://yrmp5d5nc6bo"

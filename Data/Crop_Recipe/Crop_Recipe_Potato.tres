@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="CropRecipe" format=3 uid="uid://btts5ny4x7gks"]
+
+[ext_resource type="Resource" uid="uid://djh1su57jicj8" path="res://Data/Items/Item_defs/Potato.tres" id="1_hk6bp"]
+[ext_resource type="Script" uid="uid://dnnc3x601bsis" path="res://Scripts/CropRecipe.gd" id="2_fk0xy"]
+[ext_resource type="Resource" uid="uid://bkh23jdefwtbg" path="res://Data/Items/Item_defs/Seed/Seed_Potato.tres" id="3_fk0xy"]
+
+[resource]
+script = ExtResource("2_fk0xy")
+id = &"croprecipe_wheat"
+recipe_name = "ジャガイモ"
+seed_item = ExtResource("3_fk0xy")
+harvest_item = ExtResource("1_hk6bp")
+grow_minutes = 10
+metadata/_custom_type_script = "uid://dnnc3x601bsis"

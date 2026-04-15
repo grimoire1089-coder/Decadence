@@ -1,0 +1,35 @@
+[gd_scene format=3 uid="uid://dvfbiq0ye6xdp"]
+
+[ext_resource type="Script" uid="uid://celfypmtk3scp" path="res://InventorySlot.gd" id="1_4r0iv"]
+[ext_resource type="Texture2D" uid="uid://br1dcxox73tcy" path="res://Image/Crops/Apple.png" id="2_e07lh"]
+
+[node name="InventorySlot" type="Panel" unique_id=730135500]
+custom_minimum_size = Vector2(64, 64)
+offset_right = 64.0
+offset_bottom = 64.0
+script = ExtResource("1_4r0iv")
+
+[node name="TextureRect" type="TextureRect" parent="." unique_id=1815466247]
+z_index = 100
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("2_e07lh")
+expand_mode = 3
+stretch_mode = 5
+
+[node name="CountLabel" type="Label" parent="." unique_id=1311657494]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.984
+anchor_top = 1.0
+anchor_right = 0.984
+anchor_bottom = 1.0
+offset_left = -39.976
+offset_top = -23.0
+offset_right = 0.02399826
+horizontal_alignment = 2
+vertical_alignment = 2

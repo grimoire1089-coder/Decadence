@@ -1,0 +1,30 @@
+[gd_scene format=3 uid="uid://cqcvg6cf3r4co"]
+
+[ext_resource type="Script" uid="uid://smvqjbinykwp" path="res://UI/InteractPromptUI.gd" id="1_script"]
+[ext_resource type="FontFile" uid="uid://dxl3onopl01jn" path="res://Fonts/Makinas-4-Flat.otf" id="2_30qlw"]
+
+[node name="InteractPromptUI" type="CanvasLayer" unique_id=511164782]
+layer = 20
+script = ExtResource("1_script")
+default_world_offset = Vector2(0, 0)
+
+[node name="PromptRoot" type="PanelContainer" parent="." unique_id=274476533]
+visible = false
+offset_right = 88.0
+offset_bottom = 30.0
+mouse_filter = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="PromptRoot" unique_id=1751897408]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 6
+
+[node name="PromptLabel" type="Label" parent="PromptRoot/MarginContainer" unique_id=1684312330]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_30qlw")
+theme_override_font_sizes/font_size = 32
+text = "[E] 話す"
+horizontal_alignment = 1
+vertical_alignment = 1

@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="ItemData" format=3 uid="uid://b6de6xi4kasvo"]
+
+[ext_resource type="Texture2D" uid="uid://kyhjer0l5dax" path="res://Image/Crops/Lemon.png" id="1_p4g0q"]
+[ext_resource type="Script" uid="uid://dljnvja3myc3c" path="res://Data/Items/ItemData.gd" id="2_4oa06"]
+[ext_resource type="Script" uid="uid://yrmp5d5nc6bo" path="res://Data/Items/ItemTag.gd" id="2_s6778"]
+[ext_resource type="Resource" uid="uid://ba8sdgxk1enj8" path="res://Data/ItemTags/Drink.tres" id="3_peuq3"]
+[ext_resource type="Resource" uid="uid://crm4kgmhfcccv" path="res://Data/ItemTags/Ingredients.tres" id="4_abcq6"]
+[ext_resource type="Resource" uid="uid://cmyu4gu3ci8ea" path="res://Data/ItemLabels/Fruit.tres" id="5_w21kb"]
+[ext_resource type="Resource" uid="uid://bth2in8tig72d" path="res://Data/ItemLabels/Acidity.tres" id="6_abcq6"]
+
+[resource]
+script = ExtResource("2_4oa06")
+id = &"lemon"
+item_name = "レモン"
+icon = ExtResource("1_p4g0q")
+price = 10
+fullness_restore = 10
+tags = 133
+labels = Array[ExtResource("2_s6778")]([ExtResource("3_peuq3"), ExtResource("4_abcq6"), ExtResource("5_w21kb"), ExtResource("6_abcq6")])
+metadata/_custom_type_script = "uid://dljnvja3myc3c"

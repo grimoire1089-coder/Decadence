@@ -1,0 +1,125 @@
+[gd_scene format=3 uid="uid://charqd8qx3ros"]
+
+[ext_resource type="Script" uid="uid://c50xvqs8y1sm0" path="res://InventoryUI.gd" id="1_xlonu"]
+[ext_resource type="PackedScene" uid="uid://dvfbiq0ye6xdp" path="res://InventorySlot.tscn" id="2_ictmd"]
+[ext_resource type="Script" uid="uid://dljnvja3myc3c" path="res://Data/Items/ItemData.gd" id="3_cgsp4"]
+[ext_resource type="Resource" uid="uid://cohc4noqxcd85" path="res://Data/Items/Item_defs/Apple.tres" id="4_a0n0l"]
+[ext_resource type="Resource" uid="uid://e5radprra2oy" path="res://Data/Items/Item_defs/Avocado.tres" id="5_a0n0l"]
+[ext_resource type="Resource" uid="uid://b6de6xi4kasvo" path="res://Data/Items/Item_defs/Lemon.tres" id="6_vlq62"]
+[ext_resource type="Resource" uid="uid://dj3sc5qkmiw27" path="res://Data/Items/Item_defs/Mangosteen.tres" id="7_gqpmq"]
+[ext_resource type="Resource" uid="uid://tn5q8wdmu2wy" path="res://Data/Items/Item_defs/Orange.tres" id="8_oxnxi"]
+[ext_resource type="Resource" uid="uid://dwb2v0fdv4wt" path="res://Data/Items/Item_defs/Peach.tres" id="9_6anoq"]
+[ext_resource type="Script" uid="uid://bhcauhlbtngvf" path="res://Scripts/InventoryTooltip.gd" id="10_gqpmq"]
+
+[node name="InventoryUI" type="Control" unique_id=1092591123]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_xlonu")
+slot_scene = ExtResource("2_ictmd")
+item_db = Array[ExtResource("3_cgsp4")]([ExtResource("4_a0n0l"), ExtResource("5_a0n0l"), ExtResource("6_vlq62"), ExtResource("7_gqpmq"), ExtResource("8_oxnxi"), ExtResource("9_6anoq")])
+
+[node name="Panel" type="Panel" parent="." unique_id=1305009502]
+custom_minimum_size = Vector2(400, 300)
+layout_mode = 0
+offset_left = 1480.0
+offset_top = 450.0
+offset_right = 1880.0
+offset_bottom = 750.0
+mouse_filter = 1
+
+[node name="ScrollContainer" type="ScrollContainer" parent="Panel" unique_id=1457391002]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 16.0
+offset_right = 384.0
+offset_bottom = 284.0
+
+[node name="GridContainer" type="GridContainer" parent="Panel/ScrollContainer" unique_id=707825196]
+layout_mode = 2
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 8
+columns = 5
+
+[node name="InventoryTooltip" type="PanelContainer" parent="." unique_id=1174836445]
+visible = false
+custom_minimum_size = Vector2(400, 0)
+layout_mode = 0
+offset_right = 400.0
+offset_bottom = 260.0
+mouse_filter = 2
+script = ExtResource("10_gqpmq")
+
+[node name="MarginContainer" type="MarginContainer" parent="InventoryTooltip" unique_id=656699112]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="VBoxContainer" type="VBoxContainer" parent="InventoryTooltip/MarginContainer" unique_id=84385087]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="ItemNameLabel" type="Label" parent="InventoryTooltip/MarginContainer/VBoxContainer" unique_id=754058523]
+custom_minimum_size = Vector2(1, 1)
+layout_mode = 2
+size_flags_horizontal = 3
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="IconBox" type="CenterContainer" parent="InventoryTooltip/MarginContainer/VBoxContainer" unique_id=328440055]
+custom_minimum_size = Vector2(0, 128)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="IconRect" type="TextureRect" parent="InventoryTooltip/MarginContainer/VBoxContainer/IconBox" unique_id=281090806]
+custom_minimum_size = Vector2(128, 128)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CountLabel" type="Label" parent="InventoryTooltip/MarginContainer/VBoxContainer" unique_id=1122676736]
+layout_mode = 2
+size_flags_horizontal = 3
+horizontal_alignment = 1
+
+[node name="QualityLabel" type="Label" parent="InventoryTooltip/MarginContainer/VBoxContainer" unique_id=245575030]
+layout_mode = 2
+size_flags_horizontal = 3
+horizontal_alignment = 1
+
+[node name="RankLabel" type="Label" parent="InventoryTooltip/MarginContainer/VBoxContainer" unique_id=1499440104]
+layout_mode = 2
+size_flags_horizontal = 3
+horizontal_alignment = 1
+
+[node name="BuyPriceLabel" type="Label" parent="InventoryTooltip/MarginContainer/VBoxContainer" unique_id=437235077]
+layout_mode = 2
+size_flags_horizontal = 3
+horizontal_alignment = 1
+
+[node name="SellPriceLabel" type="Label" parent="InventoryTooltip/MarginContainer/VBoxContainer" unique_id=1131178844]
+layout_mode = 2
+size_flags_horizontal = 3
+horizontal_alignment = 1
+
+[node name="DescriptionLabel" type="Label" parent="InventoryTooltip/MarginContainer/VBoxContainer" unique_id=678764514]
+custom_minimum_size = Vector2(0, 54)
+layout_mode = 2
+size_flags_horizontal = 3
+autowrap_mode = 3
+
+[node name="LabelChipFlow" type="HFlowContainer" parent="InventoryTooltip/MarginContainer/VBoxContainer" unique_id=1206356947]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 8

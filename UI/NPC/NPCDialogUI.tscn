@@ -1,0 +1,158 @@
+[gd_scene format=3 uid="uid://dlpieco7q4pd"]
+
+[ext_resource type="Script" uid="uid://coyc8vc64qu0n" path="res://UI/NPC/NPCDialogUI.gd" id="1_script"]
+
+[node name="NPCDialogUI" type="Control" unique_id=723594942]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_script")
+
+[node name="VoicePlayer" type="AudioStreamPlayer" parent="." unique_id=1195530778]
+bus = &"Voice"
+
+[node name="Dimmer" type="ColorRect" parent="." unique_id=199746592]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0.52)
+
+[node name="RootCenter" type="CenterContainer" parent="." unique_id=289654385]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="MainPanel" type="Panel" parent="RootCenter" unique_id=1336193649]
+custom_minimum_size = Vector2(1080, 560)
+layout_mode = 2
+mouse_filter = 1
+
+[node name="MarginContainer" type="MarginContainer" parent="RootCenter/MainPanel" unique_id=665141716]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 18
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 18
+
+[node name="RootVBox" type="VBoxContainer" parent="RootCenter/MainPanel/MarginContainer" unique_id=596315544]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="HeaderHBox" type="HBoxContainer" parent="RootCenter/MainPanel/MarginContainer/RootVBox" unique_id=1278064866]
+layout_mode = 2
+
+[node name="NameLabel" type="Label" parent="RootCenter/MainPanel/MarginContainer/RootVBox/HeaderHBox" unique_id=1376554679]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "住人"
+vertical_alignment = 1
+
+[node name="CloseButton" type="Button" parent="RootCenter/MainPanel/MarginContainer/RootVBox/HeaderHBox" unique_id=192544970]
+layout_mode = 2
+text = "閉じる"
+
+[node name="BodyHBox" type="HBoxContainer" parent="RootCenter/MainPanel/MarginContainer/RootVBox" unique_id=2030377719]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 14
+
+[node name="PortraitFrame" type="Panel" parent="RootCenter/MainPanel/MarginContainer/RootVBox/BodyHBox" unique_id=1904890453]
+custom_minimum_size = Vector2(320, 420)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="MarginContainer" type="MarginContainer" parent="RootCenter/MainPanel/MarginContainer/RootVBox/BodyHBox/PortraitFrame" unique_id=266398078]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="PortraitTexture" type="TextureRect" parent="RootCenter/MainPanel/MarginContainer/RootVBox/BodyHBox/PortraitFrame/MarginContainer" unique_id=1194295385]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="PortraitPlaceholder" type="Label" parent="RootCenter/MainPanel/MarginContainer/RootVBox/BodyHBox/PortraitFrame" unique_id=1167950926]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -64.0
+offset_top = -12.0
+offset_right = 64.0
+offset_bottom = 12.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "立ち絵なし"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="DialogueFrame" type="Panel" parent="RootCenter/MainPanel/MarginContainer/RootVBox/BodyHBox" unique_id=322312727]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="MarginContainer" type="MarginContainer" parent="RootCenter/MainPanel/MarginContainer/RootVBox/BodyHBox/DialogueFrame" unique_id=251835776]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 18
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 18
+
+[node name="DialogueVBox" type="VBoxContainer" parent="RootCenter/MainPanel/MarginContainer/RootVBox/BodyHBox/DialogueFrame/MarginContainer" unique_id=1486887042]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 16
+
+[node name="DialogueText" type="RichTextLabel" parent="RootCenter/MainPanel/MarginContainer/RootVBox/BodyHBox/DialogueFrame/MarginContainer/DialogueVBox" unique_id=265019395]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+text = "ここに会話文が表示される。"
+scroll_active = false
+
+[node name="ButtonHBox" type="HBoxContainer" parent="RootCenter/MainPanel/MarginContainer/RootVBox/BodyHBox/DialogueFrame/MarginContainer/DialogueVBox" unique_id=509244515]
+layout_mode = 2
+theme_override_constants/separation = 10
+alignment = 2
+
+[node name="EndButton" type="Button" parent="RootCenter/MainPanel/MarginContainer/RootVBox/BodyHBox/DialogueFrame/MarginContainer/DialogueVBox/ButtonHBox" unique_id=221481531]
+layout_mode = 2
+text = "会話終了"
+
+[node name="NextButton" type="Button" parent="RootCenter/MainPanel/MarginContainer/RootVBox/BodyHBox/DialogueFrame/MarginContainer/DialogueVBox/ButtonHBox" unique_id=1406747092]
+layout_mode = 2
+text = "次へ"

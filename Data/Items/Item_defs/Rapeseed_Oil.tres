@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="ItemData" format=3 uid="uid://cfohkiadutlo1"]
+
+[ext_resource type="Texture2D" uid="uid://p13heckykef3" path="res://Image/Food/Rapeseed_Oil.png" id="1_5prj5"]
+[ext_resource type="Script" uid="uid://yrmp5d5nc6bo" path="res://Data/Items/ItemTag.gd" id="2_xmun1"]
+[ext_resource type="Script" uid="uid://dljnvja3myc3c" path="res://Data/Items/ItemData.gd" id="3_5prj5"]
+[ext_resource type="Resource" uid="uid://br1kkn8xvhg30" path="res://Data/ItemLabels/L_Oil.tres" id="3_gda3q"]
+[ext_resource type="Resource" uid="uid://jdklae138hp0" path="res://Data/ItemLabels/L_Cooking_Supplies.tres" id="4_axe3r"]
+[ext_resource type="Resource" uid="uid://crm4kgmhfcccv" path="res://Data/ItemTags/Ingredients.tres" id="5_gda3q"]
+[ext_resource type="Resource" uid="uid://ba8sdgxk1enj8" path="res://Data/ItemTags/Drink.tres" id="6_axe3r"]
+
+[resource]
+script = ExtResource("3_5prj5")
+id = &"rapeseed_oil"
+item_name = "なたね油"
+icon = ExtResource("1_5prj5")
+price = 10
+buy_price = 20
+tags = 128
+labels = Array[ExtResource("2_xmun1")]([ExtResource("3_gda3q"), ExtResource("4_axe3r"), ExtResource("5_gda3q"), ExtResource("6_axe3r")])
+metadata/_custom_type_script = "uid://dljnvja3myc3c"

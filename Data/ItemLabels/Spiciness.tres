@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ItemTag" format=3 uid="uid://dgco6vuwr25i0"]
+
+[ext_resource type="Script" uid="uid://yrmp5d5nc6bo" path="res://Data/Items/ItemTag.gd" id="1_usd0b"]
+
+[resource]
+script = ExtResource("1_usd0b")
+id = &"labels_spiciness"
+display_name = "辛味"
+category = &"trait"
+metadata/_custom_type_script = "uid://yrmp5d5nc6bo"

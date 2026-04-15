@@ -1,0 +1,57 @@
+{
+  "recipes": [
+    {
+      "id": "boiled_egg_salad_recipe",
+      "recipe_name": "ゆでたまごサラダ",
+      "description": "たまごとブロッコリーをマヨネーズで和えたサラダ。",
+      "result_item_id": "boiled_egg_salad",
+      "result_count": 1,
+      "cook_minutes": 10,
+      "station_flags": ["mix"],
+      "required_upgrade_level": 1,
+      "base_quality_multiplier": 1.0,
+      "cooking_exp": 3,
+      "ingredients": [
+        {
+          "slot_name": "たまご",
+          "item_id": "egg",
+          "count": 2
+        },
+        {
+          "slot_name": "ブロッコリー",
+          "item_id": "broccoli",
+          "count": 1
+        },
+        {
+          "slot_name": "マヨネーズ",
+          "item_id": "mayonnaise",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "vegetable_soup_recipe",
+      "recipe_name": "野菜スープ",
+      "description": "野菜をたっぷり使った温かいスープ。",
+      "result_item_id": "vegetable_soup",
+      "result_count": 1,
+      "cook_minutes": 15,
+      "station_flags": ["boil"],
+      "required_upgrade_level": 1,
+      "base_quality_multiplier": 1.1,
+      "cooking_exp": 5,
+      "ingredients": [
+        {
+          "slot_name": "野菜",
+          "condition_id": "vegetable_food",
+          "count": 2
+        },
+        {
+          "slot_name": "水",
+          "item_id": "water",
+          "count": 1
+        }
+      ]
+    }
+  ]
+}

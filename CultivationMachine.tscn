@@ -1,0 +1,15 @@
+[gd_scene format=3 uid="uid://8oqrmlnc7hka"]
+
+[ext_resource type="Texture2D" uid="uid://ckdn342kp3dv8" path="res://Image/Cultivation_Machine.png" id="1_xcn1t"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_p7t1t"]
+size = Vector2(662, 394)
+
+[node name="CultivationMachine" type="StaticBody2D" unique_id=124723052]
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=577234781]
+texture = ExtResource("1_xcn1t")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=2055861778]
+position = Vector2(0, 196)
+shape = SubResource("RectangleShape2D_p7t1t")

@@ -1,0 +1,103 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://VendingMachineUI.gd" id="1_script"]
+
+[node name="VendingMachineUI" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="Panel" type="Panel" parent="."]
+layout_mode = 1
+offset_left = 370.0
+offset_top = 230.0
+offset_right = 1550.0
+offset_bottom = 850.0
+mouse_filter = 1
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = 20.0
+offset_right = -24.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 10
+
+[node name="TitleLabel" type="Label" parent="Panel/VBoxContainer"]
+layout_mode = 2
+text = "委託販売機"
+horizontal_alignment = 1
+
+[node name="MoneyLabel" type="Label" parent="Panel/VBoxContainer"]
+layout_mode = 2
+text = "所持金: 0 Cr"
+horizontal_alignment = 1
+
+[node name="EarningsLabel" type="Label" parent="Panel/VBoxContainer"]
+layout_mode = 2
+text = "売上: 0 Cr"
+horizontal_alignment = 1
+
+[node name="GridContainer" type="GridContainer" parent="Panel/VBoxContainer"]
+custom_minimum_size = Vector2(0, 170)
+layout_mode = 2
+size_flags_vertical = 3
+columns = 5
+theme_override_constants/h_separation = 12
+theme_override_constants/v_separation = 12
+
+[node name="PriceSpinBox" type="SpinBox" parent="Panel/VBoxContainer"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 0.0
+max_value = 999999.0
+value = 10.0
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Panel/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="StockOneButton" type="Button" parent="Panel/VBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "1個補充"
+
+[node name="TakeBackOneButton" type="Button" parent="Panel/VBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "1個戻す"
+
+[node name="SetPriceButton" type="Button" parent="Panel/VBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "価格更新"
+
+[node name="CollectButton" type="Button" parent="Panel/VBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "売上回収"
+
+[node name="InfoLabel" type="Label" parent="Panel/VBoxContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+autowrap_mode = 2
+text = "選択中のスロット情報"
+
+[node name="CloseButton" type="Button" parent="Panel/VBoxContainer"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+text = "閉じる"

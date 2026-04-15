@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ItemData" format=3 uid="uid://cyoif53etg7fb"]
+
+[ext_resource type="Texture2D" uid="uid://3p1bnjl6sqtm" path="res://Image/Seed/Seed_Wheat.png" id="1_4a6l0"]
+[ext_resource type="Script" uid="uid://yrmp5d5nc6bo" path="res://Data/Items/ItemTag.gd" id="2_vs1bj"]
+[ext_resource type="Resource" uid="uid://7nrdx7jclmh3" path="res://Data/ItemTags/Seed.tres" id="3_t2wtm"]
+[ext_resource type="Script" uid="uid://dljnvja3myc3c" path="res://Data/Items/ItemData.gd" id="4_5dkog"]
+
+[resource]
+script = ExtResource("4_5dkog")
+id = &"seed_wheat"
+item_name = "小麦の種"
+icon = ExtResource("1_4a6l0")
+price = 1
+buy_price = 5
+tags = 8
+labels = Array[ExtResource("2_vs1bj")]([ExtResource("3_t2wtm")])
+metadata/_custom_type_script = "uid://dljnvja3myc3c"

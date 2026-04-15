@@ -1,0 +1,28 @@
+[gd_scene format=3 uid="uid://n3kpat5nk0ff"]
+
+[ext_resource type="Script" uid="uid://c1ssbik1hy2p8" path="res://Scripts/CropMachine.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://ckdn342kp3dv8" path="res://Image/Cultivation_Machine.png" id="2_2apj4"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
+size = Vector2(680, 425)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_interact"]
+size = Vector2(748, 496)
+
+[node name="CropMachine" type="StaticBody2D" unique_id=60635765]
+script = ExtResource("1_script")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1015367438]
+texture = ExtResource("2_2apj4")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=203814957]
+position = Vector2(0, 180.5)
+shape = SubResource("RectangleShape2D_body")
+
+[node name="InteractArea" type="Area2D" parent="." unique_id=2039074809]
+collision_layer = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="InteractArea" unique_id=1096038689]
+position = Vector2(0, 200)
+shape = SubResource("RectangleShape2D_interact")
+debug_color = Color(1, 0, 1, 0.19607843)

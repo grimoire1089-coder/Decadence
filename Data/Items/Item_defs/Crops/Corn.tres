@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="ItemData" format=3 uid="uid://bs3ihu05l28xx"]
+
+[ext_resource type="Texture2D" uid="uid://be5sin2nn7pr6" path="res://Image/Crops/Corn.png" id="1_tc5eo"]
+[ext_resource type="Script" uid="uid://yrmp5d5nc6bo" path="res://Data/Items/ItemTag.gd" id="2_flwyf"]
+[ext_resource type="Resource" uid="uid://ba8sdgxk1enj8" path="res://Data/ItemTags/Drink.tres" id="3_emhm4"]
+[ext_resource type="Resource" uid="uid://crm4kgmhfcccv" path="res://Data/ItemTags/Ingredients.tres" id="4_blk4o"]
+[ext_resource type="Script" uid="uid://dljnvja3myc3c" path="res://Data/Items/ItemData.gd" id="7_4o6yu"]
+
+[resource]
+script = ExtResource("7_4o6yu")
+id = &"corn"
+item_name = "トウモロコシ"
+description = "美味しいりんご。"
+icon = ExtResource("1_tc5eo")
+price = 10
+buy_price = 20
+fullness_restore = 5
+tags = 129
+traits = 513
+labels = Array[ExtResource("2_flwyf")]([ExtResource("4_blk4o"), ExtResource("3_emhm4")])
+metadata/_custom_type_script = "uid://dljnvja3myc3c"

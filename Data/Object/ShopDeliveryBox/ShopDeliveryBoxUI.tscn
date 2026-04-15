@@ -1,0 +1,140 @@
+[gd_scene format=3 uid="uid://c8a2ctiwk8xu5"]
+
+[ext_resource type="Script" uid="uid://b467pwnuns6af" path="res://Data/Object/ShopDeliveryBox/ShopDeliveryBoxUI.gd" id="1_ui"]
+
+[node name="ShopDeliveryBoxUI" type="Control" unique_id=410204739]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_ui")
+
+[node name="Panel" type="Panel" parent="." unique_id=1525771539]
+layout_mode = 0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Panel" unique_id=1792795854]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = 24.0
+offset_right = -24.0
+offset_bottom = -24.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="HeaderRow" type="HBoxContainer" parent="Panel/VBoxContainer" unique_id=2147320445]
+layout_mode = 2
+
+[node name="HeaderTextBox" type="VBoxContainer" parent="Panel/VBoxContainer/HeaderRow" unique_id=1526062036]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="TitleLabel" type="Label" parent="Panel/VBoxContainer/HeaderRow/HeaderTextBox" unique_id=1374501860]
+layout_mode = 2
+text = "ショップ宅配ボックス"
+
+[node name="SelectedStoreLabel" type="Label" parent="Panel/VBoxContainer/HeaderRow/HeaderTextBox" unique_id=1135510395]
+layout_mode = 2
+text = "選択中店舗: -"
+
+[node name="StoreDescriptionLabel" type="Label" parent="Panel/VBoxContainer/HeaderRow/HeaderTextBox" unique_id=299801815]
+layout_mode = 2
+autowrap_mode = 2
+
+[node name="CreditsLabel" type="Label" parent="Panel/VBoxContainer/HeaderRow/HeaderTextBox" unique_id=170996726]
+layout_mode = 2
+text = "所持金: 0 Cr"
+
+[node name="PendingLabel" type="Label" parent="Panel/VBoxContainer/HeaderRow/HeaderTextBox" unique_id=475043506]
+layout_mode = 2
+text = "配送中: 0個 / 受け取り待ち: 0種類"
+
+[node name="CloseButton" type="Button" parent="Panel/VBoxContainer/HeaderRow" unique_id=628708896]
+layout_mode = 2
+text = "閉じる"
+
+[node name="ContentRow" type="HBoxContainer" parent="Panel/VBoxContainer" unique_id=1778506473]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="StoreColumn" type="VBoxContainer" parent="Panel/VBoxContainer/ContentRow" unique_id=1581869693]
+custom_minimum_size = Vector2(240, 0)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="StoreSectionLabel" type="Label" parent="Panel/VBoxContainer/ContentRow/StoreColumn" unique_id=1557094581]
+layout_mode = 2
+text = "店舗一覧"
+
+[node name="StoreScroll" type="ScrollContainer" parent="Panel/VBoxContainer/ContentRow/StoreColumn" unique_id=111701205]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="StoreList" type="VBoxContainer" parent="Panel/VBoxContainer/ContentRow/StoreColumn/StoreScroll" unique_id=1734246798]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="ShopColumn" type="VBoxContainer" parent="Panel/VBoxContainer/ContentRow" unique_id=125041975]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="ShopSectionLabel" type="Label" parent="Panel/VBoxContainer/ContentRow/ShopColumn" unique_id=1569992001]
+layout_mode = 2
+text = "商品一覧"
+
+[node name="ShopScroll" type="ScrollContainer" parent="Panel/VBoxContainer/ContentRow/ShopColumn" unique_id=566781353]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="ShopGrid" type="GridContainer" parent="Panel/VBoxContainer/ContentRow/ShopColumn/ShopScroll" unique_id=812673516]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="DeliveryColumn" type="VBoxContainer" parent="Panel/VBoxContainer/ContentRow" unique_id=946727463]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="DeliverySectionLabel" type="Label" parent="Panel/VBoxContainer/ContentRow/DeliveryColumn" unique_id=1495133783]
+layout_mode = 2
+text = "受け取り一覧"
+
+[node name="DeliveryScroll" type="ScrollContainer" parent="Panel/VBoxContainer/ContentRow/DeliveryColumn" unique_id=1811731127]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="DeliveryGrid" type="GridContainer" parent="Panel/VBoxContainer/ContentRow/DeliveryColumn/DeliveryScroll" unique_id=1722620059]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="ActionRow" type="HBoxContainer" parent="Panel/VBoxContainer" unique_id=234766272]
+layout_mode = 2
+
+[node name="OrderOneButton" type="Button" parent="Panel/VBoxContainer/ActionRow" unique_id=2094978294]
+layout_mode = 2
+text = "注文 x1"
+
+[node name="ReceiveOneButton" type="Button" parent="Panel/VBoxContainer/ActionRow" unique_id=522880913]
+layout_mode = 2
+text = "受取 x1"
+
+[node name="ReceiveAllButton" type="Button" parent="Panel/VBoxContainer/ActionRow" unique_id=158934387]
+layout_mode = 2
+text = "全部受取"
+
+[node name="InfoLabel" type="Label" parent="Panel/VBoxContainer" unique_id=2011426052]
+layout_mode = 2
+horizontal_alignment = 1
+autowrap_mode = 2

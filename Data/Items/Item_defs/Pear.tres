@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="ItemData" format=3 uid="uid://e7hjgx0wo8tb"]
+
+[ext_resource type="Texture2D" uid="uid://cskli7h1f178j" path="res://Image/Crops/Pear.png" id="1_y7o74"]
+[ext_resource type="Script" uid="uid://yrmp5d5nc6bo" path="res://Data/Items/ItemTag.gd" id="2_e52d3"]
+[ext_resource type="Script" uid="uid://dljnvja3myc3c" path="res://Data/Items/ItemData.gd" id="2_p6c3e"]
+[ext_resource type="Resource" uid="uid://ba8sdgxk1enj8" path="res://Data/ItemTags/Drink.tres" id="3_yosr4"]
+[ext_resource type="Resource" uid="uid://crm4kgmhfcccv" path="res://Data/ItemTags/Ingredients.tres" id="4_trm0a"]
+[ext_resource type="Resource" uid="uid://cmyu4gu3ci8ea" path="res://Data/ItemLabels/Fruit.tres" id="5_s46sy"]
+
+[resource]
+script = ExtResource("2_p6c3e")
+id = &"pear"
+item_name = "洋ナシ"
+icon = ExtResource("1_y7o74")
+price = 10
+fullness_restore = 10
+tags = 133
+labels = Array[ExtResource("2_e52d3")]([ExtResource("3_yosr4"), ExtResource("4_trm0a"), ExtResource("5_s46sy")])
+metadata/_custom_type_script = "uid://dljnvja3myc3c"

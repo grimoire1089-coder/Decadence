@@ -1,0 +1,82 @@
+[gd_scene format=3 uid="uid://bfo7iktm6ciks"]
+
+[ext_resource type="Script" uid="uid://cljt156hrkvt6" path="res://UI/Active_Skills/RoleSelectUI.gd" id="1_x1b0d"]
+
+[node name="RoleSelectUI" type="CanvasLayer" unique_id=376042415]
+script = ExtResource("1_x1b0d")
+
+[node name="RootMargin" type="MarginContainer" parent="." unique_id=1520905419]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 24
+
+[node name="Panel" type="PanelContainer" parent="RootMargin" unique_id=178292628]
+custom_minimum_size = Vector2(480, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+
+[node name="MainVBox" type="VBoxContainer" parent="RootMargin/Panel" unique_id=940443912]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="TitleLabel" type="Label" parent="RootMargin/Panel/MainVBox" unique_id=1691730294]
+layout_mode = 2
+text = "ロール設定"
+horizontal_alignment = 1
+
+[node name="DescLabel" type="Label" parent="RootMargin/Panel/MainVBox" unique_id=1320944738]
+layout_mode = 2
+text = "メインロールとサブロールを選択します。
+サブに同じメインロールを選ぶとピュア（特化）になります。"
+autowrap_mode = 2
+
+[node name="MainRoleRow" type="HBoxContainer" parent="RootMargin/Panel/MainVBox" unique_id=1866735481]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="MainRoleLabel" type="Label" parent="RootMargin/Panel/MainVBox/MainRoleRow" unique_id=396347572]
+custom_minimum_size = Vector2(140, 0)
+layout_mode = 2
+text = "メインロール"
+
+[node name="MainRoleOption" type="OptionButton" parent="RootMargin/Panel/MainVBox/MainRoleRow" unique_id=578052309]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SubRoleRow" type="HBoxContainer" parent="RootMargin/Panel/MainVBox" unique_id=1242911885]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="SubRoleLabel" type="Label" parent="RootMargin/Panel/MainVBox/SubRoleRow" unique_id=418730992]
+custom_minimum_size = Vector2(140, 0)
+layout_mode = 2
+text = "サブロール"
+
+[node name="SubRoleOption" type="OptionButton" parent="RootMargin/Panel/MainVBox/SubRoleRow" unique_id=466325324]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="CurrentRoleLabel" type="Label" parent="RootMargin/Panel/MainVBox" unique_id=557962765]
+layout_mode = 2
+text = "現在のロール: -"
+autowrap_mode = 2
+
+[node name="SpecializationLabel" type="Label" parent="RootMargin/Panel/MainVBox" unique_id=472316602]
+layout_mode = 2
+text = "状態: -"
+autowrap_mode = 2
+
+[node name="ButtonRow" type="HBoxContainer" parent="RootMargin/Panel/MainVBox" unique_id=673509487]
+layout_mode = 2
+alignment = 2
+
+[node name="CloseButton" type="Button" parent="RootMargin/Panel/MainVBox/ButtonRow" unique_id=862800475]
+layout_mode = 2
+text = "閉じる"

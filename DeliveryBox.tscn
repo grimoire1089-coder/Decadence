@@ -1,0 +1,25 @@
+[gd_scene format=3 uid="uid://hdnm7v5uk28l"]
+
+[ext_resource type="Texture2D" uid="uid://bw7qxcnymtsvs" path="res://Image/Delivery_Box.png" id="1_d7psy"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_gk1ta"]
+size = Vector2(639, 460)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_d7psy"]
+size = Vector2(748, 450)
+
+[node name="DeliveryBox" type="StaticBody2D" unique_id=154381584]
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=2092121252]
+texture = ExtResource("1_d7psy")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1429858480]
+position = Vector2(0, 220)
+shape = SubResource("RectangleShape2D_gk1ta")
+
+[node name="InteractArea" type="Area2D" parent="." unique_id=1336987232]
+
+[node name="CollisionShape2D2" type="CollisionShape2D" parent="InteractArea" unique_id=1990489370]
+position = Vector2(0, 380)
+shape = SubResource("RectangleShape2D_d7psy")
+debug_color = Color(0.97572905, 0, 0.420763, 0.41960785)

@@ -1,0 +1,24 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://UI/SkillHotbarUI.gd" id="1_xw8na"]
+
+[node name="SkillHotbarUI" type="CanvasLayer"]
+script = ExtResource("1_xw8na")
+layer = 5
+
+[node name="BottomMargin" type="MarginContainer" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="CenterContainer" type="CenterContainer" parent="BottomMargin"]
+layout_mode = 2
+size_flags_vertical = 8
+mouse_filter = 2
+
+[node name="SlotRow" type="HBoxContainer" parent="BottomMargin/CenterContainer"]
+layout_mode = 2
+mouse_filter = 2

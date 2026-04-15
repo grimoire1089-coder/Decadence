@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="ItemData" format=3 uid="uid://dj3sc5qkmiw27"]
+
+[ext_resource type="Texture2D" uid="uid://58knxepyl7a3" path="res://Image/Crops/Mangosteen.png" id="1_01l6u"]
+[ext_resource type="Script" uid="uid://dljnvja3myc3c" path="res://Data/Items/ItemData.gd" id="2_euv3j"]
+[ext_resource type="Script" uid="uid://yrmp5d5nc6bo" path="res://Data/Items/ItemTag.gd" id="2_o4cyw"]
+[ext_resource type="Resource" uid="uid://ba8sdgxk1enj8" path="res://Data/ItemTags/Drink.tres" id="3_rki73"]
+[ext_resource type="Resource" uid="uid://crm4kgmhfcccv" path="res://Data/ItemTags/Ingredients.tres" id="4_miimi"]
+[ext_resource type="Resource" uid="uid://cmyu4gu3ci8ea" path="res://Data/ItemLabels/Fruit.tres" id="5_fn0ol"]
+[ext_resource type="Resource" uid="uid://bhjvcbmbpm1f5" path="res://Data/ItemLabels/Salty.tres" id="6_skdvu"]
+
+[resource]
+script = ExtResource("2_euv3j")
+id = &"mangosteen"
+item_name = "マンゴスチン"
+icon = ExtResource("1_01l6u")
+price = 10
+fullness_restore = 10
+tags = 133
+labels = Array[ExtResource("2_o4cyw")]([ExtResource("3_rki73"), ExtResource("4_miimi"), ExtResource("5_fn0ol"), ExtResource("6_skdvu")])
+metadata/_custom_type_script = "uid://dljnvja3myc3c"

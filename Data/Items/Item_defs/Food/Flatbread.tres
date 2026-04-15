@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ItemData" format=3 uid="uid://cw1xrqd5socp7"]
+
+[ext_resource type="Texture2D" uid="uid://bsxbx4q5he6g" path="res://Image/Food/Flatbread.png" id="1_jy18y"]
+[ext_resource type="Script" uid="uid://dljnvja3myc3c" path="res://Data/Items/ItemData.gd" id="1_oury2"]
+[ext_resource type="Script" uid="uid://yrmp5d5nc6bo" path="res://Data/Items/ItemTag.gd" id="2_v8ksj"]
+[ext_resource type="Resource" uid="uid://ba8sdgxk1enj8" path="res://Data/ItemTags/Drink.tres" id="2_vob4s"]
+[ext_resource type="Resource" uid="uid://cfojom76k2o4e" path="res://Data/ItemLabels/L_Bread.tres" id="3_v8ksj"]
+[ext_resource type="Resource" uid="uid://crm4kgmhfcccv" path="res://Data/ItemTags/Ingredients.tres" id="5_jtuna"]
+
+[resource]
+script = ExtResource("1_oury2")
+id = &"flatbread"
+item_name = "フラットブレッド"
+icon = ExtResource("1_jy18y")
+price = 1
+fullness_restore = 18
+labels = Array[ExtResource("2_v8ksj")]([ExtResource("2_vob4s"), ExtResource("3_v8ksj"), ExtResource("5_jtuna")])
+metadata/_custom_type_script = "uid://dljnvja3myc3c"

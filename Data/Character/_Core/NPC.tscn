@@ -1,0 +1,23 @@
+[gd_scene format=3 uid="uid://bvvfwn3o2ydcw"]
+
+[ext_resource type="Script" uid="uid://tly8ij54ejp4" path="res://Data/Character/_Core/NPC.gd" id="1_npcscript"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
+size = Vector2(375, 483)
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_interact"]
+radius = 544.3244
+
+[node name="NPC" type="StaticBody2D" unique_id=1444557869]
+script = ExtResource("1_npcscript")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1072066625]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1891047101]
+shape = SubResource("RectangleShape2D_body")
+
+[node name="InteractArea" type="Area2D" parent="." unique_id=958106194]
+collision_layer = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="InteractArea" unique_id=1006192109]
+shape = SubResource("CircleShape2D_interact")

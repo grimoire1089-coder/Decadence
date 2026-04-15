@@ -1,0 +1,17 @@
+[gd_scene format=3 uid="uid://5cew0lqs7qrj"]
+
+[ext_resource type="Texture2D" uid="uid://ctajuealej1t2" path="res://Image/House_001.png" id="1_636gc"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_pga8v"]
+size = Vector2(847, 403)
+
+[node name="Hosue_Robin" type="Node2D" unique_id=615528862]
+
+[node name="StaticBody2D" type="StaticBody2D" parent="." unique_id=1712164198]
+
+[node name="Sprite2D" type="Sprite2D" parent="StaticBody2D" unique_id=371518115]
+texture = ExtResource("1_636gc")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D" unique_id=845621529]
+position = Vector2(0, 190)
+shape = SubResource("RectangleShape2D_pga8v")

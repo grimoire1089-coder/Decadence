@@ -1,0 +1,33 @@
+[gd_scene format=3 uid="uid://bni70hbx2qusf"]
+
+[ext_resource type="Script" uid="uid://dvgliurkmdxma" path="res://Data/Object/ShopDeliveryBox/ShopDeliveryBox.gd" id="1_box"]
+[ext_resource type="Script" uid="uid://w652pbh12dac" path="res://Data/Object/ShopDeliveryBox/ShopData.gd" id="2_w0xeh"]
+[ext_resource type="Texture2D" uid="uid://bw7qxcnymtsvs" path="res://Image/Delivery_Box.png" id="2_wvwqu"]
+[ext_resource type="Resource" uid="uid://crmyohhi1jd03" path="res://Data/Object/ShopDeliveryBox/Capsule_Farm.tres" id="3_tdcq1"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
+size = Vector2(617, 506)
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_interact"]
+radius = 568.20593
+
+[node name="ShopDeliveryBox" type="StaticBody2D" unique_id=85732636]
+script = ExtResource("1_box")
+shops = Array[ExtResource("2_w0xeh")]([ExtResource("3_tdcq1")])
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1150591638]
+texture = ExtResource("2_wvwqu")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=119484995]
+position = Vector2(-2.5, 193)
+shape = SubResource("RectangleShape2D_body")
+
+[node name="InteractArea" type="Area2D" parent="." unique_id=1526432200]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="InteractArea" unique_id=326116744]
+position = Vector2(0, 85)
+shape = SubResource("CircleShape2D_interact")
+debug_color = Color(1, 0, 1, 0.39215687)
+
+[node name="DeliveryTickTimer" type="Timer" parent="." unique_id=1508938417]
+wait_time = 0.1

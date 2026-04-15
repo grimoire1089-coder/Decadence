@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="ItemData" format=3 uid="uid://dwb2v0fdv4wt"]
+
+[ext_resource type="Texture2D" uid="uid://df7tkeq4ss8mb" path="res://Image/Crops/Peach.png" id="1_d3ios"]
+[ext_resource type="Script" uid="uid://yrmp5d5nc6bo" path="res://Data/Items/ItemTag.gd" id="2_efspk"]
+[ext_resource type="Script" uid="uid://dljnvja3myc3c" path="res://Data/Items/ItemData.gd" id="2_iua6p"]
+[ext_resource type="Resource" uid="uid://ba8sdgxk1enj8" path="res://Data/ItemTags/Drink.tres" id="3_jjp7l"]
+[ext_resource type="Resource" uid="uid://bhjvcbmbpm1f5" path="res://Data/ItemLabels/Salty.tres" id="4_3utin"]
+[ext_resource type="Resource" uid="uid://cmyu4gu3ci8ea" path="res://Data/ItemLabels/Fruit.tres" id="5_cer40"]
+[ext_resource type="Resource" uid="uid://crm4kgmhfcccv" path="res://Data/ItemTags/Ingredients.tres" id="6_lj7ly"]
+
+[resource]
+script = ExtResource("2_iua6p")
+id = &"peach"
+item_name = "モモ"
+icon = ExtResource("1_d3ios")
+price = 10
+fullness_restore = 10
+labels = Array[ExtResource("2_efspk")]([ExtResource("3_jjp7l"), ExtResource("4_3utin"), ExtResource("5_cer40"), ExtResource("6_lj7ly")])
+metadata/_custom_type_script = "uid://dljnvja3myc3c"

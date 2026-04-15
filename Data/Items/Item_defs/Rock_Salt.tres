@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="ItemData" format=3 uid="uid://ckf2s52g11g7j"]
+
+[ext_resource type="Texture2D" uid="uid://bpijeut8k8viq" path="res://Image/Food/Pink_Rock_Salt_Bottle.png" id="1_n5vb6"]
+[ext_resource type="Script" uid="uid://yrmp5d5nc6bo" path="res://Data/Items/ItemTag.gd" id="2_yodd6"]
+[ext_resource type="Resource" uid="uid://crm4kgmhfcccv" path="res://Data/ItemTags/Ingredients.tres" id="3_1jr2l"]
+[ext_resource type="Script" uid="uid://dljnvja3myc3c" path="res://Data/Items/ItemData.gd" id="3_o6gtg"]
+[ext_resource type="Resource" uid="uid://222maqpac0om" path="res://Data/ItemLabels/Sweetness.tres" id="5_b5aq5"]
+[ext_resource type="Resource" uid="uid://ccdg24xdutmwl" path="res://Data/ItemLabels/Seasoning.tres" id="6_6yxky"]
+[ext_resource type="Resource" uid="uid://ba8sdgxk1enj8" path="res://Data/ItemTags/Drink.tres" id="7_b5aq5"]
+[ext_resource type="Resource" uid="uid://copvr3w57ny3o" path="res://Data/ItemLabels/L_Salt.tres" id="7_hudbm"]
+
+[resource]
+script = ExtResource("3_o6gtg")
+id = &"rock_salt"
+item_name = "岩塩"
+icon = ExtResource("1_n5vb6")
+price = 10
+buy_price = 20
+tags = 128
+labels = Array[ExtResource("2_yodd6")]([ExtResource("3_1jr2l"), ExtResource("5_b5aq5"), ExtResource("6_6yxky"), ExtResource("7_hudbm"), ExtResource("7_b5aq5")])
+metadata/_custom_type_script = "uid://dljnvja3myc3c"

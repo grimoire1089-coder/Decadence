@@ -1,0 +1,65 @@
+[gd_scene load_steps=2 format=3 uid="uid://player_vital_bars_ui"]
+
+[ext_resource type="Script" path="res://UI/PlayerVitalBarsUI.gd" id="1_script"]
+
+[node name="PlayerVitalBarsUI" type="CanvasLayer"]
+layer = 20
+script = ExtResource("1_script")
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+offset_left = 16.0
+offset_top = 16.0
+offset_right = 292.0
+offset_bottom = 132.0
+
+[node name="PanelContainer" type="PanelContainer" parent="MarginContainer"]
+custom_minimum_size = Vector2(260, 0)
+
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer/PanelContainer"]
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/PanelContainer/MarginContainer"]
+theme_override_constants/separation = 10
+
+[node name="HPBox" type="VBoxContainer" parent="MarginContainer/PanelContainer/MarginContainer/VBoxContainer"]
+theme_override_constants/separation = 4
+
+[node name="Header" type="HBoxContainer" parent="MarginContainer/PanelContainer/MarginContainer/VBoxContainer/HPBox"]
+
+[node name="NameLabel" type="Label" parent="MarginContainer/PanelContainer/MarginContainer/VBoxContainer/HPBox/Header"]
+text = "HP"
+
+[node name="Spacer" type="Control" parent="MarginContainer/PanelContainer/MarginContainer/VBoxContainer/HPBox/Header"]
+size_flags_horizontal = 3
+
+[node name="ValueLabel" type="Label" parent="MarginContainer/PanelContainer/MarginContainer/VBoxContainer/HPBox/Header"]
+text = "0 / 0"
+horizontal_alignment = 2
+
+[node name="HPBar" type="ProgressBar" parent="MarginContainer/PanelContainer/MarginContainer/VBoxContainer/HPBox"]
+custom_minimum_size = Vector2(0, 22)
+show_percentage = false
+value = 100.0
+
+[node name="MPBox" type="VBoxContainer" parent="MarginContainer/PanelContainer/MarginContainer/VBoxContainer"]
+theme_override_constants/separation = 4
+
+[node name="Header" type="HBoxContainer" parent="MarginContainer/PanelContainer/MarginContainer/VBoxContainer/MPBox"]
+
+[node name="NameLabel" type="Label" parent="MarginContainer/PanelContainer/MarginContainer/VBoxContainer/MPBox/Header"]
+text = "MP"
+
+[node name="Spacer" type="Control" parent="MarginContainer/PanelContainer/MarginContainer/VBoxContainer/MPBox/Header"]
+size_flags_horizontal = 3
+
+[node name="ValueLabel" type="Label" parent="MarginContainer/PanelContainer/MarginContainer/VBoxContainer/MPBox/Header"]
+text = "0 / 0"
+horizontal_alignment = 2
+
+[node name="MPBar" type="ProgressBar" parent="MarginContainer/PanelContainer/MarginContainer/VBoxContainer/MPBox"]
+custom_minimum_size = Vector2(0, 22)
+show_percentage = false
+value = 100.0

@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="ShopData" format=3 uid="uid://blok4iy6royse"]
+
+[ext_resource type="Script" uid="uid://c6pfvcblsisnu" path="res://Data/Object/ShopDeliveryBox/ShopProduct.gd" id="1_6mhlv"]
+[ext_resource type="Resource" uid="uid://cet8cbio224g3" path="res://Data/Items/Item_defs/Drink/Clean_Water.tres" id="2_wm518"]
+[ext_resource type="Script" uid="uid://w652pbh12dac" path="res://Data/Object/ShopDeliveryBox/ShopData.gd" id="3_0hlav"]
+[ext_resource type="Resource" uid="uid://dsclvslwg2s1s" path="res://Data/Items/Item_defs/Flour.tres" id="3_sqxwx"]
+[ext_resource type="Resource" uid="uid://cfohkiadutlo1" path="res://Data/Items/Item_defs/Rapeseed_Oil.tres" id="4_ovcyu"]
+[ext_resource type="Resource" uid="uid://ckf2s52g11g7j" path="res://Data/Items/Item_defs/Rock_Salt.tres" id="5_dhbtk"]
+
+[sub_resource type="Resource" id="Resource_jxv3v"]
+script = ExtResource("1_6mhlv")
+item_data = ExtResource("2_wm518")
+metadata/_custom_type_script = "uid://c6pfvcblsisnu"
+
+[sub_resource type="Resource" id="Resource_wbh4w"]
+script = ExtResource("1_6mhlv")
+item_data = ExtResource("3_sqxwx")
+metadata/_custom_type_script = "uid://c6pfvcblsisnu"
+
+[sub_resource type="Resource" id="Resource_qjv64"]
+script = ExtResource("1_6mhlv")
+item_data = ExtResource("4_ovcyu")
+metadata/_custom_type_script = "uid://c6pfvcblsisnu"
+
+[sub_resource type="Resource" id="Resource_egis0"]
+script = ExtResource("1_6mhlv")
+item_data = ExtResource("5_dhbtk")
+metadata/_custom_type_script = "uid://c6pfvcblsisnu"
+
+[resource]
+script = ExtResource("3_0hlav")
+store_name = "デバッグ商店"
+products = Array[ExtResource("1_6mhlv")]([SubResource("Resource_jxv3v"), SubResource("Resource_wbh4w"), SubResource("Resource_qjv64"), SubResource("Resource_egis0")])

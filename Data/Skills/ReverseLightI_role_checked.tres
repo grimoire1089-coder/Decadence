@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="RoleSkillData" format=3 uid="uid://bwr4uu8dlii4s"]
+
+[ext_resource type="Script" uid="uid://832agx08ubjy" path="res://UI/Active_Skills/RoleSkillData.gd" id="1_0x8kn"]
+[ext_resource type="Texture2D" uid="uid://b7awn573qochy" path="res://Image/Active_Skills/Reverse_Light.png" id="1_8sjjq"]
+
+[resource]
+script = ExtResource("1_0x8kn")
+skill_id = "reverse_light_i"
+display_name = "リバース ライト I"
+description = "23m以内にいるターゲットのHPを30秒間、2秒おきに5回復します。"
+role_name = "ヒーラーロールスキル"
+required_main_role = "healer"
+mp_cost = 5
+cooldown_seconds = 5.0
+range_meters = 23.0
+effect_duration_seconds = 30.0
+tick_interval_seconds = 2.0
+hp_heal_per_tick = 5
+icon = ExtResource("1_8sjjq")

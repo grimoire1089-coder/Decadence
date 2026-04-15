@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ItemTag" format=3 uid="uid://bth2in8tig72d"]
+
+[ext_resource type="Script" uid="uid://yrmp5d5nc6bo" path="res://Data/Items/ItemTag.gd" id="1_gl237"]
+
+[resource]
+script = ExtResource("1_gl237")
+id = &"labels_acidity"
+display_name = "酸味"
+category = &"trait"
+metadata/_custom_type_script = "uid://yrmp5d5nc6bo"

@@ -1,0 +1,51 @@
+[gd_scene format=3 uid="uid://dpe3jd8jm8li8"]
+
+[ext_resource type="FontFile" uid="uid://cl5544af0kflx" path="res://Fonts/Neogrey Medium.ttf" id="1_0e48y"]
+[ext_resource type="Script" uid="uid://b8t2i6uur1d7s" path="res://TimeLabel.gd" id="2_epypp"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_time_panel"]
+content_margin_left = 16.0
+content_margin_top = 10.0
+content_margin_right = 16.0
+content_margin_bottom = 10.0
+bg_color = Color(0.05, 0.08, 0.12, 0.94)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.3, 0.75, 1, 0.7)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+shadow_color = Color(0, 0, 0, 0.22)
+shadow_size = 6
+shadow_offset = Vector2(0, 2)
+
+[node name="TimePanel" type="Panel" unique_id=1835583974]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -320.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = 90.0
+grow_horizontal = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_time_panel")
+
+[node name="TimeLabel" type="Label" parent="." unique_id=599504704]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = 10.0
+offset_right = -16.0
+offset_bottom = -10.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_fonts/font = ExtResource("1_0e48y")
+theme_override_font_sizes/font_size = 32
+horizontal_alignment = 1
+vertical_alignment = 1
+script = ExtResource("2_epypp")

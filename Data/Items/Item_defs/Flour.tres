@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="ItemData" format=3 uid="uid://dsclvslwg2s1s"]
+
+[ext_resource type="Texture2D" uid="uid://cctjfkn47ft3r" path="res://Image/Food/Flour.png" id="1_d05u0"]
+[ext_resource type="Script" uid="uid://yrmp5d5nc6bo" path="res://Data/Items/ItemTag.gd" id="2_d05u0"]
+[ext_resource type="Script" uid="uid://dljnvja3myc3c" path="res://Data/Items/ItemData.gd" id="3_4drlf"]
+[ext_resource type="Resource" uid="uid://jdklae138hp0" path="res://Data/ItemLabels/L_Cooking_Supplies.tres" id="3_ff2n2"]
+[ext_resource type="Resource" uid="uid://crm4kgmhfcccv" path="res://Data/ItemTags/Ingredients.tres" id="4_4drlf"]
+[ext_resource type="Resource" uid="uid://ba8sdgxk1enj8" path="res://Data/ItemTags/Drink.tres" id="5_ff2n2"]
+
+[resource]
+script = ExtResource("3_4drlf")
+id = &"flour"
+item_name = "小麦粉"
+icon = ExtResource("1_d05u0")
+price = 15
+buy_price = 20
+tags = 128
+labels = Array[ExtResource("2_d05u0")]([ExtResource("3_ff2n2"), ExtResource("4_4drlf"), ExtResource("5_ff2n2")])
+metadata/_custom_type_script = "uid://dljnvja3myc3c"

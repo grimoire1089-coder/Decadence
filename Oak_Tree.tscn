@@ -1,0 +1,20 @@
+[gd_scene format=3 uid="uid://cmam5ngjulj4y"]
+
+[ext_resource type="Texture2D" uid="uid://bo1jpogvnvirs" path="res://Image/Oak_Tree.png" id="1_7mmw1"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_c1xsf"]
+size = Vector2(389, 94)
+
+[node name="Node2D" type="Node2D" unique_id=573185455]
+y_sort_enabled = true
+scale = Vector2(0.2, 0.2)
+
+[node name="StaticBody2D" type="StaticBody2D" parent="." unique_id=1620541178]
+
+[node name="Sprite2D" type="Sprite2D" parent="StaticBody2D" unique_id=1879774862]
+position = Vector2(0, -359)
+texture = ExtResource("1_7mmw1")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D" unique_id=1922570550]
+position = Vector2(0, -1)
+shape = SubResource("RectangleShape2D_c1xsf")

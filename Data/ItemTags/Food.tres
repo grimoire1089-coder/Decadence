@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ItemTag" format=3 uid="uid://e57lsje8cm1t"]
+
+[ext_resource type="Script" uid="uid://yrmp5d5nc6bo" path="res://Data/Items/ItemTag.gd" id="1_6kklq"]
+
+[resource]
+script = ExtResource("1_6kklq")
+id = &"drink"
+display_name = "飲料"
+category = &"tag"
+metadata/_custom_type_script = "uid://yrmp5d5nc6bo"

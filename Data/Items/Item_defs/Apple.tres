@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="ItemData" format=3 uid="uid://cohc4noqxcd85"]
+
+[ext_resource type="Texture2D" uid="uid://br1dcxox73tcy" path="res://Image/Crops/Apple.png" id="1_g1lgi"]
+[ext_resource type="Script" uid="uid://dljnvja3myc3c" path="res://Data/Items/ItemData.gd" id="2_7wojw"]
+[ext_resource type="Script" uid="uid://yrmp5d5nc6bo" path="res://Data/Items/ItemTag.gd" id="2_vtccb"]
+[ext_resource type="Resource" uid="uid://ba8sdgxk1enj8" path="res://Data/ItemTags/Drink.tres" id="3_vtccb"]
+[ext_resource type="Resource" uid="uid://cmyu4gu3ci8ea" path="res://Data/ItemLabels/Fruit.tres" id="4_mu2dx"]
+[ext_resource type="Resource" uid="uid://bhjvcbmbpm1f5" path="res://Data/ItemLabels/Salty.tres" id="5_g1lgi"]
+[ext_resource type="Resource" uid="uid://crm4kgmhfcccv" path="res://Data/ItemTags/Ingredients.tres" id="5_t84rr"]
+
+[resource]
+script = ExtResource("2_7wojw")
+id = &"apple"
+item_name = "りんご"
+description = "美味しいりんご。"
+icon = ExtResource("1_g1lgi")
+price = 10
+buy_price = 20
+fullness_restore = 5
+tags = 129
+traits = 513
+labels = Array[ExtResource("2_vtccb")]([ExtResource("3_vtccb"), ExtResource("5_t84rr"), ExtResource("4_mu2dx"), ExtResource("5_g1lgi")])
+metadata/_custom_type_script = "uid://dljnvja3myc3c"
