@@ -202,15 +202,55 @@ func _deal_damage_to_player(player: Node) -> void:
 	if contact_damage <= 0:
 		return
 
-	if player.has_method("receive_damage"):
+	var applied_damage: int = 0
+	var stats_manager: Node = get_node_or_null("/root/PlayerStatsManager")
+
+	if player.is_in_group("player") and stats_manager != null:
+		applied_damage = _apply_damage_via_stats_manager(stats_manager, contact_damage)
+
+	if applied_damage <= 0 and player.has_method("receive_damage"):
+		var before_hp: int = _read_player_hp(stats_manager)
 		player.call("receive_damage", contact_damage, self)
-	elif PlayerStatsManager != null and PlayerStatsManager.has_method("damage_hp"):
-		PlayerStatsManager.damage_hp(contact_damage)
-	else:
+		var after_hp: int = _read_player_hp(stats_manager)
+		applied_damage = max(before_hp - after_hp, 0)
+
+	if applied_damage <= 0:
+		_log_warning("%sのダメージがHPに反映されませんでした。PlayerStatsManager.damage_hp() か receive_damage() を確認してくれ" % enemy_name)
 		return
 
 	if write_attack_log:
-		_log_warning("%sから %d ダメージ受けた" % [enemy_name, contact_damage])
+		_log_warning("%sから %d ダメージ受けた" % [enemy_name, applied_damage])
+
+
+func _apply_damage_via_stats_manager(stats_manager: Node, amount: int) -> int:
+	if stats_manager == null:
+		return 0
+
+	var before_hp: int = _read_player_hp(stats_manager)
+
+	if stats_manager.has_method("damage_hp"):
+		stats_manager.call("damage_hp", amount)
+	elif stats_manager.has_method("apply_damage"):
+		stats_manager.call("apply_damage", amount)
+	elif stats_manager.has_method("take_damage"):
+		stats_manager.call("take_damage", amount)
+	else:
+		return 0
+
+	var after_hp: int = _read_player_hp(stats_manager)
+	return max(before_hp - after_hp, 0)
+
+
+func _read_player_hp(stats_manager: Node) -> int:
+	if stats_manager == null:
+		return -1
+	if stats_manager.has_method("get_hp"):
+		return int(stats_manager.call("get_hp"))
+	if stats_manager.has_method("get_current_hp"):
+		return int(stats_manager.call("get_current_hp"))
+	if stats_manager.has_method("current_hp"):
+		return int(stats_manager.call("current_hp"))
+	return -1
 
 
 func _emit_hp_changed() -> void:

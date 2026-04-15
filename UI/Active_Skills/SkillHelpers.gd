@@ -97,32 +97,29 @@ static func spend_mp(subject: Node, amount: int) -> bool:
 		return false
 
 	if stats_manager.has_method("spend_mp"):
-		var spend_result: Variant = stats_manager.call("spend_mp", amount)
-		if spend_result is bool:
-			return spend_result
-		if spend_result is int:
-			return spend_result != 0
-		return false
+		var ok: bool = bool(stats_manager.call("spend_mp", amount))
+		if ok:
+			_show_indicator_for_subject(subject, amount, "mp_damage")
+		return ok
 
 	if stats_manager.has_method("consume_mp"):
-		if can_spend_mp(subject, amount):
-			stats_manager.call("consume_mp", amount)
-			return true
-		return false
+		var ok: bool = bool(stats_manager.call("consume_mp", amount))
+		if ok:
+			_show_indicator_for_subject(subject, amount, "mp_damage")
+		return ok
 
 	if stats_manager.has_method("use_mp"):
-		var use_result: Variant = stats_manager.call("use_mp", amount)
-		if use_result is bool:
-			return use_result
-		if use_result is int:
-			return use_result != 0
-		return false
+		var ok: bool = bool(stats_manager.call("use_mp", amount))
+		if ok:
+			_show_indicator_for_subject(subject, amount, "mp_damage")
+		return ok
 
 	if stats_manager.has_method("get_mp") and stats_manager.has_method("set_mp"):
-		var mp_value := int(stats_manager.call("get_mp"))
+		var mp_value: int = int(stats_manager.call("get_mp"))
 		if mp_value < amount:
 			return false
 		stats_manager.call("set_mp", mp_value - amount)
+		_show_indicator_for_subject(subject, amount, "mp_damage")
 		return true
 
 	add_system_log("MP消費失敗: MP消費メソッドが見つかりません")
@@ -190,6 +187,43 @@ static func add_system_log(message: String) -> void:
 			return
 
 	print(message)
+
+
+static func _resolve_combat_indicator_manager() -> Node:
+	var tree := Engine.get_main_loop() as SceneTree
+	if tree == null:
+		return null
+
+	var absolute: Node = tree.root.get_node_or_null("/root/CombatIndicatorManager")
+	if absolute != null:
+		return absolute
+
+	var by_name: Node = tree.root.get_node_or_null("CombatIndicatorManager")
+	if by_name != null:
+		return by_name
+
+	return null
+
+
+static func _show_indicator_for_subject(subject: Node, amount: int, indicator_type: String) -> void:
+	if amount == 0:
+		return
+
+	var manager: Node = _resolve_combat_indicator_manager()
+	if manager == null:
+		return
+
+	if subject != null and is_instance_valid(subject):
+		if subject is Node2D and manager.has_method("show_for_node"):
+			manager.call("show_for_node", subject, amount, indicator_type)
+			return
+
+		if _belongs_to_player_chain(subject) and manager.has_method("show_for_player"):
+			manager.call("show_for_player", amount, indicator_type)
+			return
+
+	if manager.has_method("show_for_player"):
+		manager.call("show_for_player", amount, indicator_type)
 
 
 static func _resolve_global_player_stats_manager() -> Node:

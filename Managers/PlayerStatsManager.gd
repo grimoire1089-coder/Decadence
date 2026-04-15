@@ -489,13 +489,23 @@ func set_hp(value: int) -> void:
 func heal_hp(amount: int) -> void:
 	if amount <= 0:
 		return
-	set_hp(get_hp() + amount)
+
+	var before_hp: int = get_hp()
+
+	var applied_heal: int = get_hp() - before_hp
+	if applied_heal > 0:
+		_show_combat_indicator(applied_heal, "hp_heal")
 
 
 func damage_hp(amount: int) -> void:
 	if amount <= 0:
 		return
-	set_hp(get_hp() - amount)
+
+	var before_hp: int = get_hp()
+
+	var applied_damage: int = before_hp - get_hp()
+	if applied_damage > 0:
+		_show_combat_indicator(applied_damage, "normal_damage")
 
 
 func set_mp(value: int) -> void:
@@ -507,7 +517,12 @@ func set_mp(value: int) -> void:
 func heal_mp(amount: int) -> void:
 	if amount <= 0:
 		return
-	set_mp(get_mp() + amount)
+
+	var before_mp: int = get_mp()
+
+	var applied_mp: int = get_mp() - before_mp
+	if applied_mp > 0:
+		_show_combat_indicator(applied_mp, "mp_heal")
 
 
 func can_spend_mp(amount: int) -> bool:
@@ -857,6 +872,18 @@ func _emit_all_changed() -> void:
 
 	for skill_name in EXP_SKILL_SETTINGS.keys():
 		_emit_skill_progress_changed(String(skill_name))
+
+
+func _show_combat_indicator(amount: int, indicator_type: String) -> void:
+	if amount == 0:
+		return
+
+	var manager: Node = get_node_or_null("/root/CombatIndicatorManager")
+	if manager == null:
+		return
+
+	if manager.has_method("show_for_player"):
+		manager.call("show_for_player", amount, indicator_type)
 
 
 func _get_message_log() -> Node:

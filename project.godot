@@ -28,6 +28,7 @@ BgmSettingsManager="*uid://bkt1vgada8pf6"
 CurrencyManager="*uid://r2ahx0hd3rwl"
 PlayerStatsManager="*uid://gw1pgmrky5ti"
 RoleManager="*uid://dg0uftf5hcbr5"
+CombatIndicatorManager="*uid://b60agt7hn8epn"
 
 [display]
 
