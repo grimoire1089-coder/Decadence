@@ -17,7 +17,7 @@ shadow_color = Color(0, 0, 0, 0.4)
 shadow_size = 6
 
 [sub_resource type="LabelSettings" id="LabelSettings_value_center"]
-font_size = 20
+font_size = 18
 font_color = Color(0.95, 0.98, 1, 1)
 outline_size = 2
 outline_color = Color(0.03, 0.05, 0.08, 0.95)
@@ -56,7 +56,7 @@ anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
 offset_left = -360.0
-offset_top = -230.0
+offset_top = -202.0
 offset_right = 360.0
 offset_bottom = -138.0
 mouse_filter = 2
@@ -74,23 +74,23 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 [node name="Margin" type="MarginContainer" parent="Panel" unique_id=1437737892]
 layout_mode = 2
 theme_override_constants/margin_left = 18
-theme_override_constants/margin_top = 14
+theme_override_constants/margin_top = 10
 theme_override_constants/margin_right = 18
-theme_override_constants/margin_bottom = 14
+theme_override_constants/margin_bottom = 10
 
 [node name="BarsRow" type="HBoxContainer" parent="Panel/Margin" unique_id=1833675039]
 layout_mode = 2
 theme_override_constants/separation = 16
 
 [node name="HPHolder" type="Control" parent="Panel/Margin/BarsRow" unique_id=1171931326]
-custom_minimum_size = Vector2(0, 34)
+custom_minimum_size = Vector2(0, 28)
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
 
 [node name="HPBar" type="ProgressBar" parent="Panel/Margin/BarsRow/HPHolder" unique_id=820501639]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 34)
+custom_minimum_size = Vector2(0, 28)
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -119,14 +119,14 @@ vertical_alignment = 1
 label_settings = SubResource("LabelSettings_value_center")
 
 [node name="MPHolder" type="Control" parent="Panel/Margin/BarsRow" unique_id=991902408]
-custom_minimum_size = Vector2(0, 34)
+custom_minimum_size = Vector2(0, 28)
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
 
 [node name="MPBar" type="ProgressBar" parent="Panel/Margin/BarsRow/MPHolder" unique_id=250015010]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 34)
+custom_minimum_size = Vector2(0, 28)
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
