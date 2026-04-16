@@ -4,6 +4,7 @@ class_name SkillCaster
 signal skill_cast_succeeded(skill_id: String, target: Node)
 signal skill_cast_failed(skill_id: String, reason: String)
 signal cooldown_updated(skill_id: String, remaining: float, total: float)
+signal skill_cast_started(skill_id: String, display_name: String, cast_time: float)
 
 @export_node_path("Node2D") var caster_path: NodePath
 @export var default_pixels_per_meter: float = 16.0
@@ -159,6 +160,7 @@ func _start_cooldown(skill_id: String, seconds: float) -> void:
 func _begin_cast(skill: RoleSkillData, target: Node2D, cast_time: float) -> void:
 	_is_casting = true
 	_casting_skill_id = skill.skill_id
+	skill_cast_started.emit(skill.skill_id, skill.display_name, cast_time)
 
 	var timer := get_tree().create_timer(cast_time)
 	timer.timeout.connect(_finish_cast.bind(skill, target), CONNECT_ONE_SHOT)

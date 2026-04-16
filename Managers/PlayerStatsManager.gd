@@ -55,8 +55,8 @@ const DEFAULT_STATS: Dictionary = {
 const DEFAULT_VITALS: Dictionary = {
 	"hp": 100,
 	"max_hp": 100,
-	"mp": 30,
-	"max_mp": 30,
+	"mp": 50,
+	"max_mp": 50,
 	"stamina": 100,
 	"max_stamina": 100,
 	"fullness": 100,
