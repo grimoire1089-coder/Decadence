@@ -3,8 +3,6 @@ extends Control
 @export var hp_label_text: String = "HP"
 @export var mp_label_text: String = "MP"
 
-@onready var hp_label: Label = %HPLabel
-@onready var mp_label: Label = %MPLabel
 @onready var hp_value_label: Label = %HPValue
 @onready var mp_value_label: Label = %MPValue
 @onready var hp_bar: ProgressBar = %HPBar
@@ -13,8 +11,6 @@ extends Control
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	hp_label.text = hp_label_text
-	mp_label.text = mp_label_text
 	_connect_stats_manager()
 	_refresh_from_stats_manager()
 

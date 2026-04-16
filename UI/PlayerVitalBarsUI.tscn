@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://bon7n357ps8jk"]
 
-[ext_resource type="Script" uid="uid://pm4owsxr5sbn" path="res://UI/PlayerVitalBarsUI.gd" id="1_script"]
+[ext_resource type="Script" path="res://UI/PlayerVitalBarsUI.gd" id="1_script"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
 bg_color = Color(0.027451, 0.047059, 0.0784314, 0.82)
@@ -16,17 +16,11 @@ corner_radius_bottom_left = 14
 shadow_color = Color(0, 0, 0, 0.4)
 shadow_size = 6
 
-[sub_resource type="LabelSettings" id="LabelSettings_label_small"]
-font_size = 19
+[sub_resource type="LabelSettings" id="LabelSettings_value_center"]
+font_size = 20
 font_color = Color(0.95, 0.98, 1, 1)
-
-[sub_resource type="LabelSettings" id="LabelSettings_value"]
-font_size = 18
-font_color = Color(0.95, 0.98, 1, 1)
-
-[sub_resource type="LabelSettings" id="LabelSettings_value_right"]
-font_size = 18
-font_color = Color(0.95, 0.98, 1, 1)
+outline_size = 2
+outline_color = Color(0.03, 0.05, 0.08, 0.95)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bar_bg"]
 bg_color = Color(0.054902, 0.0823529, 0.12549, 0.95)
@@ -35,24 +29,24 @@ border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
 border_color = Color(0.137255, 0.239216, 0.34902, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hp_fill"]
 bg_color = Color(0.913725, 0.215686, 0.227451, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_mp_fill"]
 bg_color = Color(0.235294, 0.486275, 0.941176, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
 
 [node name="StatusBarsBottomCenter" type="Control" unique_id=1841010962]
 layout_mode = 3
@@ -84,75 +78,78 @@ theme_override_constants/margin_top = 14
 theme_override_constants/margin_right = 18
 theme_override_constants/margin_bottom = 14
 
-[node name="VBox" type="VBoxContainer" parent="Panel/Margin" unique_id=543709600]
+[node name="BarsRow" type="HBoxContainer" parent="Panel/Margin" unique_id=1833675039]
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 16
 
-[node name="TopRow" type="HBoxContainer" parent="Panel/Margin/VBox" unique_id=1802275544]
-layout_mode = 2
-theme_override_constants/separation = 10
-
-[node name="HPTop" type="HBoxContainer" parent="Panel/Margin/VBox/TopRow" unique_id=1171931326]
+[node name="HPHolder" type="Control" parent="Panel/Margin/BarsRow" unique_id=1171931326]
+custom_minimum_size = Vector2(0, 34)
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 8
+mouse_filter = 2
 
-[node name="HPLabel" type="Label" parent="Panel/Margin/VBox/TopRow/HPTop" unique_id=1153961087]
+[node name="HPBar" type="ProgressBar" parent="Panel/Margin/BarsRow/HPHolder" unique_id=820501639]
 unique_name_in_owner = true
-layout_mode = 2
-text = "HP"
-label_settings = SubResource("LabelSettings_label_small")
-
-[node name="HPValue" type="Label" parent="Panel/Margin/VBox/TopRow/HPTop" unique_id=1189583968]
-unique_name_in_owner = true
-layout_mode = 2
-text = "100 / 100"
-label_settings = SubResource("LabelSettings_value")
-
-[node name="Spacer" type="Control" parent="Panel/Margin/VBox/TopRow" unique_id=630502683]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="MPTop" type="HBoxContainer" parent="Panel/Margin/VBox/TopRow" unique_id=991902408]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_constants/separation = 8
-alignment = 2
-
-[node name="MPLabel" type="Label" parent="Panel/Margin/VBox/TopRow/MPTop" unique_id=1150674896]
-unique_name_in_owner = true
-layout_mode = 2
-text = "MP"
-label_settings = SubResource("LabelSettings_label_small")
-
-[node name="MPValue" type="Label" parent="Panel/Margin/VBox/TopRow/MPTop" unique_id=440437472]
-unique_name_in_owner = true
-layout_mode = 2
-text = "50 / 50"
-label_settings = SubResource("LabelSettings_value_right")
-
-[node name="BarsRow" type="HBoxContainer" parent="Panel/Margin/VBox" unique_id=1833675039]
-layout_mode = 2
-theme_override_constants/separation = 20
-
-[node name="HPBar" type="ProgressBar" parent="Panel/Margin/VBox/BarsRow" unique_id=820501639]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 24)
-layout_mode = 2
-size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 34)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
 theme_override_styles/background = SubResource("StyleBoxFlat_bar_bg")
 theme_override_styles/fill = SubResource("StyleBoxFlat_hp_fill")
 max_value = 150.0
 value = 150.0
 show_percentage = false
 
-[node name="MPBar" type="ProgressBar" parent="Panel/Margin/VBox/BarsRow" unique_id=250015010]
+[node name="HPValue" type="Label" parent="Panel/Margin/BarsRow/HPHolder" unique_id=1189583968]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 24)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+text = "100 / 100"
+horizontal_alignment = 1
+vertical_alignment = 1
+label_settings = SubResource("LabelSettings_value_center")
+
+[node name="MPHolder" type="Control" parent="Panel/Margin/BarsRow" unique_id=991902408]
+custom_minimum_size = Vector2(0, 34)
 layout_mode = 2
 size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="MPBar" type="ProgressBar" parent="Panel/Margin/BarsRow/MPHolder" unique_id=250015010]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 34)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
 theme_override_styles/background = SubResource("StyleBoxFlat_bar_bg")
 theme_override_styles/fill = SubResource("StyleBoxFlat_mp_fill")
 max_value = 50.0
 value = 50.0
 show_percentage = false
+
+[node name="MPValue" type="Label" parent="Panel/Margin/BarsRow/MPHolder" unique_id=440437472]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+text = "50 / 50"
+horizontal_alignment = 1
+vertical_alignment = 1
+label_settings = SubResource("LabelSettings_value_center")
