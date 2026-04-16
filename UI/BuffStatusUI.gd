@@ -3,7 +3,7 @@ class_name BuffStatusUI
 
 @export_node_path("Node") var target_path: NodePath
 @export var panel_offset: Vector2 = Vector2(16, 16)
-@export var icon_size: Vector2 = Vector2(56, 56)
+@export var icon_size: Vector2 = Vector2(72, 72)
 @export_range(1, 12, 1) var columns: int = 6
 @export var slot_spacing: int = 8
 @export var time_label_min_width: float = 42.0
@@ -13,6 +13,7 @@ class_name BuffStatusUI
 @onready var _margin: MarginContainer = $TopRightMargin
 @onready var _panel: PanelContainer = $TopRightMargin/Panel
 @onready var _grid: GridContainer = $TopRightMargin/Panel/Margin/VBox/BuffGrid
+@onready var _title: Label = $TopRightMargin/Panel/Margin/VBox.get_node_or_null("Title") as Label
 
 var _target: Node = null
 var _slot_views: Dictionary = {}
@@ -42,16 +43,21 @@ func _configure_layout() -> void:
 	if _margin == null:
 		return
 
-	_margin.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	_margin.offset_left = -520.0 + panel_offset.x
-	_margin.offset_top = panel_offset.y
-	_margin.offset_right = -panel_offset.x
-	_margin.offset_bottom = 220.0 + panel_offset.y
+	_margin.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	_margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_update_container_rect(max(_slot_views.size(), 1))
+
+	if _panel != null:
+		_panel.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+		_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 	if _grid != null:
 		_grid.columns = columns
 		_grid.add_theme_constant_override("h_separation", slot_spacing)
 		_grid.add_theme_constant_override("v_separation", slot_spacing)
+
+	if _title != null:
+		_title.visible = false
 
 
 func _resolve_target() -> void:
@@ -89,6 +95,8 @@ func _refresh_views() -> void:
 		if old_slot != null and is_instance_valid(old_slot):
 			old_slot.queue_free()
 		_slot_views.erase(key)
+
+	_update_container_rect(max(_slot_views.size(), 1))
 
 	if hide_when_empty and _panel != null:
 		_panel.visible = not _slot_views.is_empty()
@@ -130,9 +138,12 @@ func _get_effect_key(effect: Node) -> String:
 func _create_slot_view(key: String) -> Control:
 	var panel := PanelContainer.new()
 	panel.name = "Buff_%s" % key.replace(":", "_")
-	panel.custom_minimum_size = icon_size
+	panel.custom_minimum_size = _get_slot_size()
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.add_theme_stylebox_override("panel", _make_slot_stylebox())
 
 	var margin := MarginContainer.new()
+	margin.name = "Margin"
 	margin.add_theme_constant_override("margin_left", 4)
 	margin.add_theme_constant_override("margin_top", 4)
 	margin.add_theme_constant_override("margin_right", 4)
@@ -140,18 +151,20 @@ func _create_slot_view(key: String) -> Control:
 	panel.add_child(margin)
 
 	var root := VBoxContainer.new()
+	root.name = "VBox"
 	root.add_theme_constant_override("separation", 2)
 	margin.add_child(root)
 
 	var icon_holder := CenterContainer.new()
-	icon_holder.custom_minimum_size = Vector2(icon_size.x - 8.0, max(icon_size.y - 28.0, 24.0))
+	icon_holder.name = "IconHolder"
+	icon_holder.custom_minimum_size = icon_size
 	root.add_child(icon_holder)
 
 	var icon := TextureRect.new()
 	icon.name = "Icon"
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	icon.custom_minimum_size = Vector2(24, 24)
+	icon.custom_minimum_size = icon_size
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	icon_holder.add_child(icon)
 
@@ -167,7 +180,7 @@ func _create_slot_view(key: String) -> Control:
 	var time_label := Label.new()
 	time_label.name = "TimeLabel"
 	time_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	time_label.custom_minimum_size = Vector2(time_label_min_width, 0)
+	time_label.custom_minimum_size = Vector2(max(time_label_min_width, icon_size.x), 0)
 	root.add_child(time_label)
 
 	return panel
@@ -187,6 +200,7 @@ func _update_slot_view(slot: Control, effect: Node) -> void:
 		icon_texture = effect.call("get_effect_icon") as Texture2D
 
 	if icon != null:
+		icon.custom_minimum_size = icon_size
 		icon.texture = icon_texture
 		icon.visible = icon_texture != null
 
@@ -222,3 +236,50 @@ func _format_remaining_time(seconds: float) -> String:
 	if clamped >= 10.0:
 		return "%d秒" % int(ceil(clamped))
 	return "%.1f秒" % clamped
+
+
+func _get_slot_size() -> Vector2:
+	return Vector2(icon_size.x + 8.0, icon_size.y + 30.0)
+
+
+func _make_slot_stylebox() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.055, 0.075, 0.11, 0.92)
+	style.border_color = Color(0.20, 0.63, 1.0, 0.95)
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(8)
+	style.shadow_color = Color(0.0, 0.0, 0.0, 0.28)
+	style.shadow_size = 2
+	style.content_margin_left = 0
+	style.content_margin_top = 0
+	style.content_margin_right = 0
+	style.content_margin_bottom = 0
+	return style
+
+
+func _update_container_rect(slot_count: int) -> void:
+	if _margin == null:
+		return
+
+	var safe_columns: int = max(columns, 1)
+	var visible_slots: int = max(slot_count, 1)
+	var used_columns: int = mini(visible_slots, safe_columns)
+	var used_rows: int = maxi(int(ceil(float(visible_slots) / float(safe_columns))), 1)
+	var slot_size := _get_slot_size()
+	var panel_padding_x := 16.0
+	var panel_padding_y := 16.0
+	var panel_width := used_columns * slot_size.x
+	var panel_height := used_rows * slot_size.y
+
+	if used_columns > 1:
+		panel_width += float((used_columns - 1) * slot_spacing)
+	if used_rows > 1:
+		panel_height += float((used_rows - 1) * slot_spacing)
+
+	panel_width += panel_padding_x
+	panel_height += panel_padding_y
+
+	_margin.offset_left = panel_offset.x
+	_margin.offset_right = panel_offset.x + panel_width
+	_margin.offset_top = panel_offset.y
+	_margin.offset_bottom = panel_offset.y + panel_height

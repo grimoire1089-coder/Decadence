@@ -23,6 +23,7 @@
 [ext_resource type="AudioStream" uid="uid://csuvqr8l1rjg0" path="res://BGM/Ancient pillars.ogg" id="8_pljue"]
 [ext_resource type="PackedScene" uid="uid://charqd8qx3ros" path="res://InventoryUI.tscn" id="8_trn2v"]
 [ext_resource type="AudioStream" uid="uid://clp5ekaewgxtf" path="res://BGM/夏風.ogg" id="9_im7ls"]
+[ext_resource type="AudioStream" uid="uid://citsh0miw631h" path="res://BGM/Gale x 春風.ogg" id="10_cfjnh"]
 [ext_resource type="AudioStream" uid="uid://dpmo7sm01pyuu" path="res://BGM/キャンドルバード.ogg" id="12_x3yn0"]
 [ext_resource type="AudioStream" uid="uid://dqc5lyc8s8hds" path="res://BGM/Fairy tail.ogg" id="13_x3yn0"]
 [ext_resource type="AudioStream" uid="uid://diddsyr2byvwt" path="res://BGM/星の王子様.ogg" id="15_38apo"]
@@ -72,7 +73,7 @@
 
 [node name="BGMManager" type="Node" parent="." unique_id=2131174254]
 script = ExtResource("1_2gh4u")
-day_tracks = Array[AudioStream]([ExtResource("1_r0du0"), ExtResource("3_devvj"), ExtResource("4_hhcpw"), ExtResource("5_vi5kq"), ExtResource("6_5mkgo"), ExtResource("7_ny7u2"), ExtResource("8_pljue"), ExtResource("9_im7ls")])
+day_tracks = Array[AudioStream]([ExtResource("1_r0du0"), ExtResource("3_devvj"), ExtResource("4_hhcpw"), ExtResource("5_vi5kq"), ExtResource("6_5mkgo"), ExtResource("7_ny7u2"), ExtResource("8_pljue"), ExtResource("9_im7ls"), ExtResource("10_cfjnh")])
 night_tracks = Array[AudioStream]([ExtResource("2_sc1dx"), ExtResource("6_mxvw5"), ExtResource("7_xrxkg"), ExtResource("8_hri7i"), ExtResource("12_x3yn0"), ExtResource("13_x3yn0"), ExtResource("15_38apo")])
 
 [node name="BGMPlayer" type="AudioStreamPlayer" parent="BGMManager" unique_id=23635928]
@@ -195,8 +196,6 @@ texture = ExtResource("39_oaklg")
 script = ExtResource("1_03owx")
 
 [node name="PlayerVitalBarsUI" parent="UI" unique_id=1962454848 instance=ExtResource("46_yf3a2")]
-grow_horizontal = 2
-grow_vertical = 0
 
 [node name="LevelExpBar" parent="UI" unique_id=1913616966 instance=ExtResource("47_wrbn1")]
 

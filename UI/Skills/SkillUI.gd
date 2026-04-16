@@ -46,8 +46,20 @@ var _active_skill_section: PanelContainer
 var _active_skill_status_label: Label
 var _active_skill_list: VBoxContainer
 var _selected_skill_label: Label
+var _open_select_page_button: Button
 var _register_button: Button
 var _clear_slot_button: Button
+
+var _skill_select_overlay: ColorRect
+var _skill_select_panel: PanelContainer
+var _skill_select_list: VBoxContainer
+var _skill_select_icon: TextureRect
+var _skill_select_name_label: Label
+var _skill_select_description_label: Label
+var _skill_select_state_label: Label
+var _skill_select_confirm_button: Button
+var _skill_select_cancel_button: Button
+var _skill_select_pending_skill: RoleSkillData = null
 
 var _selected_role_skill: RoleSkillData = null
 var _observed_hotbar: Node = null
@@ -65,6 +77,7 @@ func _ready() -> void:
 	close_button.pressed.connect(_on_close_pressed)
 	_ensure_role_section()
 	_ensure_active_skill_section()
+	_ensure_skill_select_overlay()
 	_connect_stats_manager()
 	_connect_role_manager()
 	_bind_skill_hotbar()
@@ -103,6 +116,7 @@ func open_ui() -> void:
 
 
 func close() -> void:
+	_hide_skill_select_overlay()
 	_release_ui_lock()
 	visible = false
 
@@ -322,35 +336,36 @@ func _refresh_role_section() -> void:
 
 func _refresh_active_skill_section() -> void:
 	_ensure_active_skill_section()
+	_ensure_skill_select_overlay()
 	_bind_skill_hotbar()
 
-	for child in _active_skill_list.get_children():
-		_active_skill_list.remove_child(child)
-		child.queue_free()
-
 	var role_skills: Array[RoleSkillData] = _get_role_skills()
+	var hotbar: Node = _observed_hotbar
+
 	if role_skills.is_empty():
 		_active_skill_status_label.text = "ロールスキルがまだありません。"
 		_selected_skill_label.text = "登録候補: まだ選択していません"
-		_register_button.disabled = true
-		_clear_slot_button.disabled = true
+		if _open_select_page_button != null:
+			_open_select_page_button.disabled = true
+		if _register_button != null:
+			_register_button.disabled = true
+		if _clear_slot_button != null:
+			_clear_slot_button.disabled = true
+		_hide_skill_select_overlay()
 		return
 
-	var hotbar: Node = _observed_hotbar
 	var current_slot_text: String = _get_hotbar_slot_text(hotbar)
 	var current_skill_text: String = _get_hotbar_current_skill_text(hotbar)
 	_active_skill_status_label.text = "選択中スロット: %s   現在登録: %s" % [current_slot_text, current_skill_text]
-
-	for skill in role_skills:
-		if skill == null:
-			continue
-		var row: Control = _build_role_skill_row(skill)
-		_active_skill_list.add_child(row)
 
 	if _selected_role_skill == null:
 		_selected_skill_label.text = "登録候補: まだ選択していません"
 	else:
 		_selected_skill_label.text = "登録候補: %s" % _selected_role_skill.display_name
+
+	if _open_select_page_button != null:
+		_open_select_page_button.disabled = false
+		_open_select_page_button.text = "ロールスキル選択ページを開く"
 
 	if hotbar == null:
 		_register_button.disabled = true
@@ -362,60 +377,269 @@ func _refresh_active_skill_section() -> void:
 	_register_button.text = "選択中スロット(%s)に登録" % current_slot_text
 	_clear_slot_button.disabled = _is_current_hotbar_slot_empty(hotbar)
 
+	if _skill_select_overlay != null and _skill_select_overlay.visible:
+		_refresh_skill_select_page()
 
-func _build_role_skill_row(skill: RoleSkillData) -> Control:
+
+func _build_role_skill_select_item(skill: RoleSkillData) -> Control:
+	var row_button: Button = Button.new()
+	row_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row_button.text = skill.display_name
+	row_button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	row_button.custom_minimum_size = Vector2(0, 48)
+	row_button.pressed.connect(_on_role_skill_select_page_item_pressed.bind(skill))
+	return row_button
+
+
+func _open_skill_select_overlay() -> void:
+	_ensure_skill_select_overlay()
+	_skill_select_pending_skill = _selected_role_skill
+	_refresh_skill_select_page()
+	if _skill_select_overlay != null:
+		_skill_select_overlay.visible = true
+
+
+func _hide_skill_select_overlay() -> void:
+	if _skill_select_overlay != null:
+		_skill_select_overlay.visible = false
+	_skill_select_pending_skill = null
+
+
+func _refresh_skill_select_page() -> void:
+	if _skill_select_overlay == null:
+		return
+
+	for child in _skill_select_list.get_children():
+		_skill_select_list.remove_child(child)
+		child.queue_free()
+
+	var role_skills: Array[RoleSkillData] = _get_role_skills()
+	if role_skills.is_empty():
+		_skill_select_name_label.text = "ロールスキルなし"
+		_skill_select_icon.texture = null
+		_skill_select_description_label.text = "選択可能なロールスキルがありません。"
+		_skill_select_state_label.text = ""
+		_skill_select_confirm_button.disabled = true
+		return
+
+	var preview_skill: RoleSkillData = _skill_select_pending_skill
+	if preview_skill == null:
+		preview_skill = role_skills[0]
+
+	for skill in role_skills:
+		if skill == null:
+			continue
+		var item: Button = _build_role_skill_select_item(skill) as Button
+		if skill == preview_skill:
+			item.text += "  [選択中]"
+		_skill_select_list.add_child(item)
+
+	_apply_skill_select_preview(preview_skill)
+
+
+func _apply_skill_select_preview(skill: RoleSkillData) -> void:
+	if skill == null:
+		_skill_select_name_label.text = "未選択"
+		_skill_select_icon.texture = null
+		_skill_select_description_label.text = ""
+		_skill_select_state_label.text = ""
+		_skill_select_confirm_button.disabled = true
+		return
+
+	_skill_select_pending_skill = skill
+	_skill_select_name_label.text = skill.display_name
+	_skill_select_icon.texture = skill.icon
+	_skill_select_description_label.text = _build_role_skill_detail_text(skill)
+
 	var role_manager: Node = _find_role_manager()
-	var role_check: Dictionary = {"ok": true, "reason": ""}
+	var state_text: String = "現在のロールで使用可能"
 	if role_manager != null and role_manager.has_method("can_use_skill"):
 		var result: Variant = role_manager.call("can_use_skill", skill)
-		if result is Dictionary:
-			role_check = result as Dictionary
+		if result is Dictionary and not bool(result.get("ok", false)):
+			state_text = "現在のロールでは使用不可: %s" % String(result.get("reason", "条件未達成"))
+	_skill_select_state_label.text = state_text
+	_skill_select_confirm_button.disabled = false
 
-	var panel_container: PanelContainer = PanelContainer.new()
-	panel_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+func _on_role_skill_select_page_item_pressed(skill: RoleSkillData) -> void:
+	_apply_skill_select_preview(skill)
+	_refresh_skill_select_page()
+
+
+func _on_skill_select_confirm_pressed() -> void:
+	_selected_role_skill = _skill_select_pending_skill
+	_hide_skill_select_overlay()
+	_refresh_active_skill_section()
+
+
+func _on_skill_select_cancel_pressed() -> void:
+	_hide_skill_select_overlay()
+
+
+func _ensure_skill_select_overlay() -> void:
+	if _skill_select_overlay != null and is_instance_valid(_skill_select_overlay):
+		return
+
+	_skill_select_overlay = ColorRect.new()
+	_skill_select_overlay.name = "RoleSkillSelectOverlay"
+	_skill_select_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_skill_select_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	_skill_select_overlay.color = Color(0.0, 0.0, 0.0, 0.62)
+	_skill_select_overlay.visible = false
+	add_child(_skill_select_overlay)
+
+	var center: CenterContainer = CenterContainer.new()
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_skill_select_overlay.add_child(center)
+
+	_skill_select_panel = PanelContainer.new()
+	_skill_select_panel.custom_minimum_size = Vector2(980, 540)
+	_skill_select_panel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	_skill_select_panel.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	center.add_child(_skill_select_panel)
+
+	var panel_style: StyleBoxFlat = StyleBoxFlat.new()
+	panel_style.bg_color = Color(0.04, 0.05, 0.07, 0.98)
+	panel_style.border_width_left = 2
+	panel_style.border_width_top = 2
+	panel_style.border_width_right = 2
+	panel_style.border_width_bottom = 2
+	panel_style.border_color = Color(0.20, 0.34, 0.48, 0.95)
+	panel_style.corner_radius_top_left = 14
+	panel_style.corner_radius_top_right = 14
+	panel_style.corner_radius_bottom_left = 14
+	panel_style.corner_radius_bottom_right = 14
+	_skill_select_panel.add_theme_stylebox_override("panel", panel_style)
 
 	var margin: MarginContainer = MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 12)
-	margin.add_theme_constant_override("margin_top", 10)
-	margin.add_theme_constant_override("margin_right", 12)
-	margin.add_theme_constant_override("margin_bottom", 10)
-	panel_container.add_child(margin)
+	margin.add_theme_constant_override("margin_left", 16)
+	margin.add_theme_constant_override("margin_top", 16)
+	margin.add_theme_constant_override("margin_right", 16)
+	margin.add_theme_constant_override("margin_bottom", 16)
+	_skill_select_panel.add_child(margin)
 
-	var vbox: VBoxContainer = VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 6)
-	margin.add_child(vbox)
+	var root_vbox: VBoxContainer = VBoxContainer.new()
+	root_vbox.add_theme_constant_override("separation", 12)
+	margin.add_child(root_vbox)
 
-	var top_row: HBoxContainer = HBoxContainer.new()
-	top_row.add_theme_constant_override("separation", 8)
-	vbox.add_child(top_row)
+	var title_label: Label = Label.new()
+	title_label.text = "ロールスキル選択"
+	title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title_label.add_theme_font_size_override("font_size", 24)
+	root_vbox.add_child(title_label)
 
-	var name_label: Label = Label.new()
-	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var selected_suffix: String = ""
-	if _selected_role_skill == skill:
-		selected_suffix = "  [選択中]"
-	name_label.text = "%s%s" % [skill.display_name, selected_suffix]
-	top_row.add_child(name_label)
+	var body_split: HSplitContainer = HSplitContainer.new()
+	body_split.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	body_split.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	body_split.split_offset = 0
+	root_vbox.add_child(body_split)
 
-	var select_button: Button = Button.new()
-	select_button.text = "選択"
-	select_button.pressed.connect(_on_role_skill_selected.bind(skill))
-	top_row.add_child(select_button)
+	var left_panel: PanelContainer = PanelContainer.new()
+	left_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	left_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	body_split.add_child(left_panel)
 
-	var detail_label: Label = Label.new()
-	detail_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	detail_label.text = _build_role_skill_detail_text(skill)
-	vbox.add_child(detail_label)
+	var left_style: StyleBoxFlat = StyleBoxFlat.new()
+	left_style.bg_color = Color(0.08, 0.09, 0.11, 0.96)
+	left_style.corner_radius_top_left = 10
+	left_style.corner_radius_top_right = 10
+	left_style.corner_radius_bottom_left = 10
+	left_style.corner_radius_bottom_right = 10
+	left_style.border_width_left = 1
+	left_style.border_width_top = 1
+	left_style.border_width_right = 1
+	left_style.border_width_bottom = 1
+	left_style.border_color = Color(0.17, 0.25, 0.35, 0.9)
+	left_panel.add_theme_stylebox_override("panel", left_style)
 
-	var state_label: Label = Label.new()
-	state_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	if bool(role_check.get("ok", false)):
-		state_label.text = "現在のロールで使用可能"
-	else:
-		state_label.text = "現在のロールでは使用不可: %s" % String(role_check.get("reason", "条件未達成"))
-	vbox.add_child(state_label)
+	var left_margin: MarginContainer = MarginContainer.new()
+	left_margin.add_theme_constant_override("margin_left", 14)
+	left_margin.add_theme_constant_override("margin_top", 14)
+	left_margin.add_theme_constant_override("margin_right", 14)
+	left_margin.add_theme_constant_override("margin_bottom", 14)
+	left_panel.add_child(left_margin)
 
-	return panel_container
+	var left_vbox: VBoxContainer = VBoxContainer.new()
+	left_vbox.add_theme_constant_override("separation", 10)
+	left_margin.add_child(left_vbox)
+
+	var desc_title: Label = Label.new()
+	desc_title.text = "スキル説明"
+	desc_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	desc_title.add_theme_font_size_override("font_size", 20)
+	left_vbox.add_child(desc_title)
+
+	_skill_select_description_label = Label.new()
+	_skill_select_description_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_skill_select_description_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	left_vbox.add_child(_skill_select_description_label)
+
+	_skill_select_state_label = Label.new()
+	_skill_select_state_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	left_vbox.add_child(_skill_select_state_label)
+
+	var right_panel: PanelContainer = PanelContainer.new()
+	right_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	right_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	body_split.add_child(right_panel)
+	right_panel.add_theme_stylebox_override("panel", left_style.duplicate())
+
+	var right_margin: MarginContainer = MarginContainer.new()
+	right_margin.add_theme_constant_override("margin_left", 14)
+	right_margin.add_theme_constant_override("margin_top", 14)
+	right_margin.add_theme_constant_override("margin_right", 14)
+	right_margin.add_theme_constant_override("margin_bottom", 14)
+	right_panel.add_child(right_margin)
+
+	var right_vbox: VBoxContainer = VBoxContainer.new()
+	right_vbox.add_theme_constant_override("separation", 12)
+	right_margin.add_child(right_vbox)
+
+	var preview_title: Label = Label.new()
+	preview_title.text = "スキル選択"
+	preview_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	preview_title.add_theme_font_size_override("font_size", 20)
+	right_vbox.add_child(preview_title)
+
+	_skill_select_icon = TextureRect.new()
+	_skill_select_icon.custom_minimum_size = Vector2(96, 96)
+	_skill_select_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_skill_select_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_skill_select_icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	right_vbox.add_child(_skill_select_icon)
+
+	_skill_select_name_label = Label.new()
+	_skill_select_name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_skill_select_name_label.add_theme_font_size_override("font_size", 22)
+	right_vbox.add_child(_skill_select_name_label)
+
+	var list_scroll: ScrollContainer = ScrollContainer.new()
+	list_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	list_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	list_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	right_vbox.add_child(list_scroll)
+
+	_skill_select_list = VBoxContainer.new()
+	_skill_select_list.add_theme_constant_override("separation", 8)
+	_skill_select_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	list_scroll.add_child(_skill_select_list)
+
+	var button_row: HBoxContainer = HBoxContainer.new()
+	button_row.add_theme_constant_override("separation", 10)
+	root_vbox.add_child(button_row)
+
+	_skill_select_cancel_button = Button.new()
+	_skill_select_cancel_button.text = "閉じる"
+	_skill_select_cancel_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_skill_select_cancel_button.pressed.connect(_on_skill_select_cancel_pressed)
+	button_row.add_child(_skill_select_cancel_button)
+
+	_skill_select_confirm_button = Button.new()
+	_skill_select_confirm_button.text = "このスキルを選択"
+	_skill_select_confirm_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_skill_select_confirm_button.pressed.connect(_on_skill_select_confirm_pressed)
+	button_row.add_child(_skill_select_confirm_button)
 
 
 func _build_role_skill_detail_text(skill: RoleSkillData) -> String:
@@ -752,13 +976,15 @@ func _ensure_active_skill_section() -> void:
 	_active_skill_status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	vbox.add_child(_active_skill_status_label)
 
-	_active_skill_list = VBoxContainer.new()
-	_active_skill_list.add_theme_constant_override("separation", 6)
-	vbox.add_child(_active_skill_list)
-
 	_selected_skill_label = Label.new()
 	_selected_skill_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	vbox.add_child(_selected_skill_label)
+
+	_open_select_page_button = Button.new()
+	_open_select_page_button.text = "ロールスキル選択ページを開く"
+	_open_select_page_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_open_select_page_button.pressed.connect(_open_skill_select_overlay)
+	vbox.add_child(_open_select_page_button)
 
 	var button_row: HBoxContainer = HBoxContainer.new()
 	button_row.add_theme_constant_override("separation", 8)
@@ -774,6 +1000,10 @@ func _ensure_active_skill_section() -> void:
 	_clear_slot_button.text = "選択中スロットを解除"
 	_clear_slot_button.pressed.connect(_on_clear_slot_pressed)
 	button_row.add_child(_clear_slot_button)
+
+	_active_skill_list = VBoxContainer.new()
+	_active_skill_list.visible = false
+	vbox.add_child(_active_skill_list)
 
 	content_vbox.add_child(_active_skill_section)
 	content_vbox.move_child(_active_skill_section, 2)

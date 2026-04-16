@@ -2,7 +2,7 @@ extends CanvasLayer
 
 class_name BgmNowPlayingPanel
 
-@export var panel_size: Vector2 = Vector2(360, 108)
+@export var panel_size: Vector2 = Vector2(360, 84)
 @export var margin_right: float = 20.0
 @export var margin_bottom: float = 190.0
 @export var slide_duration: float = 0.28
@@ -32,7 +32,7 @@ func _ready() -> void:
 	_connect_runtime_signals()
 
 
-func show_track(track_name: String, detail_text: String = "BGMが切り替わりました") -> void:
+func show_track(track_name: String, detail_text: String = "") -> void:
 	if track_name.strip_edges().is_empty():
 		return
 
@@ -46,6 +46,7 @@ func show_track(track_name: String, detail_text: String = "BGMが切り替わり
 	header_label.text = "♪ Now Playing"
 	track_label.text = track_name
 	detail_label.text = detail_text
+	_detail_label_visibility()
 
 	_update_positions(_not_showing())
 	_show_panel()
@@ -80,7 +81,12 @@ func _ensure_ui_refs() -> void:
 		margin_container = MarginContainer.new()
 		margin_container.name = "MarginContainer"
 		panel.add_child(margin_container)
-		margin_container.set_anchors_preset(Control.PRESET_FULL_RECT)
+
+	margin_container.set_anchors_preset(Control.PRESET_FULL_RECT)
+	margin_container.offset_left = 0.0
+	margin_container.offset_top = 0.0
+	margin_container.offset_right = 0.0
+	margin_container.offset_bottom = 0.0
 
 	var vbox := get_node_or_null("Panel/MarginContainer/VBoxContainer") as VBoxContainer
 	if vbox == null:
@@ -88,6 +94,12 @@ func _ensure_ui_refs() -> void:
 		vbox.name = "VBoxContainer"
 		margin_container.add_child(vbox)
 		vbox.theme_override_constants.separation = 4
+
+	vbox.set_anchors_preset(Control.PRESET_FULL_RECT)
+	vbox.offset_left = 0.0
+	vbox.offset_top = 0.0
+	vbox.offset_right = 0.0
+	vbox.offset_bottom = 0.0
 
 	if header_label == null:
 		header_label = get_node_or_null("Panel/MarginContainer/VBoxContainer/HeaderLabel") as Label
@@ -103,17 +115,29 @@ func _ensure_ui_refs() -> void:
 		track_label = Label.new()
 		track_label.name = "TrackLabel"
 		track_label.text = "Track Name"
-		track_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		vbox.add_child(track_label)
+
+	track_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	track_label.clip_text = true
+	track_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	track_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	track_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	track_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 
 	if detail_label == null:
 		detail_label = get_node_or_null("Panel/MarginContainer/VBoxContainer/DetailLabel") as Label
 	if detail_label == null:
 		detail_label = Label.new()
 		detail_label.name = "DetailLabel"
-		detail_label.text = "BGMが切り替わりました"
-		detail_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		detail_label.text = ""
 		vbox.add_child(detail_label)
+
+	detail_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	detail_label.clip_text = true
+	detail_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	detail_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	detail_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_detail_label_visibility()
 
 	if hide_timer == null:
 		hide_timer = get_node_or_null("HideTimer") as Timer
@@ -122,6 +146,12 @@ func _ensure_ui_refs() -> void:
 		hide_timer.name = "HideTimer"
 		hide_timer.one_shot = true
 		add_child(hide_timer)
+
+
+func _detail_label_visibility() -> void:
+	if detail_label == null:
+		return
+	detail_label.visible = not detail_label.text.strip_edges().is_empty()
 
 
 func _show_panel() -> void:
