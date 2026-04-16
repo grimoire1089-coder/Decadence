@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="RoleSkillData" format=3 uid="uid://bmrmddg66mlqi"]
+
+[ext_resource type="Texture2D" uid="uid://bse1iej6uisql" path="res://Image/Active_Skills/Healing_Light.png" id="1_6ipom"]
+[ext_resource type="Script" uid="uid://832agx08ubjy" path="res://UI/Active_Skills/RoleSkillData.gd" id="1_kasxe"]
+
+[resource]
+script = ExtResource("1_kasxe")
+skill_id = "healing_light"
+display_name = "ヒーリングライト"
+description = "23m以内にいるターゲットのHPを30回復します"
+role_name = "ヒーラーロールスキル"
+required_main_role = "healer"
+mp_cost = 10
+cast_time_seconds = 2.0
+range_meters = 23.0
+effect_type = "heal"
+heal_amount = 30
+icon = ExtResource("1_6ipom")
+metadata/_custom_type_script = "uid://832agx08ubjy"

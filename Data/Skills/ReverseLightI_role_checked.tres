@@ -6,10 +6,10 @@
 [resource]
 script = ExtResource("1_0x8kn")
 skill_id = "reverse_light_i"
-display_name = "リバース ライト I"
+display_name = "リバースライト"
 description = "23m以内にいるターゲットのHPを30秒間、2秒おきに5回復します。"
 role_name = "ヒーラーロールスキル"
-required_main_role = "healer"
+required_sub_role = "healer"
 mp_cost = 5
 cooldown_seconds = 5.0
 range_meters = 23.0

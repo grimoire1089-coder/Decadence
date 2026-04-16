@@ -9,6 +9,8 @@ signal cooldown_updated(skill_id: String, remaining: float, total: float)
 @export var default_pixels_per_meter: float = 16.0
 
 var _cooldowns: Dictionary = {}
+var _is_casting: bool = false
+var _casting_skill_id: String = ""
 
 
 func _ready() -> void:
@@ -45,6 +47,9 @@ func validate_cast(skill: RoleSkillData, target: Node2D) -> Dictionary:
 	if caster == null:
 		return {"ok": false, "reason": "キャスターが見つかりません"}
 
+	if _is_casting:
+		return {"ok": false, "reason": "詠唱中です"}
+
 	if target == null or not is_instance_valid(target):
 		return {"ok": false, "reason": "対象がいません"}
 
@@ -71,7 +76,7 @@ func validate_cast(skill: RoleSkillData, target: Node2D) -> Dictionary:
 
 func cast_skill(skill: RoleSkillData, target: Node2D) -> bool:
 	var check: Dictionary = validate_cast(skill, target)
-	if not bool(check.get("ok", false)):
+	if check.get("ok", false) != true:
 		var failed_skill_id: String = ""
 		if skill != null:
 			failed_skill_id = skill.skill_id
@@ -83,18 +88,16 @@ func cast_skill(skill: RoleSkillData, target: Node2D) -> bool:
 		skill_cast_failed.emit(skill.skill_id, "MPの消費に失敗しました")
 		return false
 
-	_start_cooldown(skill.skill_id, skill.cooldown_seconds)
+	var cast_time: float = max(skill.cast_time_seconds, 0.0)
+	if cast_time > 0.0:
+		_begin_cast(skill, target, cast_time)
+		return true
 
-	match skill.effect_type:
-		"heal_over_time":
-			_apply_heal_over_time(skill, target)
-		_:
-			skill_cast_failed.emit(skill.skill_id, "未対応の効果タイプです")
-			return false
+	return _apply_skill_effect(skill, target)
 
-	SkillHelpers.add_system_log("%s を発動した" % skill.display_name)
-	skill_cast_succeeded.emit(skill.skill_id, target)
-	return true
+
+func is_casting() -> bool:
+	return _is_casting
 
 
 func is_on_cooldown(skill_id: String) -> bool:
@@ -151,6 +154,78 @@ func _start_cooldown(skill_id: String, seconds: float) -> void:
 		"total": seconds
 	}
 	cooldown_updated.emit(skill_id, seconds, seconds)
+
+
+func _begin_cast(skill: RoleSkillData, target: Node2D, cast_time: float) -> void:
+	_is_casting = true
+	_casting_skill_id = skill.skill_id
+
+	var timer := get_tree().create_timer(cast_time)
+	timer.timeout.connect(_finish_cast.bind(skill, target), CONNECT_ONE_SHOT)
+
+
+func _clear_cast_state() -> void:
+	_is_casting = false
+	_casting_skill_id = ""
+
+
+func _validate_cast_finish(skill: RoleSkillData, target: Node2D) -> Dictionary:
+	if skill == null:
+		return {"ok": false, "reason": "スキルデータがありません"}
+
+	var caster: Node2D = _get_caster_node()
+	if caster == null:
+		return {"ok": false, "reason": "キャスターが見つかりません"}
+
+	if target == null or not is_instance_valid(target):
+		return {"ok": false, "reason": "対象がいません"}
+
+	var target_stats: Node = SkillHelpers.resolve_stats_manager(target)
+	if target_stats == null:
+		return {"ok": false, "reason": "対象を回復できません"}
+
+	var allowed_distance: float = _get_effective_range_pixels(skill)
+	if allowed_distance > 0.0 and caster.global_position.distance_to(target.global_position) > allowed_distance:
+		return {"ok": false, "reason": "射程外です"}
+
+	return {"ok": true, "reason": ""}
+
+
+func _finish_cast(skill: RoleSkillData, target: Node2D) -> void:
+	var check: Dictionary = _validate_cast_finish(skill, target)
+	if check.get("ok", false) != true:
+		_clear_cast_state()
+		var failed_skill_id: String = ""
+		if skill != null:
+			failed_skill_id = skill.skill_id
+		skill_cast_failed.emit(failed_skill_id, String(check.get("reason", "発動できません")))
+		return
+
+	_apply_skill_effect(skill, target)
+	_clear_cast_state()
+
+
+func _apply_skill_effect(skill: RoleSkillData, target: Node2D) -> bool:
+	var success: bool = false
+
+	match skill.effect_type:
+		"heal":
+			success = SkillHelpers.heal_target(target, skill.heal_amount)
+		"heal_over_time":
+			_apply_heal_over_time(skill, target)
+			success = true
+		_:
+			skill_cast_failed.emit(skill.skill_id, "未対応の効果タイプです")
+			return false
+
+	if not success:
+		skill_cast_failed.emit(skill.skill_id, "効果の適用に失敗しました")
+		return false
+
+	_start_cooldown(skill.skill_id, skill.cooldown_seconds)
+	SkillHelpers.add_system_log("%s を発動した" % skill.display_name)
+	skill_cast_succeeded.emit(skill.skill_id, target)
+	return true
 
 
 func _apply_heal_over_time(skill: RoleSkillData, target: Node2D) -> void:

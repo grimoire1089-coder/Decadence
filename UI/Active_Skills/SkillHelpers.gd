@@ -2,6 +2,16 @@ extends RefCounted
 class_name SkillHelpers
 
 
+static func _variant_to_bool(value: Variant) -> bool:
+	if value is bool:
+		return value
+	if value is int:
+		return value != 0
+	if value is float:
+		return not is_zero_approx(value)
+	return false
+
+
 static func resolve_stats_manager(subject: Node) -> Node:
 	if subject == null or not is_instance_valid(subject):
 		return _resolve_global_player_stats_manager()
@@ -97,19 +107,19 @@ static func spend_mp(subject: Node, amount: int) -> bool:
 		return false
 
 	if stats_manager.has_method("spend_mp"):
-		var ok: bool = bool(stats_manager.call("spend_mp", amount))
+		var ok: bool = _variant_to_bool(stats_manager.call("spend_mp", amount))
 		if ok:
 			_show_indicator_for_subject(subject, amount, "mp_damage")
 		return ok
 
 	if stats_manager.has_method("consume_mp"):
-		var ok: bool = bool(stats_manager.call("consume_mp", amount))
+		var ok: bool = _variant_to_bool(stats_manager.call("consume_mp", amount))
 		if ok:
 			_show_indicator_for_subject(subject, amount, "mp_damage")
 		return ok
 
 	if stats_manager.has_method("use_mp"):
-		var ok: bool = bool(stats_manager.call("use_mp", amount))
+		var ok: bool = _variant_to_bool(stats_manager.call("use_mp", amount))
 		if ok:
 			_show_indicator_for_subject(subject, amount, "mp_damage")
 		return ok
@@ -137,6 +147,10 @@ static func heal_target(subject: Node, amount: int) -> bool:
 
 	if stats_manager.has_method("heal_hp"):
 		stats_manager.call("heal_hp", amount)
+		return true
+
+	if stats_manager.has_method("recover_hp"):
+		stats_manager.call("recover_hp", amount)
 		return true
 
 	if stats_manager.has_method("add_hp"):

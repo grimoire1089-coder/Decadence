@@ -23,7 +23,8 @@ class_name RoleSkillData
 @export var pixels_per_meter: float = 16.0
 
 @export_group("Effect")
-@export_enum("heal_over_time") var effect_type: String = "heal_over_time"
+@export_enum("heal", "heal_over_time") var effect_type: String = "heal_over_time"
+@export var heal_amount: int = 0
 @export var effect_duration_seconds: float = 0.0
 @export var tick_interval_seconds: float = 1.0
 @export var hp_heal_per_tick: int = 0
