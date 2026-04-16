@@ -62,9 +62,9 @@ anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
 offset_left = -360.0
-offset_top = -230.0
+offset_top = -176.0
 offset_right = 360.0
-offset_bottom = -138.0
+offset_bottom = -84.0
 mouse_filter = 2
 script = ExtResource("1_script")
 
@@ -106,7 +106,7 @@ label_settings = SubResource("LabelSettings_label_small")
 [node name="HPValue" type="Label" parent="Panel/Margin/VBox/TopRow/HPTop" unique_id=1189583968]
 unique_name_in_owner = true
 layout_mode = 2
-text = "100 / 100"
+text = "145 / 150"
 label_settings = SubResource("LabelSettings_value")
 
 [node name="Spacer" type="Control" parent="Panel/Margin/VBox/TopRow" unique_id=630502683]
@@ -128,7 +128,7 @@ label_settings = SubResource("LabelSettings_label_small")
 [node name="MPValue" type="Label" parent="Panel/Margin/VBox/TopRow/MPTop" unique_id=440437472]
 unique_name_in_owner = true
 layout_mode = 2
-text = "50 / 50"
+text = "55 / 55"
 label_settings = SubResource("LabelSettings_value_right")
 
 [node name="BarsRow" type="HBoxContainer" parent="Panel/Margin/VBox" unique_id=1833675039]
@@ -143,7 +143,7 @@ size_flags_horizontal = 3
 theme_override_styles/background = SubResource("StyleBoxFlat_bar_bg")
 theme_override_styles/fill = SubResource("StyleBoxFlat_hp_fill")
 max_value = 150.0
-value = 150.0
+value = 145.0
 show_percentage = false
 
 [node name="MPBar" type="ProgressBar" parent="Panel/Margin/VBox/BarsRow" unique_id=250015010]
@@ -153,6 +153,6 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/background = SubResource("StyleBoxFlat_bar_bg")
 theme_override_styles/fill = SubResource("StyleBoxFlat_mp_fill")
-max_value = 50.0
-value = 50.0
+max_value = 55.0
+value = 55.0
 show_percentage = false

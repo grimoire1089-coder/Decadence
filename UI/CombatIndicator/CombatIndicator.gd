@@ -16,6 +16,7 @@ const KIND_DOT_DAMAGE := "dot_damage"
 const KIND_HP_HEAL := "hp_heal"
 const KIND_MP_HEAL := "mp_heal"
 const KIND_MP_DAMAGE := "mp_damage"
+const INDICATOR_Z_INDEX := 5000
 
 const KIND_COLORS := {
 	KIND_NORMAL_DAMAGE: Color("ffffff"),
@@ -36,7 +37,7 @@ var _configured: bool = false
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	top_level = true
-	z_index = 5000
+	z_index = _get_safe_indicator_z_index()
 	_ensure_label()
 	label.text = ""
 	visible = false
@@ -47,7 +48,7 @@ func setup(amount: int, kind: String, text_override: String = "") -> void:
 	_ensure_label()
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	top_level = true
-	z_index = 5000
+	z_index = _get_safe_indicator_z_index()
 
 	label.add_theme_font_size_override("font_size", font_size)
 	label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.92))
@@ -133,3 +134,7 @@ func _ease_out_back(x: float) -> float:
 	var c1: float = 1.70158
 	var c3: float = c1 + 1.0
 	return 1.0 + c3 * pow(x - 1.0, 3.0) + c1 * pow(x - 1.0, 2.0)
+
+
+func _get_safe_indicator_z_index() -> int:
+	return clampi(INDICATOR_Z_INDEX, RenderingServer.CANVAS_ITEM_Z_MIN, RenderingServer.CANVAS_ITEM_Z_MAX)
