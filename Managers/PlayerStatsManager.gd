@@ -491,6 +491,7 @@ func heal_hp(amount: int) -> void:
 		return
 
 	var before_hp: int = get_hp()
+	set_hp(before_hp + amount)
 
 	var applied_heal: int = get_hp() - before_hp
 	if applied_heal > 0:
@@ -502,6 +503,7 @@ func damage_hp(amount: int) -> void:
 		return
 
 	var before_hp: int = get_hp()
+	set_hp(before_hp - amount)
 
 	var applied_damage: int = before_hp - get_hp()
 	if applied_damage > 0:
@@ -519,6 +521,7 @@ func heal_mp(amount: int) -> void:
 		return
 
 	var before_mp: int = get_mp()
+	set_mp(before_mp + amount)
 
 	var applied_mp: int = get_mp() - before_mp
 	if applied_mp > 0:
