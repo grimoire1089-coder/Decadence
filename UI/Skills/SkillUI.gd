@@ -27,12 +27,13 @@ const SUPPORTED_SKILLS: Array[Dictionary] = [
 @export var role_skill_resources: Array[Resource] = []
 
 @onready var panel: Panel = $CenterContainer/Panel
-@onready var title_label: Label = $CenterContainer/Panel/MarginContainer/VBoxContainer/HeaderHBox/TitleLabel
-@onready var close_button: Button = $CenterContainer/Panel/MarginContainer/VBoxContainer/HeaderHBox/CloseButton
-@onready var summary_label: Label = $CenterContainer/Panel/MarginContainer/VBoxContainer/SummaryLabel
-@onready var skill_list: VBoxContainer = $CenterContainer/Panel/MarginContainer/VBoxContainer/ScrollContainer/SkillList
-@onready var hint_label: Label = $CenterContainer/Panel/MarginContainer/VBoxContainer/HintLabel
-@onready var content_vbox: VBoxContainer = $CenterContainer/Panel/MarginContainer/VBoxContainer
+@onready var title_label: Label = $CenterContainer/Panel/MarginContainer/RootVBox/HeaderHBox/TitleLabel
+@onready var close_button: Button = $CenterContainer/Panel/MarginContainer/RootVBox/HeaderHBox/CloseButton
+@onready var summary_label: Label = $CenterContainer/Panel/MarginContainer/RootVBox/SummaryLabel
+@onready var skill_list: VBoxContainer = $CenterContainer/Panel/MarginContainer/RootVBox/BodySplit/LeftPanel/LeftMargin/LeftVBox/LifeSkillScroll/SkillList
+@onready var hint_label: Label = $CenterContainer/Panel/MarginContainer/RootVBox/BodySplit/LeftPanel/LeftMargin/LeftVBox/HintLabel
+@onready var content_vbox: VBoxContainer = $CenterContainer/Panel/MarginContainer/RootVBox/BodySplit/RightPanel/RightMargin/RightScroll/RightVBox
+
 
 var _role_section: PanelContainer
 var _role_status_label: Label
@@ -721,7 +722,7 @@ func _ensure_role_section() -> void:
 	vbox.add_child(_role_note_label)
 
 	content_vbox.add_child(_role_section)
-	content_vbox.move_child(_role_section, summary_label.get_index())
+	content_vbox.move_child(_role_section, 1)
 
 
 func _ensure_active_skill_section() -> void:
@@ -775,7 +776,7 @@ func _ensure_active_skill_section() -> void:
 	button_row.add_child(_clear_slot_button)
 
 	content_vbox.add_child(_active_skill_section)
-	content_vbox.move_child(_active_skill_section, summary_label.get_index())
+	content_vbox.move_child(_active_skill_section, 2)
 
 
 func _get_hotbar_slot_text(hotbar: Node) -> String:

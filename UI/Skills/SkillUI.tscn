@@ -3,6 +3,30 @@
 [ext_resource type="Script" uid="uid://cutsr0f63tiwy" path="res://UI/Skills/SkillUI.gd" id="1_q5v4b"]
 [ext_resource type="PackedScene" uid="uid://f3lja0vmynmw" path="res://UI/Skills/SkillRow.tscn" id="2_0f8wx"]
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_main_panel"]
+bg_color = Color(0.03, 0.04, 0.05, 0.97)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.18, 0.3, 0.42, 0.95)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_section_panel"]
+bg_color = Color(0.06, 0.08, 0.1, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.2, 0.34, 0.48, 0.85)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
 [node name="SkillUI" type="Control" unique_id=405101302]
 layout_mode = 3
 anchors_preset = 15
@@ -23,7 +47,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 1
-color = Color(0, 0, 0, 0.35)
+color = Color(0, 0, 0, 0.52)
 
 [node name="CenterContainer" type="CenterContainer" parent="." unique_id=684105686]
 layout_mode = 1
@@ -34,56 +58,136 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="Panel" type="Panel" parent="CenterContainer" unique_id=1597727178]
-custom_minimum_size = Vector2(520, 360)
+custom_minimum_size = Vector2(1260, 660)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
+theme_override_styles/panel = SubResource("StyleBoxFlat_main_panel")
 
 [node name="MarginContainer" type="MarginContainer" parent="CenterContainer/Panel" unique_id=552674945]
-layout_mode = 0
-offset_left = 12.0
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 14.0
 offset_top = 12.0
-offset_right = 508.0
-offset_bottom = 348.0
-theme_override_constants/margin_left = 12
-theme_override_constants/margin_top = 12
-theme_override_constants/margin_right = 12
-theme_override_constants/margin_bottom = 12
+offset_right = -14.0
+offset_bottom = -12.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 6
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 6
+theme_override_constants/margin_bottom = 6
 
-[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer/Panel/MarginContainer" unique_id=170519321]
+[node name="RootVBox" type="VBoxContainer" parent="CenterContainer/Panel/MarginContainer" unique_id=170519321]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-theme_override_constants/separation = 12
+theme_override_constants/separation = 10
 
-[node name="HeaderHBox" type="HBoxContainer" parent="CenterContainer/Panel/MarginContainer/VBoxContainer" unique_id=1640948814]
+[node name="HeaderHBox" type="HBoxContainer" parent="CenterContainer/Panel/MarginContainer/RootVBox" unique_id=1640948814]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="LeftHeaderSpacer" type="Control" parent="CenterContainer/Panel/MarginContainer/RootVBox/HeaderHBox" unique_id=767091368]
+custom_minimum_size = Vector2(40, 0)
 layout_mode = 2
 
-[node name="TitleLabel" type="Label" parent="CenterContainer/Panel/MarginContainer/VBoxContainer/HeaderHBox" unique_id=1639875849]
+[node name="TitleLabel" type="Label" parent="CenterContainer/Panel/MarginContainer/RootVBox/HeaderHBox" unique_id=1639875849]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 28
 text = "スキル"
+horizontal_alignment = 1
+vertical_alignment = 1
 
-[node name="CloseButton" type="Button" parent="CenterContainer/Panel/MarginContainer/VBoxContainer/HeaderHBox" unique_id=1393162897]
+[node name="CloseButton" type="Button" parent="CenterContainer/Panel/MarginContainer/RootVBox/HeaderHBox" unique_id=1393162897]
+custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
-text = "閉じる"
+theme_override_font_sizes/font_size = 24
+text = "×"
 
-[node name="SummaryLabel" type="Label" parent="CenterContainer/Panel/MarginContainer/VBoxContainer" unique_id=186935547]
+[node name="SummaryLabel" type="Label" parent="CenterContainer/Panel/MarginContainer/RootVBox" unique_id=186935547]
 layout_mode = 2
-text = "プレイヤーLv.1   スキルポイント 0"
+text = "プレイヤーLv.1   未使用スキルpt合計 0"
+horizontal_alignment = 1
+autowrap_mode = 2
 
-[node name="ScrollContainer" type="ScrollContainer" parent="CenterContainer/Panel/MarginContainer/VBoxContainer" unique_id=630576857]
-custom_minimum_size = Vector2(0, 220)
+[node name="BodySplit" type="HSplitContainer" parent="CenterContainer/Panel/MarginContainer/RootVBox" unique_id=197711622]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="LeftPanel" type="PanelContainer" parent="CenterContainer/Panel/MarginContainer/RootVBox/BodySplit" unique_id=1335883201]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_section_panel")
+
+[node name="LeftMargin" type="MarginContainer" parent="CenterContainer/Panel/MarginContainer/RootVBox/BodySplit/LeftPanel" unique_id=1805138350]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="LeftVBox" type="VBoxContainer" parent="CenterContainer/Panel/MarginContainer/RootVBox/BodySplit/LeftPanel/LeftMargin" unique_id=988204318]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 10
+
+[node name="LifeTitleLabel" type="Label" parent="CenterContainer/Panel/MarginContainer/RootVBox/BodySplit/LeftPanel/LeftMargin/LeftVBox" unique_id=1318236144]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "生活系スキル"
+horizontal_alignment = 1
+
+[node name="LifeSkillScroll" type="ScrollContainer" parent="CenterContainer/Panel/MarginContainer/RootVBox/BodySplit/LeftPanel/LeftMargin/LeftVBox" unique_id=630576857]
+custom_minimum_size = Vector2(0, 320)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
 
-[node name="SkillList" type="VBoxContainer" parent="CenterContainer/Panel/MarginContainer/VBoxContainer/ScrollContainer" unique_id=255838335]
+[node name="SkillList" type="VBoxContainer" parent="CenterContainer/Panel/MarginContainer/RootVBox/BodySplit/LeftPanel/LeftMargin/LeftVBox/LifeSkillScroll" unique_id=255838335]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="HintLabel" type="Label" parent="CenterContainer/Panel/MarginContainer/RootVBox/BodySplit/LeftPanel/LeftMargin/LeftVBox" unique_id=1890180606]
+layout_mode = 2
+text = "Esc / キャンセルで閉じる"
+autowrap_mode = 2
+
+[node name="RightPanel" type="PanelContainer" parent="CenterContainer/Panel/MarginContainer/RootVBox/BodySplit" unique_id=209322223]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_section_panel")
+
+[node name="RightMargin" type="MarginContainer" parent="CenterContainer/Panel/MarginContainer/RootVBox/BodySplit/RightPanel" unique_id=835090979]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="RightScroll" type="ScrollContainer" parent="CenterContainer/Panel/MarginContainer/RootVBox/BodySplit/RightPanel/RightMargin" unique_id=1471002105]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="RightVBox" type="VBoxContainer" parent="CenterContainer/Panel/MarginContainer/RootVBox/BodySplit/RightPanel/RightMargin/RightScroll" unique_id=1246921196]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 10
 
-[node name="HintLabel" type="Label" parent="CenterContainer/Panel/MarginContainer/VBoxContainer" unique_id=1890180606]
+[node name="CombatTitleLabel" type="Label" parent="CenterContainer/Panel/MarginContainer/RootVBox/BodySplit/RightPanel/RightMargin/RightScroll/RightVBox" unique_id=451827665]
 layout_mode = 2
-text = "Esc / キャンセルで閉じる"
+theme_override_font_sizes/font_size = 24
+text = "戦闘系 / ロール"
+horizontal_alignment = 1
