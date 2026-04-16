@@ -1,9 +1,10 @@
-[gd_scene format=3 uid="uid://bydaxmu4ucuwa"]
+[gd_scene load_steps=4 format=3 uid="uid://bydaxmu4ucuwa"]
 
 [ext_resource type="Script" uid="uid://cutsr0f63tiwy" path="res://UI/Skills/SkillUI.gd" id="1_q5v4b"]
 [ext_resource type="PackedScene" uid="uid://f3lja0vmynmw" path="res://UI/Skills/SkillRow.tscn" id="2_0f8wx"]
+[ext_resource type="Script" path="res://UI/Skills/SkillTwoColumnContainer.gd" id="3_8jta3"]
 
-[node name="SkillUI" type="Control" unique_id=405101302]
+[node name="SkillUI" type="Control"]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -15,7 +16,7 @@ script = ExtResource("1_q5v4b")
 skill_row_scene = ExtResource("2_0f8wx")
 role_skill_resources = Array[Resource]([null])
 
-[node name="ColorRect" type="ColorRect" parent="." unique_id=1029995937]
+[node name="ColorRect" type="ColorRect" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -25,7 +26,7 @@ grow_vertical = 2
 mouse_filter = 1
 color = Color(0, 0, 0, 0.35)
 
-[node name="CenterContainer" type="CenterContainer" parent="." unique_id=684105686]
+[node name="CenterContainer" type="CenterContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -33,57 +34,73 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Panel" type="Panel" parent="CenterContainer" unique_id=1597727178]
-custom_minimum_size = Vector2(520, 360)
+[node name="Panel" type="Panel" parent="CenterContainer"]
+custom_minimum_size = Vector2(1320, 760)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
 
-[node name="MarginContainer" type="MarginContainer" parent="CenterContainer/Panel" unique_id=552674945]
-layout_mode = 0
-offset_left = 12.0
-offset_top = 12.0
-offset_right = 508.0
-offset_bottom = 348.0
-theme_override_constants/margin_left = 12
-theme_override_constants/margin_top = 12
-theme_override_constants/margin_right = 12
-theme_override_constants/margin_bottom = 12
+[node name="MarginContainer" type="MarginContainer" parent="CenterContainer/Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+offset_left = 18.0
+offset_top = 18.0
+offset_right = -18.0
+offset_bottom = -18.0
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
 
-[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer/Panel/MarginContainer" unique_id=170519321]
+[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer/Panel/MarginContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_constants/separation = 12
+script = ExtResource("3_8jta3")
 
-[node name="HeaderHBox" type="HBoxContainer" parent="CenterContainer/Panel/MarginContainer/VBoxContainer" unique_id=1640948814]
+[node name="HeaderHBox" type="HBoxContainer" parent="CenterContainer/Panel/MarginContainer/VBoxContainer"]
 layout_mode = 2
 
-[node name="TitleLabel" type="Label" parent="CenterContainer/Panel/MarginContainer/VBoxContainer/HeaderHBox" unique_id=1639875849]
+[node name="TitleLabel" type="Label" parent="CenterContainer/Panel/MarginContainer/VBoxContainer/HeaderHBox"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "スキル"
 
-[node name="CloseButton" type="Button" parent="CenterContainer/Panel/MarginContainer/VBoxContainer/HeaderHBox" unique_id=1393162897]
+[node name="CloseButton" type="Button" parent="CenterContainer/Panel/MarginContainer/VBoxContainer/HeaderHBox"]
 layout_mode = 2
-text = "閉じる"
+text = "閈じる"
 
-[node name="SummaryLabel" type="Label" parent="CenterContainer/Panel/MarginContainer/VBoxContainer" unique_id=186935547]
+[node name="LifeTitleLabel" type="Label" parent="CenterContainer/Panel/MarginContainer/VBoxContainer"]
 layout_mode = 2
+text = "生活系 スキル"
+
+[node name="CombatTitleLabel" type="Label" parent="CenterContainer/Panel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "戦门系 / ロール"
+
+[node name="SummaryLabel" type="Label" parent="CenterContainer/Panel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+autowrap_mode = 2
 text = "プレイヤーLv.1   スキルポイント 0"
 
-[node name="ScrollContainer" type="ScrollContainer" parent="CenterContainer/Panel/MarginContainer/VBoxContainer" unique_id=630576857]
-custom_minimum_size = Vector2(0, 220)
+[node name="ScrollContainer" type="ScrollContainer" parent="CenterContainer/Panel/MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 560)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
 
-[node name="SkillList" type="VBoxContainer" parent="CenterContainer/Panel/MarginContainer/VBoxContainer/ScrollContainer" unique_id=255838335]
+[node name="SkillList" type="VBoxContainer" parent="CenterContainer/Panel/MarginContainer/VBoxContainer/ScrollContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 10
+theme_override_constants/separation = 8
 
-[node name="HintLabel" type="Label" parent="CenterContainer/Panel/MarginContainer/VBoxContainer" unique_id=1890180606]
+[node name="HintLabel" type="Label" parent="CenterContainer/Panel/MarginContainer/VBoxContainer"]
 layout_mode = 2
+autowrap_mode = 2
 text = "Esc / キャンセルで閉じる"
