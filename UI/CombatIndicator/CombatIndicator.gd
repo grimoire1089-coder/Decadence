@@ -11,8 +11,6 @@ class_name CombatIndicator
 @export var peak_scale: float = 1.08
 @export var end_scale: float = 0.96
 
-@onready var label: Label = $Label
-
 const KIND_NORMAL_DAMAGE := "normal_damage"
 const KIND_DOT_DAMAGE := "dot_damage"
 const KIND_HP_HEAL := "hp_heal"
@@ -27,14 +25,27 @@ const KIND_COLORS := {
 	KIND_MP_DAMAGE: Color("b56cff"),
 }
 
+@onready var label: Label = get_node_or_null("Label")
+
 var _elapsed: float = 0.0
 var _start_position: Vector2 = Vector2.ZERO
 var _target_position: Vector2 = Vector2.ZERO
-var _text_kind: String = KIND_NORMAL_DAMAGE
+var _configured: bool = false
+
+
+func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	top_level = true
+	z_index = 5000
+	_ensure_label()
+	label.text = ""
+	visible = false
+	set_process(false)
 
 
 func setup(amount: int, kind: String, text_override: String = "") -> void:
-	_text_kind = kind
+	_ensure_label()
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	top_level = true
 	z_index = 5000
 
@@ -52,10 +63,14 @@ func setup(amount: int, kind: String, text_override: String = "") -> void:
 	_start_position = global_position
 	_target_position = _start_position + Vector2(randf_range(drift_x_min, drift_x_max), -rise_distance)
 	_elapsed = 0.0
+	_configured = true
 	set_process(true)
 
 
 func _process(delta: float) -> void:
+	if not _configured:
+		return
+
 	_elapsed += delta
 	var t: float = 1.0
 	if lifetime > 0.0:
@@ -67,6 +82,21 @@ func _process(delta: float) -> void:
 
 	if t >= 1.0:
 		queue_free()
+
+
+func _ensure_label() -> void:
+	if label != null:
+		return
+	label = get_node_or_null("Label")
+	if label != null:
+		return
+	label = Label.new()
+	label.name = "Label"
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.position = Vector2(-36, -14)
+	label.size = Vector2(72, 28)
+	add_child(label)
 
 
 func _build_text(amount: int, kind: String, text_override: String) -> String:
