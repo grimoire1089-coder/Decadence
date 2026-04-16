@@ -217,56 +217,37 @@ func _rebuild_slots() -> void:
 		panel.custom_minimum_size = slot_size
 		panel.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		panel.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		panel.mouse_filter = Control.MOUSE_FILTER_STOP
+		panel.clip_contents = true
 
-		var root: MarginContainer = MarginContainer.new()
-		root.add_theme_constant_override("margin_left", 6)
-		root.add_theme_constant_override("margin_top", 6)
-		root.add_theme_constant_override("margin_right", 6)
-		root.add_theme_constant_override("margin_bottom", 6)
+		var root: Control = Control.new()
+		root.name = "Root"
+		root.set_anchors_preset(Control.PRESET_FULL_RECT)
+		root.offset_left = 0.0
+		root.offset_top = 0.0
+		root.offset_right = 0.0
+		root.offset_bottom = 0.0
+		root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		panel.add_child(root)
-
-		var content: VBoxContainer = VBoxContainer.new()
-		content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		content.size_flags_vertical = Control.SIZE_EXPAND_FILL
-		content.add_theme_constant_override("separation", 4)
-		root.add_child(content)
-
-		var header: HBoxContainer = HBoxContainer.new()
-		header.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		content.add_child(header)
-
-		var key_label: Label = Label.new()
-		key_label.name = "KeyLabel"
-		key_label.text = _get_key_label(i)
-		key_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
-		key_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		header.add_child(key_label)
-
-		var cooldown_label: Label = Label.new()
-		cooldown_label.name = "CooldownLabel"
-		cooldown_label.text = ""
-		cooldown_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-		cooldown_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		header.add_child(cooldown_label)
 
 		var icon_holder: Control = Control.new()
 		icon_holder.name = "IconHolder"
-		icon_holder.custom_minimum_size = Vector2(max(slot_size.x - 12.0, 32.0), max(slot_size.y - 36.0, 32.0))
-		icon_holder.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		icon_holder.size_flags_vertical = Control.SIZE_EXPAND_FILL
-		content.add_child(icon_holder)
-
-		var icon_center: CenterContainer = CenterContainer.new()
-		icon_center.set_anchors_preset(Control.PRESET_FULL_RECT)
-		icon_center.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		icon_holder.add_child(icon_center)
+		icon_holder.set_anchors_preset(Control.PRESET_FULL_RECT)
+		icon_holder.offset_left = 5.0
+		icon_holder.offset_top = 5.0
+		icon_holder.offset_right = -5.0
+		icon_holder.offset_bottom = -5.0
+		icon_holder.clip_contents = true
+		icon_holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		root.add_child(icon_holder)
 
 		var icon: TextureRect = TextureRect.new()
 		icon.name = "Icon"
+		icon.set_anchors_preset(Control.PRESET_FULL_RECT)
+		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		icon.custom_minimum_size = Vector2(32, 32)
-		icon_center.add_child(icon)
+		icon_holder.add_child(icon)
 
 		var cooldown_cover: ColorRect = ColorRect.new()
 		cooldown_cover.name = "CooldownCover"
@@ -276,22 +257,47 @@ func _rebuild_slots() -> void:
 		cooldown_cover.set_anchors_preset(Control.PRESET_FULL_RECT)
 		icon_holder.add_child(cooldown_cover)
 
+		var key_label: Label = Label.new()
+		key_label.name = "KeyLabel"
+		key_label.text = _get_key_label(i)
+		key_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+		key_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+		key_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		key_label.position = Vector2(6.0, 3.0)
+		key_label.size = Vector2(max(slot_size.x - 12.0, 20.0), 18.0)
+		key_label.z_index = 5
+		root.add_child(key_label)
+
+		var cooldown_label: Label = Label.new()
+		cooldown_label.name = "CooldownLabel"
+		cooldown_label.text = ""
+		cooldown_label.set_anchors_preset(Control.PRESET_FULL_RECT)
+		cooldown_label.offset_left = 0.0
+		cooldown_label.offset_top = 0.0
+		cooldown_label.offset_right = 0.0
+		cooldown_label.offset_bottom = 0.0
+		cooldown_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		cooldown_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		cooldown_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		cooldown_label.z_index = 10
+		root.add_child(cooldown_label)
+
 		var name_label: Label = Label.new()
 		name_label.name = "NameLabel"
 		name_label.text = ""
-		name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		name_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		name_label.clip_text = true
-		name_label.custom_minimum_size = Vector2(0, 16)
-		content.add_child(name_label)
+		name_label.visible = false
+		name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		root.add_child(name_label)
 
 		if allow_mouse_select:
 			panel.gui_input.connect(_on_slot_gui_input.bind(i))
+		panel.resized.connect(_on_slot_resized.bind(i))
 
 		_slot_row.add_child(panel)
 		_slot_views.append({
 			"panel": panel,
+			"root": root,
+			"icon_holder": icon_holder,
 			"key_label": key_label,
 			"cooldown_label": cooldown_label,
 			"icon": icon,
@@ -324,6 +330,7 @@ func _refresh_slot(slot_index: int) -> void:
 	var key_label: Label = view["key_label"] as Label
 	var cooldown_label: Label = view["cooldown_label"] as Label
 	var cooldown_cover: ColorRect = view["cooldown_cover"] as ColorRect
+	var icon_holder: Control = view["icon_holder"] as Control
 	var panel: PanelContainer = view["panel"] as PanelContainer
 
 	key_label.text = String(data.get("key_label", _get_key_label(slot_index)))
@@ -331,7 +338,7 @@ func _refresh_slot(slot_index: int) -> void:
 
 	var display_name: String = String(data.get("display_name", ""))
 	name_label.text = display_name
-	name_label.visible = not display_name.is_empty()
+	name_label.visible = false
 
 	var skill_id: String = String(data.get("skill_id", ""))
 	panel.tooltip_text = display_name if not display_name.is_empty() else ("空きスロット" if show_empty_tooltip else "")
@@ -344,9 +351,14 @@ func _refresh_slot(slot_index: int) -> void:
 	cooldown_label.visible = not cooldown_text.is_empty()
 	cooldown_cover.visible = cooldown_ratio > 0.001
 	if cooldown_ratio > 0.001:
-		var holder_size: Vector2 = (view["panel"] as PanelContainer).custom_minimum_size
-		var cover_height: float = max(holder_size.y - 12.0, 24.0) * cooldown_ratio
-		cooldown_cover.offset_top = max((holder_size.y - 36.0) - cover_height, 0.0)
+		var holder_height: float = max(icon_holder.size.y, icon_holder.custom_minimum_size.y)
+		var cover_height: float = holder_height * cooldown_ratio
+		cooldown_cover.offset_left = 0.0
+		cooldown_cover.offset_right = 0.0
+		cooldown_cover.offset_bottom = 0.0
+		cooldown_cover.offset_top = max(holder_height - cover_height, 0.0)
+	else:
+		cooldown_cover.offset_top = 0.0
 		cooldown_cover.offset_bottom = 0.0
 		cooldown_cover.offset_left = 0.0
 		cooldown_cover.offset_right = 0.0
@@ -410,6 +422,10 @@ func _on_slot_gui_input(event: InputEvent, slot_index: int) -> void:
 		select_slot(slot_index)
 		emit_signal("skill_slot_pressed", slot_index)
 		get_viewport().set_input_as_handled()
+
+
+func _on_slot_resized(slot_index: int) -> void:
+	_refresh_slot(slot_index)
 
 
 func _is_valid_slot_index(slot_index: int) -> bool:
