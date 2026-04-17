@@ -148,7 +148,7 @@ func export_scene_data(scene_root: Node) -> Dictionary:
 		if typeof(exported_root) == TYPE_DICTIONARY:
 			world_data["scene_root"] = exported_root
 
-	var player := _find_player_node(scene_root)
+	var player: Node = _find_player_node(scene_root)
 	if player != null and player is Node2D:
 		world_data["player"] = {
 			"path": String(scene_root.get_path_to(player)),
@@ -168,7 +168,7 @@ func export_scene_data(scene_root: Node) -> Dictionary:
 		if not node.has_method("export_save_data"):
 			continue
 
-		var persistent_id := _get_persistent_id(node)
+		var persistent_id: String = _get_persistent_id(node)
 		if persistent_id.is_empty():
 			continue
 
@@ -197,16 +197,29 @@ func apply_world_state(scene_root: Node, save_data: Dictionary) -> void:
 				continue
 			if not node.has_method("import_save_data"):
 				continue
-			var persistent_id := _get_persistent_id(node)
+			var persistent_id: String = _get_persistent_id(node)
 			if persistent_id.is_empty():
 				continue
 			if persistent_map.has(persistent_id):
 				node.call("import_save_data", persistent_map[persistent_id])
 
-	_apply_player_state(scene_root, world_data.get("player", {}))
+	var player_data: Dictionary = world_data.get("player", {}) as Dictionary
+	_apply_player_state(scene_root, player_data)
 
 	if scene_root.has_method("after_save_data_applied"):
 		scene_root.call_deferred("after_save_data_applied", save_data)
+
+	# scene 側の deferred 初期化や spawn 処理で位置が上書きされるケースへの保険
+	call_deferred("_apply_player_state_deferred", scene_root, player_data)
+
+
+func _apply_player_state_deferred(scene_root: Node, player_data: Dictionary) -> void:
+	if not is_instance_valid(scene_root):
+		return
+	await get_tree().process_frame
+	if not is_instance_valid(scene_root):
+		return
+	_apply_player_state(scene_root, player_data)
 
 
 func collect_autoload_save_data() -> Dictionary:
@@ -254,9 +267,9 @@ func _apply_player_state(scene_root: Node, player_data: Dictionary) -> void:
 	if player is Node2D:
 		var position_data: Dictionary = player_data.get("position", {}) as Dictionary
 		if not position_data.is_empty():
-			player.global_position = Vector2(
-				float(position_data.get("x", player.global_position.x)),
-				float(position_data.get("y", player.global_position.y))
+			(player as Node2D).global_position = Vector2(
+				float(position_data.get("x", (player as Node2D).global_position.x)),
+				float(position_data.get("y", (player as Node2D).global_position.y))
 			)
 
 	var player_save_data: Dictionary = player_data.get("data", {}) as Dictionary

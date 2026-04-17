@@ -35,7 +35,7 @@ func _run_boot_sequence() -> void:
 	await _step(0.02, "ロード画面を準備中...", "Boot scene を初期化しています")
 	_stop_time_manager()
 
-	var save_manager := _get_save_manager()
+	var save_manager: Node = _get_save_manager()
 	if save_manager == null:
 		push_error("BootManager: SaveManager autoload が見つかりません。project.godot の autoload を確認してください。")
 		_set_progress(1.0, "起動に失敗しました", "SaveManager autoload が見つかりません")
@@ -54,19 +54,26 @@ func _run_boot_sequence() -> void:
 		return
 
 	await _step(0.35, "シーンを読み込み中...", target_scene_path)
-	var packed_scene := await _load_scene_threaded(target_scene_path)
+	var packed_scene: PackedScene = await _load_scene_threaded(target_scene_path)
 	if packed_scene == null:
 		_set_progress(1.0, "起動に失敗しました", "シーンのロードに失敗しました: %s" % target_scene_path)
 		return
 
 	await _step(0.65, "ワールドを生成中...", "シーンをインスタンス化しています")
-	var new_scene := _instantiate_target_scene(packed_scene)
+	var new_scene: Node = _instantiate_target_scene(packed_scene)
 	if new_scene == null:
 		_set_progress(1.0, "起動に失敗しました", "シーンの生成に失敗しました")
 		return
 
+	# シーン側の _ready / call_deferred 初期化を少し待つ
+	await get_tree().process_frame
+	await get_tree().process_frame
+
 	await _step(0.82, "ワールド状態を復元中...", "persistent_id を持つノードとプレイヤー位置を復元します")
 	save_manager.apply_world_state(new_scene, save_data)
+
+	# 復元後の deferred 処理も 1 フレーム待ってから時間開始
+	await get_tree().process_frame
 
 	await _step(0.94, "時間を再開中...", "最後の処理として TimeManager をスタートします")
 	_start_time_manager()
@@ -126,8 +133,8 @@ func _instantiate_target_scene(packed_scene: PackedScene) -> Node:
 	if packed_scene == null:
 		return null
 
-	var previous_scene := get_tree().current_scene
-	var new_scene := packed_scene.instantiate()
+	var previous_scene: Node = get_tree().current_scene
+	var new_scene: Node = packed_scene.instantiate()
 	if new_scene == null:
 		return null
 
@@ -141,7 +148,7 @@ func _instantiate_target_scene(packed_scene: PackedScene) -> Node:
 
 
 func _stop_time_manager() -> void:
-	var time_manager := get_node_or_null("/root/TimeManager")
+	var time_manager: Node = get_node_or_null("/root/TimeManager")
 	if time_manager == null:
 		return
 	if time_manager.has_method("stop_time"):
@@ -155,7 +162,7 @@ func _stop_time_manager() -> void:
 
 
 func _start_time_manager() -> void:
-	var time_manager := get_node_or_null("/root/TimeManager")
+	var time_manager: Node = get_node_or_null("/root/TimeManager")
 	if time_manager == null:
 		return
 	if time_manager.has_method("start_time"):

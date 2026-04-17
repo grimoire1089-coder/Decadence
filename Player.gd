@@ -4,6 +4,7 @@ signal interactable_changed(target)
 
 const UI_MODAL_MANAGER_SCRIPT_NAME: String = "UIModalManager.gd"
 const PAUSE_MENU_SCENE_PATH: String = "res://UI/PauseMenuUI.tscn"
+const DEBUG_SAVE_SLOT_NAME: String = "slot_01"
 const MODAL_UI_GROUPS: Array[StringName] = [
 	&"vending_ui",
 	&"crop_machine_ui",
@@ -191,6 +192,9 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 			return
 
+	if _handle_debug_save_input(event):
+		return
+
 	if event.is_action_pressed("ui_cancel"):
 		if _has_non_pause_modal_visible():
 			return
@@ -211,6 +215,42 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	if event.is_action_pressed("eat_selected_item"):
 		try_consume_selected_item()
+
+
+func _handle_debug_save_input(event: InputEvent) -> bool:
+	var should_save: bool = false
+
+	if InputMap.has_action("debug_save"):
+		should_save = event.is_action_pressed("debug_save")
+	elif event is InputEventKey:
+		var key_event: InputEventKey = event as InputEventKey
+		if key_event != null and key_event.pressed and not key_event.echo and key_event.keycode == KEY_F5:
+			should_save = true
+
+	if not should_save:
+		return false
+
+	_debug_save_game()
+	get_viewport().set_input_as_handled()
+	return true
+
+
+func _debug_save_game() -> void:
+	if SaveManager == null:
+		push_warning("SaveManager が見つかりません")
+		return
+
+	var ok: bool = SaveManager.save_game(get_tree().current_scene, DEBUG_SAVE_SLOT_NAME)
+	if ok:
+		var log_node: Node = get_node_or_null("/root/MessageLog")
+		if log_node != null:
+			if log_node.has_method("add_system_message"):
+				log_node.call("add_system_message", "仮セーブ完了: %s" % DEBUG_SAVE_SLOT_NAME)
+			elif log_node.has_method("add_system"):
+				log_node.call("add_system", "仮セーブ完了: %s" % DEBUG_SAVE_SLOT_NAME)
+		print("仮セーブ完了: %s" % DEBUG_SAVE_SLOT_NAME)
+	else:
+		push_warning("仮セーブ失敗: %s" % DEBUG_SAVE_SLOT_NAME)
 
 
 func _is_interaction_ui_open() -> bool:
@@ -383,11 +423,7 @@ func _update_current_interactable() -> void:
 	var nearest: Node2D = null
 	var nearest_distance: float = INF
 
-	for target_variant in nearby_interactables:
-		var target: Node2D = target_variant as Node2D
-		if target == null:
-			continue
-
+	for target in nearby_interactables:
 		var dist: float = global_position.distance_squared_to(target.global_position)
 		if dist < nearest_distance:
 			nearest_distance = dist

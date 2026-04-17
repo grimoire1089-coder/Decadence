@@ -21,8 +21,8 @@ buses/default_bus_layout="uid://qxfeontuqclr"
 
 [autoload]
 
-SaveManager="*uid://ha6dxoxc61ha"
 TimeManager="*uid://duwlmn68q4gp7"
+SaveManager="*uid://ha6dxoxc61ha"
 MessageLog="*uid://pu31vlo00bf1"
 UiModalManager="*uid://slqefgvwqon5"
 BgmSettingsManager="*uid://bkt1vgada8pf6"

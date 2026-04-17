@@ -11,6 +11,7 @@ enum TimePeriod {
 }
 
 @export var real_seconds_per_game_minute: float = 1.0
+@export var failsafe_resume_delay_sec: float = 0.6
 
 var day: int = 1
 var hour: int = 8
@@ -37,10 +38,13 @@ func _ready() -> void:
 
 	_update_period(true)
 	_emit_time_changed()
+	call_deferred("_schedule_failsafe_resume")
 
 
 func _on_tick() -> void:
 	if not is_running:
+		return
+	if is_time_paused():
 		return
 	add_minutes(1)
 
@@ -70,23 +74,23 @@ func set_time(target_day: int, target_hour: int, target_minute: int) -> void:
 	_emit_time_changed()
 
 
-func start_time(silent: bool = true) -> void:
-	_set_time_running_internal(true, silent)
+func start_time() -> void:
+	_set_time_running_internal(true)
 
 
-func stop_time(silent: bool = true) -> void:
-	_set_time_running_internal(false, silent)
+func stop_time() -> void:
+	_set_time_running_internal(false)
 
 
-func set_time_running(value: bool, silent: bool = true) -> void:
-	_set_time_running_internal(value, silent)
+func set_time_running(value: bool) -> void:
+	_set_time_running_internal(value)
 
 
 func request_pause(source: String = "unknown") -> void:
 	if source.is_empty():
 		source = "unknown"
 
-	var was_paused: bool = _is_effectively_paused()
+	var was_paused: bool = is_time_paused()
 	_pause_sources[source] = true
 	_apply_pause_state(was_paused)
 
@@ -95,7 +99,7 @@ func release_pause(source: String = "unknown") -> void:
 	if source.is_empty():
 		source = "unknown"
 
-	var was_paused: bool = _is_effectively_paused()
+	var was_paused: bool = is_time_paused()
 	_pause_sources.erase(source)
 	_apply_pause_state(was_paused)
 
@@ -109,7 +113,7 @@ func resume_time(source: String = "manual") -> void:
 
 
 func is_time_paused() -> bool:
-	return _is_effectively_paused()
+	return not _pause_sources.is_empty()
 
 
 func get_pause_sources() -> PackedStringArray:
@@ -137,24 +141,22 @@ func export_save_data() -> Dictionary:
 	return {
 		"day": day,
 		"hour": hour,
-		"minute": minute,
+		"minute": minute
 	}
 
 
 func import_save_data(data: Dictionary) -> void:
 	if data.is_empty():
 		return
-
 	set_time(
 		int(data.get("day", day)),
 		int(data.get("hour", hour)),
 		int(data.get("minute", minute))
 	)
-	_refresh_tick_timer_state()
 
 
 func _update_period(force: bool = false) -> void:
-	var new_period: int = get_time_period()
+	var new_period := get_time_period()
 	if force or new_period != _last_period:
 		_last_period = new_period
 		period_changed.emit(new_period)
@@ -164,27 +166,8 @@ func _emit_time_changed() -> void:
 	time_changed.emit(day, hour, minute)
 
 
-func _set_time_running_internal(value: bool, silent: bool) -> void:
-	var was_paused: bool = _is_effectively_paused()
-	is_running = value
-	_apply_pause_state(was_paused, silent)
-
-
-func _is_effectively_paused() -> bool:
-	return (not is_running) or (not _pause_sources.is_empty())
-
-
-func _refresh_tick_timer_state() -> void:
-	var paused: bool = _is_effectively_paused()
-
-	if tick_timer != null:
-		tick_timer.paused = paused
-
-	_set_customer_timers_paused(paused)
-
-
-func _apply_pause_state(was_paused: bool, silent: bool = false) -> void:
-	var now_paused: bool = _is_effectively_paused()
+func _apply_pause_state(was_paused: bool) -> void:
+	var now_paused: bool = is_time_paused()
 	_refresh_tick_timer_state()
 
 	if now_paused == was_paused:
@@ -192,21 +175,45 @@ func _apply_pause_state(was_paused: bool, silent: bool = false) -> void:
 
 	time_pause_changed.emit(now_paused)
 
-	if silent:
-		return
-
 	if now_paused:
-		var reason_text: String = _build_pause_reason_text()
+		var reason_text := _build_pause_reason_text()
 		_log_system("ゲーム内時間を停止しました%s" % reason_text)
 	else:
 		_log_system("ゲーム内時間が再開しました")
 
 
 func _build_pause_reason_text() -> String:
-	var sources: PackedStringArray = get_pause_sources()
+	var sources := get_pause_sources()
 	if sources.is_empty():
 		return ""
 	return "（%s）" % " / ".join(sources)
+
+
+func _refresh_tick_timer_state() -> void:
+	if tick_timer == null:
+		return
+
+	var should_pause: bool = (not is_running) or is_time_paused()
+	tick_timer.paused = should_pause
+	_set_customer_timers_paused(should_pause)
+
+
+func _set_time_running_internal(value: bool) -> void:
+	if is_running == value:
+		_refresh_tick_timer_state()
+		return
+	is_running = value
+	_refresh_tick_timer_state()
+
+
+func _schedule_failsafe_resume() -> void:
+	await get_tree().process_frame
+	await get_tree().create_timer(failsafe_resume_delay_sec).timeout
+	if is_running:
+		return
+	if is_time_paused():
+		return
+	start_time()
 
 
 func _set_customer_timers_paused(paused_value: bool) -> void:

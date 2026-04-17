@@ -23,7 +23,28 @@ func _boot_game() -> void:
 	await get_tree().create_timer(0.15).timeout
 
 	loading_overlay.close()
+	await get_tree().process_frame
+	_resume_time_manager()
 	player.set_input_locked(false)
+
+
+func _resume_time_manager() -> void:
+	var time_manager: Node = get_node_or_null("/root/TimeManager")
+	if time_manager == null:
+		return
+
+	if time_manager.has_method("start_time"):
+		time_manager.call("start_time")
+		return
+
+	if time_manager.has_method("set_time_running"):
+		time_manager.call("set_time_running", true)
+		return
+
+	for property_info in time_manager.get_property_list():
+		if String(property_info.get("name", "")) == "is_running":
+			time_manager.set("is_running", true)
+			return
 
 
 func _set_player_input_locked(value: bool) -> void:
