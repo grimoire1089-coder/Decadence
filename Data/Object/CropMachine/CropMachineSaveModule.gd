@@ -95,13 +95,15 @@ func apply_save_payload(machine: CropMachine, data: Dictionary) -> void:
 
 
 func _deserialize_slot(machine: CropMachine, incoming: Dictionary) -> Dictionary:
-	var slot: Dictionary = machine._make_empty_slot()
+	var slot_quality_bonus: int = max(int(incoming.get("slot_quality_bonus", 0)), 0)
+	var slot: Dictionary = machine._make_empty_slot(slot_quality_bonus)
 	slot["seed_item_path"] = str(incoming.get("seed_item_path", ""))
 	slot["harvest_item_path"] = str(incoming.get("harvest_item_path", ""))
 	slot["display_name"] = str(incoming.get("display_name", ""))
 	slot["total_minutes"] = max(int(incoming.get("total_minutes", 0)), 0)
 	slot["harvest_amount"] = max(int(incoming.get("harvest_amount", 0)), 0)
 	slot["recipe_key"] = str(incoming.get("recipe_key", ""))
+	slot["seed_quality"] = max(int(incoming.get("seed_quality", 0)), 0)
 
 	if incoming.has("queued_count") or incoming.has("ready_count"):
 		slot["remaining_minutes"] = max(int(incoming.get("remaining_minutes", 0)), 0)
@@ -122,6 +124,6 @@ func _deserialize_slot(machine: CropMachine, incoming: Dictionary) -> Dictionary
 			slot["ready_count"] = 0
 
 	if max(int(slot.get("queued_count", 0)), 0) <= 0 and max(int(slot.get("ready_count", 0)), 0) <= 0:
-		return machine._make_empty_slot()
+		return machine._make_empty_slot(slot_quality_bonus)
 
 	return slot

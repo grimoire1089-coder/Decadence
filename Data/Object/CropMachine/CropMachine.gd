@@ -17,6 +17,8 @@ var _last_total_minutes: int = -1
 var _save_module: CropMachineSaveModule = CropMachineSaveModule.new()
 var _growth_module: CropMachineGrowthModule = CropMachineGrowthModule.new()
 var _recipe_repository: CropMachineRecipeRepository = CropMachineRecipeRepository.new()
+var _slot_logic_module: CropMachineSlotLogicModule = CropMachineSlotLogicModule.new()
+var _harvest_quality_module: CropMachineHarvestQualityModule = CropMachineHarvestQualityModule.new()
 
 @onready var interact_area: Area2D = $InteractArea
 
@@ -52,7 +54,7 @@ func _resize_slots_to_count(new_count: int) -> void:
 	slot_count = clamped_count
 
 
-func _make_empty_slot() -> Dictionary:
+func _make_empty_slot(slot_quality_bonus: int = 0) -> Dictionary:
 	return {
 		"seed_item_path": "",
 		"harvest_item_path": "",
@@ -62,7 +64,9 @@ func _make_empty_slot() -> Dictionary:
 		"harvest_amount": 0,
 		"queued_count": 0,
 		"ready_count": 0,
-		"recipe_key": ""
+		"recipe_key": "",
+		"seed_quality": 0,
+		"slot_quality_bonus": max(slot_quality_bonus, 0)
 	}
 
 
@@ -136,408 +140,144 @@ func interact(player: Node) -> void:
 
 
 func can_stack_recipe(slot_index: int, recipe: CropRecipe) -> bool:
-	if not _is_valid_slot_index(slot_index):
-		return false
-	if recipe == null or not recipe.is_valid_recipe():
-		return false
-	if is_slot_empty(slot_index):
-		return false
-
-	var slot: Dictionary = slots[slot_index]
-	var slot_seed_path: String = str(slot.get("seed_item_path", ""))
-	var slot_harvest_path: String = str(slot.get("harvest_item_path", ""))
-	var slot_total_minutes: int = int(slot.get("total_minutes", 0))
-	var slot_harvest_amount: int = int(slot.get("harvest_amount", 0))
-	var slot_recipe_key: String = str(slot.get("recipe_key", ""))
-	var recipe_key: String = _get_recipe_unique_key(recipe)
-
-	if not slot_recipe_key.is_empty() and not recipe_key.is_empty():
-		return slot_recipe_key == recipe_key
-
-	return slot_seed_path == recipe.seed_item.resource_path \
-		and slot_harvest_path == recipe.harvest_item.resource_path \
-		and slot_total_minutes == max(recipe.grow_minutes, 1) \
-		and slot_harvest_amount == max(recipe.harvest_amount, 1)
+	return _get_slot_logic_module().can_stack_recipe(self, slot_index, recipe)
 
 
 func can_plant_recipe_in_slot(slot_index: int, recipe: CropRecipe) -> bool:
-	if not _is_valid_slot_index(slot_index):
-		return false
-	if recipe == null or not recipe.is_valid_recipe():
-		return false
-	if is_slot_empty(slot_index):
-		return true
-	return can_stack_recipe(slot_index, recipe)
+	return _get_slot_logic_module().can_plant_recipe_in_slot(self, slot_index, recipe)
 
 
-func plant_slot(slot_index: int, recipe: CropRecipe, plant_count: int = 1) -> bool:
-	if not _is_valid_slot_index(slot_index):
-		return false
-	if recipe == null or not recipe.is_valid_recipe():
-		return false
-	if plant_count <= 0:
-		return false
-	if not can_plant_recipe_in_slot(slot_index, recipe):
-		return false
+func plant_slot(slot_index: int, recipe: CropRecipe, plant_count: int = 1, seed_item_data: ItemData = null) -> bool:
+	return _get_slot_logic_module().plant_slot(self, slot_index, recipe, plant_count, seed_item_data)
 
-	if is_slot_empty(slot_index):
-		var new_slot: Dictionary = _make_empty_slot()
-		new_slot["seed_item_path"] = recipe.seed_item.resource_path
-		new_slot["harvest_item_path"] = recipe.harvest_item.resource_path
-		new_slot["display_name"] = recipe.get_display_name()
-		new_slot["total_minutes"] = max(recipe.grow_minutes, 1)
-		new_slot["remaining_minutes"] = max(recipe.grow_minutes, 1)
-		new_slot["harvest_amount"] = max(recipe.harvest_amount, 1)
-		new_slot["queued_count"] = plant_count
-		new_slot["ready_count"] = 0
-		new_slot["recipe_key"] = _get_recipe_unique_key(recipe)
-		slots[slot_index] = new_slot
-	else:
-		var slot: Dictionary = slots[slot_index]
-		slot["queued_count"] = max(int(slot.get("queued_count", 0)), 0) + plant_count
-		if int(slot.get("remaining_minutes", 0)) <= 0:
-			slot["remaining_minutes"] = max(int(slot.get("total_minutes", 0)), 1)
-		if str(slot.get("recipe_key", "")).is_empty():
-			slot["recipe_key"] = _get_recipe_unique_key(recipe)
-		slots[slot_index] = slot
-
-	save_data()
-	_refresh_open_ui()
-	return true
 
 
 func _get_player_stats_manager() -> Node:
-	return get_node_or_null("/root/PlayerStatsManager")
+	return _get_harvest_quality_module().get_player_stats_manager(self)
 
 
 func _get_farming_quality_bonus() -> float:
-	var stats_manager: Node = _get_player_stats_manager()
-	if stats_manager != null and stats_manager.has_method("get_farming_quality_bonus"):
-		return clamp(float(stats_manager.call("get_farming_quality_bonus")), 0.0, 1.0)
-	return 0.0
+	return _get_harvest_quality_module().get_farming_quality_bonus(self)
 
 
-func _get_harvest_quality_value() -> int:
-	return clamp(int(round(_get_farming_quality_bonus() * 100.0)), 0, 100)
+func _get_harvest_quality_value(slot_index: int = -1) -> int:
+	return _get_harvest_quality_module().get_harvest_quality_value(self, slot_index)
 
 
 func _get_harvest_rank_from_quality(quality_value: int) -> int:
-	if quality_value <= 0:
-		return 0
-	return clamp(int(ceil(float(quality_value) / 20.0)), 0, 5)
+	return _get_harvest_quality_module().get_harvest_rank_from_quality(self, quality_value)
 
 
-func _build_quality_harvest_item(base_item: ItemData) -> ItemData:
-	if base_item == null:
-		return null
-
-	var harvested_item: ItemData = base_item.duplicate(true) as ItemData
-	if harvested_item == null:
-		harvested_item = base_item
-
-	var quality_value: int = _get_harvest_quality_value()
-	harvested_item.quality = quality_value
-	harvested_item.rank = _get_harvest_rank_from_quality(quality_value)
-	return harvested_item
+func _build_quality_harvest_item(base_item: ItemData, slot_index: int = -1) -> ItemData:
+	return _get_harvest_quality_module().build_quality_harvest_item(self, base_item, slot_index)
 
 
 func harvest_slot(slot_index: int) -> Dictionary:
-	var result: Dictionary = {
-		"success": false,
-		"item_data": null,
-		"amount": 0,
-		"ready_cycles": 0,
-		"quality": 0,
-		"rank": 0
-	}
-
-	if not _is_valid_slot_index(slot_index):
-		return result
-	if is_slot_empty(slot_index):
-		return result
-
-	var ready_cycles: int = get_slot_ready_count(slot_index)
-	if ready_cycles <= 0:
-		return result
-
-	var harvest_item: ItemData = get_slot_harvest_item(slot_index)
-	if harvest_item == null:
-		_log_error("収穫アイテムが読み込めない")
-		return result
-
-	var per_cycle_amount: int = max(int(slots[slot_index].get("harvest_amount", 0)), 0)
-	if per_cycle_amount <= 0:
-		return result
-
-	var total_amount: int = ready_cycles * per_cycle_amount
-	var harvested_item: ItemData = _build_quality_harvest_item(harvest_item)
-	if harvested_item == null:
-		return result
-
-	result["success"] = true
-	result["item_data"] = harvested_item
-	result["amount"] = total_amount
-	result["ready_cycles"] = ready_cycles
-	result["quality"] = harvested_item.get_quality()
-	result["rank"] = harvested_item.get_rank()
-
-	var slot: Dictionary = slots[slot_index]
-	slot["ready_count"] = 0
-	if max(int(slot.get("queued_count", 0)), 0) <= 0:
-		slots[slot_index] = _make_empty_slot()
-	else:
-		slots[slot_index] = slot
-
-	save_data()
-	_refresh_open_ui()
-	return result
+	return _get_slot_logic_module().harvest_slot(self, slot_index)
 
 
 func get_slot_cancel_preview(slot_index: int) -> Dictionary:
-	var result: Dictionary = {
-		"success": false,
-		"display_name": "",
-		"ready_item_data": null,
-		"ready_amount": 0,
-		"ready_cycles": 0,
-		"ready_quality": 0,
-		"ready_rank": 0,
-		"seed_item_data": null,
-		"return_seed_count": 0
-	}
-
-	if not _is_valid_slot_index(slot_index):
-		return result
-	if is_slot_empty(slot_index):
-		return result
-
-	var ready_cycles: int = get_slot_ready_count(slot_index)
-	var queued_count: int = get_slot_queued_count(slot_index)
-	var harvest_amount_per_cycle: int = get_slot_harvest_amount(slot_index)
-	var harvest_item: ItemData = get_slot_harvest_item(slot_index)
-	var seed_item: ItemData = get_slot_seed_item(slot_index)
-	var ready_item: ItemData = null
-	if ready_cycles > 0 and harvest_item != null:
-		ready_item = _build_quality_harvest_item(harvest_item)
-
-	result["success"] = ready_cycles > 0 or queued_count > 0
-	result["display_name"] = get_slot_display_name(slot_index)
-	result["ready_item_data"] = ready_item
-	result["ready_amount"] = ready_cycles * harvest_amount_per_cycle
-	result["ready_cycles"] = ready_cycles
-	if ready_item != null:
-		result["ready_quality"] = ready_item.get_quality()
-		result["ready_rank"] = ready_item.get_rank()
-	result["seed_item_data"] = seed_item
-	result["return_seed_count"] = queued_count
-	return result
+	return _get_slot_logic_module().get_slot_cancel_preview(self, slot_index)
 
 
 func cancel_slot(slot_index: int) -> Dictionary:
-	var result: Dictionary = get_slot_cancel_preview(slot_index)
-	if not bool(result.get("success", false)):
-		return result
-
-	slots[slot_index] = _make_empty_slot()
-	save_data()
-	_refresh_open_ui()
-	return result
+	return _get_slot_logic_module().cancel_slot(self, slot_index)
 
 
 func clear_slot(slot_index: int) -> void:
-	if not _is_valid_slot_index(slot_index):
-		return
-
-	slots[slot_index] = _make_empty_slot()
-	save_data()
-	_refresh_open_ui()
+	_get_slot_logic_module().clear_slot(self, slot_index)
 
 
 func get_unlocked_slot_count() -> int:
-	return slot_count
+	return _get_slot_logic_module().get_unlocked_slot_count(self)
 
 
 func get_max_slot_count() -> int:
-	return max_slot_count
+	return _get_slot_logic_module().get_max_slot_count(self)
 
 
 func can_unlock_slot() -> bool:
-	return slot_count < max_slot_count
+	return _get_slot_logic_module().can_unlock_slot(self)
 
 
 func get_next_slot_unlock_cost() -> int:
-	if not can_unlock_slot():
-		return 0
-
-	var multiplier_step: int = max(slot_count - 1, 0)
-	var scaled_cost: float = float(slot_unlock_cost_base) * pow(slot_unlock_cost_multiplier, float(multiplier_step))
-	return max(int(round(scaled_cost)), 0)
+	return _get_slot_logic_module().get_next_slot_unlock_cost(self)
 
 
 func unlock_slot() -> bool:
-	if not can_unlock_slot():
-		return false
-
-	_resize_slots_to_count(slot_count + 1)
-	save_data()
-	_log_system("%sのスロット%dを解放した" % [machine_name, slot_count])
-	_refresh_open_ui()
-	return true
+	return _get_slot_logic_module().unlock_slot(self)
 
 
 func is_slot_empty(slot_index: int) -> bool:
-	if not _is_valid_slot_index(slot_index):
-		return true
-
-	var slot: Dictionary = slots[slot_index]
-	var harvest_item_path: String = str(slot.get("harvest_item_path", ""))
-	var queued_count: int = max(int(slot.get("queued_count", 0)), 0)
-	var ready_count: int = max(int(slot.get("ready_count", 0)), 0)
-	return harvest_item_path.is_empty() or (queued_count <= 0 and ready_count <= 0)
+	return _get_slot_logic_module().is_slot_empty(self, slot_index)
 
 
 func is_slot_ready(slot_index: int) -> bool:
-	if not _is_valid_slot_index(slot_index):
-		return false
-	if is_slot_empty(slot_index):
-		return false
-	return get_slot_ready_count(slot_index) > 0
+	return _get_slot_logic_module().is_slot_ready(self, slot_index)
 
 
 func has_slot_active_growth(slot_index: int) -> bool:
-	if not _is_valid_slot_index(slot_index):
-		return false
-	if is_slot_empty(slot_index):
-		return false
-	return get_slot_queued_count(slot_index) > 0
+	return _get_slot_logic_module().has_slot_active_growth(self, slot_index)
 
 
 func get_slot_display_name(slot_index: int) -> String:
-	if not _is_valid_slot_index(slot_index):
-		return "-"
-	if is_slot_empty(slot_index):
-		return "空"
-	return get_slot_display_name_from_slot(slots[slot_index])
+	return _get_slot_logic_module().get_slot_display_name(self, slot_index)
 
 
 func get_slot_display_name_from_slot(slot: Dictionary) -> String:
-	var display_name: String = str(slot.get("display_name", ""))
-	if not display_name.is_empty():
-		return display_name
-
-	var harvest_item_path: String = str(slot.get("harvest_item_path", ""))
-	if not harvest_item_path.is_empty():
-		var harvest_item: ItemData = load(harvest_item_path) as ItemData
-		if harvest_item != null:
-			if not harvest_item.item_name.is_empty():
-				return harvest_item.item_name
-			return str(harvest_item.id)
-
-	return "作物"
+	return _get_slot_logic_module().get_slot_display_name_from_slot(self, slot)
 
 
 func get_slot_remaining_minutes(slot_index: int) -> int:
-	if not _is_valid_slot_index(slot_index):
-		return 0
-	if is_slot_empty(slot_index):
-		return 0
-	if not has_slot_active_growth(slot_index):
-		return 0
-	return max(int(slots[slot_index].get("remaining_minutes", 0)), 0)
+	return _get_slot_logic_module().get_slot_remaining_minutes(self, slot_index)
 
 
 func get_slot_total_minutes(slot_index: int) -> int:
-	if not _is_valid_slot_index(slot_index):
-		return 0
-	if is_slot_empty(slot_index):
-		return 0
-	return max(int(slots[slot_index].get("total_minutes", 0)), 0)
+	return _get_slot_logic_module().get_slot_total_minutes(self, slot_index)
 
 
 func get_slot_progress_ratio(slot_index: int) -> float:
-	if not _is_valid_slot_index(slot_index):
-		return 0.0
-	if is_slot_empty(slot_index):
-		return 0.0
-	if not has_slot_active_growth(slot_index):
-		return 1.0
-
-	var total_minutes: int = get_slot_total_minutes(slot_index)
-	if total_minutes <= 0:
-		return 0.0
-
-	var remaining_minutes: int = get_slot_remaining_minutes(slot_index)
-	var grown_minutes: int = total_minutes - remaining_minutes
-	return clamp(float(grown_minutes) / float(total_minutes), 0.0, 1.0)
+	return _get_slot_logic_module().get_slot_progress_ratio(self, slot_index)
 
 
 func get_slot_status_text(slot_index: int) -> String:
-	if not _is_valid_slot_index(slot_index):
-		return "無効"
-	if is_slot_empty(slot_index):
-		return "空きスロット"
-
-	var display_name: String = get_slot_display_name(slot_index)
-	var ready_count: int = get_slot_ready_count(slot_index)
-	var queued_count: int = get_slot_queued_count(slot_index)
-	if queued_count <= 0 and ready_count > 0:
-		return "%s\n収穫待ち: %d回分" % [display_name, ready_count]
-
-	var remaining_minutes: int = get_slot_remaining_minutes(slot_index)
-	var progress_percent: int = int(round(get_slot_progress_ratio(slot_index) * 100.0))
-	return "%s\n進行中: %d回 / 収穫待ち: %d回\n現在: 残り%d分 / %d%%" % [display_name, queued_count, ready_count, remaining_minutes, progress_percent]
+	return _get_slot_logic_module().get_slot_status_text(self, slot_index)
 
 
 func get_slot_harvest_amount(slot_index: int) -> int:
-	if not _is_valid_slot_index(slot_index):
-		return 0
-	if is_slot_empty(slot_index):
-		return 0
-	return max(int(slots[slot_index].get("harvest_amount", 0)), 0)
+	return _get_slot_logic_module().get_slot_harvest_amount(self, slot_index)
 
 
 func get_slot_ready_count(slot_index: int) -> int:
-	if not _is_valid_slot_index(slot_index):
-		return 0
-	if is_slot_empty(slot_index):
-		return 0
-	return max(int(slots[slot_index].get("ready_count", 0)), 0)
+	return _get_slot_logic_module().get_slot_ready_count(self, slot_index)
 
 
 func get_slot_queued_count(slot_index: int) -> int:
-	if not _is_valid_slot_index(slot_index):
-		return 0
-	if is_slot_empty(slot_index):
-		return 0
-	return max(int(slots[slot_index].get("queued_count", 0)), 0)
+	return _get_slot_logic_module().get_slot_queued_count(self, slot_index)
 
 
 func get_slot_seed_item(slot_index: int) -> ItemData:
-	if not _is_valid_slot_index(slot_index):
-		return null
-	if is_slot_empty(slot_index):
-		return null
+	return _get_slot_logic_module().get_slot_seed_item(self, slot_index)
 
-	var path: String = str(slots[slot_index].get("seed_item_path", ""))
-	if path.is_empty():
-		return null
-	return load(path) as ItemData
+
+func get_slot_seed_quality(slot_index: int) -> int:
+	return _get_slot_logic_module().get_slot_seed_quality(self, slot_index)
+
+
+func get_slot_quality_bonus(slot_index: int) -> int:
+	return _get_slot_logic_module().get_slot_quality_bonus(self, slot_index)
+
+
+func set_slot_quality_bonus(slot_index: int, quality_bonus: int) -> void:
+	_get_slot_logic_module().set_slot_quality_bonus(self, slot_index, quality_bonus)
 
 
 func get_slot_harvest_item(slot_index: int) -> ItemData:
-	if not _is_valid_slot_index(slot_index):
-		return null
-	if is_slot_empty(slot_index):
-		return null
-
-	var path: String = str(slots[slot_index].get("harvest_item_path", ""))
-	if path.is_empty():
-		return null
-	return load(path) as ItemData
+	return _get_slot_logic_module().get_slot_harvest_item(self, slot_index)
 
 
 func _is_valid_slot_index(slot_index: int) -> bool:
-	return slot_index >= 0 and slot_index < slots.size()
+	return _get_slot_logic_module().is_valid_slot_index(self, slot_index)
 
 
 func _get_save_module() -> CropMachineSaveModule:
@@ -556,6 +296,18 @@ func _get_recipe_repository() -> CropMachineRecipeRepository:
 	if _recipe_repository == null:
 		_recipe_repository = CropMachineRecipeRepository.new()
 	return _recipe_repository
+
+
+func _get_slot_logic_module() -> CropMachineSlotLogicModule:
+	if _slot_logic_module == null:
+		_slot_logic_module = CropMachineSlotLogicModule.new()
+	return _slot_logic_module
+
+
+func _get_harvest_quality_module() -> CropMachineHarvestQualityModule:
+	if _harvest_quality_module == null:
+		_harvest_quality_module = CropMachineHarvestQualityModule.new()
+	return _harvest_quality_module
 
 
 func get_save_key() -> String:

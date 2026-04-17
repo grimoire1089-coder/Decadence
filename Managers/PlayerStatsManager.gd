@@ -232,6 +232,18 @@ func get_farming_quality_bonus() -> float:
 	)
 
 
+func get_farming_quality_level_bonus() -> int:
+	return max(get_skill(FARMING_SKILL_NAME), 0)
+
+
+func get_farming_quality_passive_flat_bonus() -> int:
+	return 0
+
+
+func get_farming_quality_passive_multiplier() -> float:
+	return 1.0
+
+
 func get_hp() -> int:
 	return int(vitals.get("hp", 0))
 

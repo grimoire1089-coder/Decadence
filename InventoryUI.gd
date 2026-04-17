@@ -356,6 +356,119 @@ func get_item_count_by_data(item_data: ItemData) -> int:
 
 	return 0
 
+
+func get_highest_quality_item_by_id(item_id: StringName) -> ItemData:
+	var best_item: ItemData = null
+	for entry_obj in items:
+		var entry: InventoryEntry = entry_obj
+		if entry.item_data == null or entry.item_data.id != item_id:
+			continue
+		if _is_better_quality_item(entry.item_data, best_item):
+			best_item = entry.item_data
+	return best_item
+
+
+func remove_highest_quality_items_by_id(item_id: StringName, amount: int = 1) -> Dictionary:
+	var result: Dictionary = {
+		"success": false,
+		"removed_entries": [],
+		"representative_item_data": null,
+		"seed_quality": 0
+	}
+
+	if amount <= 0:
+		return result
+	if get_item_count(item_id) < amount:
+		return result
+
+	var candidates: Array[InventoryEntry] = []
+	for entry_obj in items:
+		var entry: InventoryEntry = entry_obj
+		if entry.item_data != null and entry.item_data.id == item_id:
+			candidates.append(entry)
+
+	if candidates.is_empty():
+		return result
+
+	candidates.sort_custom(_sort_inventory_entries_by_quality_desc)
+
+	var remaining: int = amount
+	var removed_entries: Array = []
+	var representative_item_data: ItemData = candidates[0].item_data
+
+	for entry in candidates:
+		if remaining <= 0:
+			break
+		if entry == null or entry.item_data == null or entry.count <= 0:
+			continue
+
+		var remove_count: int = min(entry.count, remaining)
+		if remove_count <= 0:
+			continue
+
+		removed_entries.append({
+			"item_data": entry.item_data,
+			"count": remove_count
+		})
+
+		entry.count -= remove_count
+		remaining -= remove_count
+
+		if entry.count <= 0:
+			if selected_item_data == entry.item_data:
+				selected_item_data = null
+			items.erase(entry)
+
+	if remaining > 0:
+		restore_removed_item_entries(removed_entries)
+		return result
+
+	refresh()
+
+	result["success"] = true
+	result["removed_entries"] = removed_entries
+	result["representative_item_data"] = representative_item_data
+	if representative_item_data != null:
+		result["seed_quality"] = max(representative_item_data.get_quality(), 0)
+	return result
+
+
+func restore_removed_item_entries(removed_entries: Array) -> void:
+	for removed_entry in removed_entries:
+		if typeof(removed_entry) != TYPE_DICTIONARY:
+			continue
+		var item_data: ItemData = removed_entry.get("item_data", null) as ItemData
+		var count: int = max(int(removed_entry.get("count", 0)), 0)
+		if item_data == null or count <= 0:
+			continue
+		add_item(item_data, count)
+
+
+func _sort_inventory_entries_by_quality_desc(a: InventoryEntry, b: InventoryEntry) -> bool:
+	var a_item: ItemData = null if a == null else a.item_data
+	var b_item: ItemData = null if b == null else b.item_data
+	if a_item == null:
+		return false
+	if b_item == null:
+		return true
+	if a_item.get_quality() != b_item.get_quality():
+		return a_item.get_quality() > b_item.get_quality()
+	if a_item.get_rank() != b_item.get_rank():
+		return a_item.get_rank() > b_item.get_rank()
+	return String(a_item.resource_path) < String(b_item.resource_path)
+
+
+func _is_better_quality_item(candidate: ItemData, current_best: ItemData) -> bool:
+	if candidate == null:
+		return false
+	if current_best == null:
+		return true
+	if candidate.get_quality() != current_best.get_quality():
+		return candidate.get_quality() > current_best.get_quality()
+	if candidate.get_rank() != current_best.get_rank():
+		return candidate.get_rank() > current_best.get_rank()
+	return String(candidate.resource_path) < String(current_best.resource_path)
+
 func get_selected_item_data() -> ItemData:
 	return selected_item_data
 

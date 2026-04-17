@@ -817,6 +817,108 @@ func _call_item_count_method(target: Node, method_name: String, item_data: ItemD
 	return best_numeric_result
 
 
+func _collect_inventory_targets() -> Array[Node]:
+	var targets: Array[Node] = []
+
+	if current_player != null:
+		for property_name in ["inventory_ui", "inventory", "inventory_manager"]:
+			var value: Variant = current_player.get(property_name)
+			if value is Node:
+				_append_item_count_target(targets, value as Node)
+
+	var inventory_ui: Node = get_tree().get_first_node_in_group("inventory_ui")
+	_append_item_count_target(targets, inventory_ui)
+	_append_item_count_target(targets, current_player)
+
+	return targets
+
+
+func _remove_seed_items_for_planting(seed_item: ItemData, amount: int) -> Dictionary:
+	var result: Dictionary = {
+		"success": false,
+		"removed_entries": [],
+		"representative_item_data": seed_item,
+		"seed_quality": 0
+	}
+
+	if seed_item == null or amount <= 0:
+		return result
+
+	for target in _collect_inventory_targets():
+		if target == null:
+			continue
+
+		if not str(seed_item.id).is_empty() and target.has_method("remove_highest_quality_items_by_id"):
+			var advanced_result: Variant = target.call("remove_highest_quality_items_by_id", StringName(seed_item.id), amount)
+			if typeof(advanced_result) == TYPE_DICTIONARY:
+				var advanced_dict: Dictionary = advanced_result
+				if bool(advanced_dict.get("success", false)):
+					if advanced_dict.get("representative_item_data", null) == null:
+						advanced_dict["representative_item_data"] = seed_item
+					return advanced_dict
+
+		if target == current_player and current_player != null and current_player.has_method("remove_item_from_inventory"):
+			var removed_ok: bool = bool(current_player.call("remove_item_from_inventory", seed_item, amount))
+			if removed_ok:
+				result["success"] = true
+				result["removed_entries"] = [{"item_data": seed_item, "count": amount}]
+				result["seed_quality"] = max(seed_item.get_quality(), 0)
+				return result
+
+		if target.has_method("remove_item"):
+			var remove_item_ok: bool = bool(target.call("remove_item", seed_item, amount))
+			if remove_item_ok:
+				result["success"] = true
+				result["removed_entries"] = [{"item_data": seed_item, "count": amount}]
+				result["seed_quality"] = max(seed_item.get_quality(), 0)
+				return result
+
+		if not str(seed_item.id).is_empty() and target.has_method("remove_item_by_id"):
+			var remove_by_id_ok: bool = bool(target.call("remove_item_by_id", StringName(seed_item.id), amount))
+			if remove_by_id_ok:
+				result["success"] = true
+				result["removed_entries"] = [{"item_data": seed_item, "count": amount}]
+				result["seed_quality"] = max(seed_item.get_quality(), 0)
+				return result
+
+	return result
+
+
+func _restore_removed_seed_entries(removed_entries: Array) -> void:
+	if removed_entries.is_empty():
+		return
+
+	for target in _collect_inventory_targets():
+		if target == null:
+			continue
+
+		if target.has_method("restore_removed_item_entries"):
+			target.call("restore_removed_item_entries", removed_entries)
+			return
+
+		if target.has_method("add_item"):
+			for removed_entry in removed_entries:
+				if typeof(removed_entry) != TYPE_DICTIONARY:
+					continue
+				var item_data: ItemData = removed_entry.get("item_data", null) as ItemData
+				var count: int = max(int(removed_entry.get("count", 0)), 0)
+				if item_data == null or count <= 0:
+					continue
+				target.call("add_item", item_data, count)
+			return
+
+		if target == current_player and current_player != null and current_player.has_method("add_item_to_inventory"):
+			for removed_entry in removed_entries:
+				if typeof(removed_entry) != TYPE_DICTIONARY:
+					continue
+				var item_data: ItemData = removed_entry.get("item_data", null) as ItemData
+				var count: int = max(int(removed_entry.get("count", 0)), 0)
+				if item_data == null or count <= 0:
+					continue
+				current_player.call("add_item_to_inventory", item_data, count)
+			return
+
+
 func _update_selected_slot_info() -> void:
 	if current_machine == null:
 		info_label.text = ""
@@ -935,15 +1037,19 @@ func _on_plant_pressed() -> void:
 		return
 
 	var plant_count: int = max(int(plant_count_spinbox.value), 1)
-	var removed_ok: bool = bool(current_player.call("remove_item_from_inventory", recipe.seed_item, plant_count))
-	if not removed_ok:
+	var removed_seed_result: Dictionary = _remove_seed_items_for_planting(recipe.seed_item, plant_count)
+	if not bool(removed_seed_result.get("success", false)):
 		info_label.text = "必要な種が %d 個 足りない" % plant_count
 		return
 
+	var representative_seed_item: ItemData = removed_seed_result.get("representative_item_data", null) as ItemData
+	if representative_seed_item == null:
+		representative_seed_item = recipe.seed_item
+
 	var was_empty: bool = current_machine.is_slot_empty(selected_slot_index)
-	var planted: bool = current_machine.plant_slot(selected_slot_index, recipe, plant_count)
+	var planted: bool = current_machine.plant_slot(selected_slot_index, recipe, plant_count, representative_seed_item)
 	if not planted:
-		current_player.call("add_item_to_inventory", recipe.seed_item, plant_count)
+		_restore_removed_seed_entries(removed_seed_result.get("removed_entries", []))
 		info_label.text = "植え付けできなかった"
 		return
 
