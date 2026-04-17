@@ -15,6 +15,8 @@ class_name CropMachine
 var slots: Array[Dictionary] = []
 var _last_total_minutes: int = -1
 var _save_module: CropMachineSaveModule = CropMachineSaveModule.new()
+var _growth_module: CropMachineGrowthModule = CropMachineGrowthModule.new()
+var _recipe_repository: CropMachineRecipeRepository = CropMachineRecipeRepository.new()
 
 @onready var interact_area: Area2D = $InteractArea
 
@@ -65,91 +67,23 @@ func _make_empty_slot() -> Dictionary:
 
 
 func _reload_available_recipes() -> void:
-	var merged: Array[CropRecipe] = []
-	var seen: Dictionary = {}
-
-	for recipe in available_recipes:
-		_append_unique_recipe(merged, seen, recipe)
-
-	for recipe in _load_recipes_from_folder(recipe_folder_path, include_subfolders):
-		_append_unique_recipe(merged, seen, recipe)
-
-	available_recipes = merged
+	_get_recipe_repository().reload_available_recipes(self)
 
 
 func _append_unique_recipe(target: Array[CropRecipe], seen: Dictionary, recipe: CropRecipe) -> bool:
-	if recipe == null:
-		return false
-	if not recipe.is_valid_recipe():
-		return false
-
-	var key: String = _get_recipe_unique_key(recipe)
-	if key.is_empty():
-		return false
-	if seen.has(key):
-		return false
-
-	seen[key] = true
-	target.append(recipe)
-	return true
+	return _get_recipe_repository().append_unique_recipe(target, seen, recipe)
 
 
 func _get_recipe_unique_key(recipe: CropRecipe) -> String:
-	if recipe == null:
-		return ""
-	if not recipe.resource_path.is_empty():
-		return recipe.resource_path
-	if not str(recipe.id).is_empty():
-		return str(recipe.id)
-	return recipe.get_display_name()
+	return _get_recipe_repository().get_recipe_unique_key(recipe)
 
 
 func _load_recipes_from_folder(folder_path: String, recursive: bool) -> Array[CropRecipe]:
-	var results: Array[CropRecipe] = []
-	if folder_path.is_empty():
-		return results
-	if not DirAccess.dir_exists_absolute(folder_path):
-		_log_debug("栽培レシピフォルダが見つからない: %s" % folder_path)
-		return results
-
-	_collect_recipes_in_folder(folder_path, recursive, results)
-	return results
+	return _get_recipe_repository().load_recipes_from_folder(self, folder_path, recursive)
 
 
 func _collect_recipes_in_folder(folder_path: String, recursive: bool, out_results: Array[CropRecipe]) -> void:
-	var dir: DirAccess = DirAccess.open(folder_path)
-	if dir == null:
-		_log_error("栽培レシピフォルダを開けない: %s" % folder_path)
-		return
-
-	dir.list_dir_begin()
-	while true:
-		var entry: String = dir.get_next()
-		if entry.is_empty():
-			break
-		if entry == "." or entry == "..":
-			continue
-
-		var full_path: String = folder_path.path_join(entry)
-		if dir.current_is_dir():
-			if recursive:
-				_collect_recipes_in_folder(full_path, true, out_results)
-			continue
-
-		var lower_entry: String = entry.to_lower()
-		if not lower_entry.ends_with(".tres") and not lower_entry.ends_with(".res"):
-			continue
-
-		var recipe: CropRecipe = load(full_path) as CropRecipe
-		if recipe == null:
-			continue
-		if not recipe.is_valid_recipe():
-			_log_debug("無効な栽培レシピをスキップ: %s" % full_path)
-			continue
-
-		out_results.append(recipe)
-
-	dir.list_dir_end()
+	_get_recipe_repository().collect_recipes_in_folder(self, folder_path, recursive, out_results)
 
 
 func _connect_interact_area() -> void:
@@ -164,98 +98,27 @@ func _connect_interact_area() -> void:
 
 
 func _connect_time_manager() -> void:
-	var time_manager: Node = _get_time_manager()
-	if time_manager == null:
-		return
-
-	var callable: Callable = Callable(self, "_on_time_changed")
-	if time_manager.has_signal("time_changed") and not time_manager.is_connected("time_changed", callable):
-		time_manager.connect("time_changed", callable)
+	_get_growth_module().connect_time_manager(self)
 
 
 func _disconnect_time_manager() -> void:
-	var time_manager: Node = _get_time_manager()
-	if time_manager == null:
-		return
-
-	var callable: Callable = Callable(self, "_on_time_changed")
-	if time_manager.has_signal("time_changed") and time_manager.is_connected("time_changed", callable):
-		time_manager.disconnect("time_changed", callable)
+	_get_growth_module().disconnect_time_manager(self)
 
 
 func _sync_last_total_minutes() -> void:
-	var time_manager: Node = _get_time_manager()
-	if time_manager == null:
-		_last_total_minutes = -1
-		return
-
-	var current_day: int = int(time_manager.get("day"))
-	var current_hour: int = int(time_manager.get("hour"))
-	var current_minute: int = int(time_manager.get("minute"))
-	_last_total_minutes = _to_total_minutes(current_day, current_hour, current_minute)
+	_get_growth_module().sync_last_total_minutes(self)
 
 
 func _to_total_minutes(day: int, hour: int, minute: int) -> int:
-	return ((max(day, 1) - 1) * 24 * 60) + (clamp(hour, 0, 23) * 60) + clamp(minute, 0, 59)
+	return _get_growth_module().to_total_minutes(day, hour, minute)
 
 
 func _on_time_changed(day: int, hour: int, minute: int) -> void:
-	var new_total: int = _to_total_minutes(day, hour, minute)
-	if _last_total_minutes < 0:
-		_last_total_minutes = new_total
-		return
-
-	var delta_minutes: int = new_total - _last_total_minutes
-	_last_total_minutes = new_total
-	if delta_minutes <= 0:
-		return
-
-	_advance_growth(delta_minutes)
+	_get_growth_module().handle_time_changed(self, day, hour, minute)
 
 
 func _advance_growth(delta_minutes: int) -> void:
-	var changed: bool = false
-
-	for i in range(slots.size()):
-		if is_slot_empty(i):
-			continue
-
-		var slot_before: Dictionary = slots[i].duplicate(true)
-		var slot: Dictionary = slots[i]
-		var ready_before: int = max(int(slot.get("ready_count", 0)), 0)
-		var delta_left: int = delta_minutes
-
-		while delta_left > 0 and max(int(slot.get("queued_count", 0)), 0) > 0:
-			var current_remaining: int = max(int(slot.get("remaining_minutes", 0)), 0)
-			if current_remaining <= 0:
-				current_remaining = max(int(slot.get("total_minutes", 0)), 1)
-				slot["remaining_minutes"] = current_remaining
-
-			if delta_left >= current_remaining:
-				delta_left -= current_remaining
-				slot["ready_count"] = max(int(slot.get("ready_count", 0)), 0) + 1
-				slot["queued_count"] = max(int(slot.get("queued_count", 0)), 0) - 1
-
-				if max(int(slot.get("queued_count", 0)), 0) > 0:
-					slot["remaining_minutes"] = max(int(slot.get("total_minutes", 0)), 1)
-				else:
-					slot["remaining_minutes"] = 0
-			else:
-				slot["remaining_minutes"] = current_remaining - delta_left
-				delta_left = 0
-
-		var ready_after: int = max(int(slot.get("ready_count", 0)), 0)
-		if ready_after > ready_before:
-			var added_ready: int = ready_after - ready_before
-			_log_system("%sのスロット%dで%sが %d 回分 収穫待ちになった" % [machine_name, i + 1, get_slot_display_name_from_slot(slot), added_ready])
-
-		if slot != slot_before:
-			slots[i] = slot
-			changed = true
-
-	if changed:
-		save_data()
-		_refresh_open_ui()
+	_get_growth_module().advance_growth(self, delta_minutes)
 
 
 func get_interact_action_text() -> String:
@@ -681,6 +544,18 @@ func _get_save_module() -> CropMachineSaveModule:
 	if _save_module == null:
 		_save_module = CropMachineSaveModule.new()
 	return _save_module
+
+
+func _get_growth_module() -> CropMachineGrowthModule:
+	if _growth_module == null:
+		_growth_module = CropMachineGrowthModule.new()
+	return _growth_module
+
+
+func _get_recipe_repository() -> CropMachineRecipeRepository:
+	if _recipe_repository == null:
+		_recipe_repository = CropMachineRecipeRepository.new()
+	return _recipe_repository
 
 
 func get_save_key() -> String:
