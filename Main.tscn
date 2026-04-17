@@ -67,8 +67,10 @@
 [ext_resource type="PackedScene" path="res://UI/SkillHotbarUI.tscn" id="63_gdb40"]
 [ext_resource type="PackedScene" uid="uid://bfo7iktm6ciks" path="res://UI/Active_Skills/RoleSelectUI.tscn" id="65_8h1yq"]
 [ext_resource type="PackedScene" uid="uid://dnovnatyiscdl" path="res://UI/BuffStatusUI.tscn" id="66_fykug"]
+[ext_resource type="Script" uid="uid://cdoromro6h4sh" path="res://Main.gd" id="99_main_script"]
 
 [node name="Main" type="Node2D" unique_id=2061062064]
+script = ExtResource("99_main_script")
 
 [node name="BGMManager" type="Node" parent="." unique_id=2131174254]
 script = ExtResource("1_2gh4u")
