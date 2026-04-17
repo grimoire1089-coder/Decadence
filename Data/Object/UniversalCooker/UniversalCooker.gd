@@ -16,7 +16,7 @@ const SAVE_PATH_PREFIX: String = "user://universal_cooker_"
 	"飲み物:16",
 	"発酵:32"
 ) var station_flags: int = 63
-@export var available_recipes: Array[CookingRecipe] = []
+@export var available_recipes: Array = []
 @export_dir var recipe_folder_path: String = "res://Data/Cooking_Recipe"
 @export var include_subfolders: bool = false
 @export var use_json_recipes: bool = true
@@ -28,7 +28,7 @@ const SAVE_PATH_PREFIX: String = "user://universal_cooker_"
 
 var slots: Array[Dictionary] = []
 var _last_total_minutes: int = -1
-var _base_available_recipes: Array[CookingRecipe] = []
+var _base_available_recipes: Array = []
 var _base_available_recipes_cached: bool = false
 
 @onready var interact_area: Area2D = get_node_or_null("InteractArea") as Area2D
@@ -77,29 +77,33 @@ func _cache_base_available_recipes() -> void:
 	_base_available_recipes_cached = true
 	_base_available_recipes.clear()
 
-	for recipe in available_recipes:
+	for recipe_obj in available_recipes:
+		var recipe: CookingRecipe = recipe_obj as CookingRecipe
 		if recipe != null:
 			_base_available_recipes.append(recipe)
 
 
 func _reload_available_recipes() -> void:
-	var merged: Array[CookingRecipe] = []
+	var merged: Array = []
 	var seen: Dictionary = {}
 	var base_count: int = 0
 	var folder_count: int = 0
 	var json_count: int = 0
 
-	for recipe in _base_available_recipes:
+	for recipe_obj in _base_available_recipes:
+		var recipe: CookingRecipe = recipe_obj as CookingRecipe
 		if _append_unique_recipe(merged, seen, recipe):
 			base_count += 1
 
-	var folder_recipes: Array[CookingRecipe] = _load_recipes_from_folder(recipe_folder_path, include_subfolders)
-	for recipe in folder_recipes:
+	var folder_recipes: Array = _load_recipes_from_folder(recipe_folder_path, include_subfolders)
+	for recipe_obj in folder_recipes:
+		var recipe: CookingRecipe = recipe_obj as CookingRecipe
 		if _append_unique_recipe(merged, seen, recipe):
 			folder_count += 1
 
-	var json_recipes: Array[CookingRecipe] = _load_recipes_from_json()
-	for recipe in json_recipes:
+	var json_recipes: Array = _load_recipes_from_json()
+	for recipe_obj in json_recipes:
+		var recipe: CookingRecipe = recipe_obj as CookingRecipe
 		if _append_unique_recipe(merged, seen, recipe):
 			json_count += 1
 
@@ -107,7 +111,7 @@ func _reload_available_recipes() -> void:
 	_log_debug("万能調理器レシピ再読込: 手動%d / フォルダ%d / JSON%d / 合計%d" % [base_count, folder_count, json_count, available_recipes.size()])
 
 
-func _append_unique_recipe(target: Array[CookingRecipe], seen: Dictionary, recipe: CookingRecipe) -> bool:
+func _append_unique_recipe(target: Array, seen: Dictionary, recipe: CookingRecipe) -> bool:
 	if recipe == null:
 		return false
 	if not recipe.is_valid_recipe():
@@ -134,8 +138,8 @@ func _get_recipe_unique_key(recipe: CookingRecipe) -> String:
 	return recipe.get_display_name()
 
 
-func _load_recipes_from_folder(folder_path: String, recursive: bool) -> Array[CookingRecipe]:
-	var results: Array[CookingRecipe] = []
+func _load_recipes_from_folder(folder_path: String, recursive: bool) -> Array:
+	var results: Array = []
 	if folder_path.is_empty():
 		return results
 	if not DirAccess.dir_exists_absolute(folder_path):
@@ -146,8 +150,8 @@ func _load_recipes_from_folder(folder_path: String, recursive: bool) -> Array[Co
 	return results
 
 
-func _load_recipes_from_json() -> Array[CookingRecipe]:
-	var results: Array[CookingRecipe] = []
+func _load_recipes_from_json() -> Array:
+	var results: Array = []
 	if not use_json_recipes:
 		_log_debug("JSONレシピ読み込み: OFF")
 		return results
@@ -199,7 +203,7 @@ func _get_effective_json_paths() -> Array[String]:
 	return paths
 
 
-func _collect_recipes_in_folder(folder_path: String, recursive: bool, out_results: Array[CookingRecipe]) -> void:
+func _collect_recipes_in_folder(folder_path: String, recursive: bool, out_results: Array) -> void:
 	var dir: DirAccess = DirAccess.open(folder_path)
 	if dir == null:
 		_log_error("料理レシピフォルダを開けない: %s" % folder_path)

@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="CropRecipe" format=3 uid="uid://bf00fg1wsb7sv"]
 
 [ext_resource type="Resource" uid="uid://cc7c31ecbf5iu" path="res://Data/Items/Item_defs/Wheat.tres" id="1_ybm1v"]
-[ext_resource type="Script" uid="uid://dnnc3x601bsis" path="res://Scripts/CropRecipe.gd" id="2_qdk5f"]
+[ext_resource type="Script" uid="uid://dnnc3x601bsis" path="res://Data/Object/CropMachine/CropRecipe.gd" id="2_qdk5f"]
 [ext_resource type="Resource" uid="uid://cyoif53etg7fb" path="res://Data/Items/Item_defs/Seed/Seed_Wheat.tres" id="3_eilhe"]
 
 [resource]

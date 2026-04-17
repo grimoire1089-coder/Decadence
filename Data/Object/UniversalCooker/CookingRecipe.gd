@@ -15,7 +15,7 @@ enum StationType {
 @export var recipe_name: String = ""
 @export_multiline var description: String = ""
 
-@export var ingredients: Array[RecipeIngredient] = []
+@export var ingredients: Array = []
 @export var ingredient_counts: PackedInt32Array = []
 
 @export var result_item: ItemData
@@ -47,7 +47,7 @@ func is_valid_recipe() -> bool:
 		return false
 
 	for i in range(ingredients.size()):
-		var ingredient: RecipeIngredient = ingredients[i]
+		var ingredient: RecipeIngredient = ingredients[i] as RecipeIngredient
 		if ingredient == null:
 			return false
 		if not ingredient.is_valid_ingredient():
@@ -89,7 +89,7 @@ func get_ingredients_summary_text() -> String:
 	var parts: PackedStringArray = PackedStringArray()
 
 	for i in range(ingredients.size()):
-		var ingredient: RecipeIngredient = ingredients[i]
+		var ingredient: RecipeIngredient = ingredients[i] as RecipeIngredient
 		if ingredient == null:
 			continue
 

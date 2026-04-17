@@ -165,7 +165,7 @@ func _rebuild_shop_grid() -> void:
 		selected_product_index = -1
 		return
 
-	var products: Array[ShopProduct] = current_box.get_products(selected_shop_index)
+	var products: Array = current_box.get_products(selected_shop_index)
 	if products.is_empty():
 		var empty_label: Label = Label.new()
 		empty_label.text = "商品が登録されていない"
@@ -179,7 +179,9 @@ func _rebuild_shop_grid() -> void:
 	selected_product_index = clamp(selected_product_index, 0, products.size() - 1)
 
 	for i in range(products.size()):
-		var product: ShopProduct = products[i]
+		var product: ShopProduct = products[i] as ShopProduct
+		if product == null:
+			continue
 		var button: Button = _make_card_button(i == selected_product_index)
 		_populate_product_button(button, product)
 		button.pressed.connect(_on_product_pressed.bind(i))

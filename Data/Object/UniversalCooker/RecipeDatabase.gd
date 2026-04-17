@@ -8,9 +8,9 @@ func clear_errors() -> void:
 	errors = PackedStringArray()
 
 
-func load_recipes_from_json_files(json_paths: Array[String], registry: ItemRegistry) -> Array[CookingRecipe]:
+func load_recipes_from_json_files(json_paths: Array[String], registry: ItemRegistry) -> Array:
 	clear_errors()
-	var recipes: Array[CookingRecipe] = []
+	var recipes: Array = []
 	for json_path in json_paths:
 		if json_path.is_empty():
 			continue
@@ -19,12 +19,12 @@ func load_recipes_from_json_files(json_paths: Array[String], registry: ItemRegis
 	return recipes
 
 
-func load_recipes_from_json_text(json_text: String, registry: ItemRegistry, source_name: String = "<json_text>") -> Array[CookingRecipe]:
+func load_recipes_from_json_text(json_text: String, registry: ItemRegistry, source_name: String = "<json_text>") -> Array:
 	clear_errors()
 	return _load_rows_from_text(json_text, registry, source_name)
 
 
-func _load_single_file(json_path: String, registry: ItemRegistry) -> Array[CookingRecipe]:
+func _load_single_file(json_path: String, registry: ItemRegistry) -> Array:
 	if not FileAccess.file_exists(json_path):
 		errors.append("JSONレシピが見つからない: %s" % json_path)
 		return []
@@ -37,8 +37,8 @@ func _load_single_file(json_path: String, registry: ItemRegistry) -> Array[Cooki
 	return _load_rows_from_text(file.get_as_text(), registry, json_path)
 
 
-func _load_rows_from_text(json_text: String, registry: ItemRegistry, source_name: String) -> Array[CookingRecipe]:
-	var results: Array[CookingRecipe] = []
+func _load_rows_from_text(json_text: String, registry: ItemRegistry, source_name: String) -> Array:
+	var results: Array = []
 	var json: JSON = JSON.new()
 	var err: int = json.parse(json_text)
 	if err != OK:
@@ -199,8 +199,8 @@ func _collect_label_id_array(source: Dictionary, key: String) -> Array:
 	return result
 
 
-func _resolve_labels(label_ids: Array, registry: ItemRegistry, recipe_name: String, ingredient_index: int, field_name: String) -> Array[ItemTag]:
-	var result: Array[ItemTag] = []
+func _resolve_labels(label_ids: Array, registry: ItemRegistry, recipe_name: String, ingredient_index: int, field_name: String) -> Array:
+	var result: Array = []
 	var seen: Dictionary = {}
 
 	for label_id_variant in label_ids:

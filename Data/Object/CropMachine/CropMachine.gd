@@ -8,7 +8,7 @@ class_name CropMachine
 @export_range(1, 240) var max_slot_count: int = 240
 @export_range(0, 999999999) var slot_unlock_cost_base: int = 100
 @export_range(1.0, 100.0, 0.1) var slot_unlock_cost_multiplier: float = 1.5
-@export var available_recipes: Array[CropRecipe] = []
+@export var available_recipes: Array = []
 @export_dir var recipe_folder_path: String = "res://Data/Crop_Recipe"
 @export var include_subfolders: bool = false
 
@@ -74,7 +74,7 @@ func _reload_available_recipes() -> void:
 	_get_recipe_repository().reload_available_recipes(self)
 
 
-func _append_unique_recipe(target: Array[CropRecipe], seen: Dictionary, recipe: CropRecipe) -> bool:
+func _append_unique_recipe(target: Array, seen: Dictionary, recipe: CropRecipe) -> bool:
 	return _get_recipe_repository().append_unique_recipe(target, seen, recipe)
 
 
@@ -82,11 +82,11 @@ func _get_recipe_unique_key(recipe: CropRecipe) -> String:
 	return _get_recipe_repository().get_recipe_unique_key(recipe)
 
 
-func _load_recipes_from_folder(folder_path: String, recursive: bool) -> Array[CropRecipe]:
+func _load_recipes_from_folder(folder_path: String, recursive: bool) -> Array:
 	return _get_recipe_repository().load_recipes_from_folder(self, folder_path, recursive)
 
 
-func _collect_recipes_in_folder(folder_path: String, recursive: bool, out_results: Array[CropRecipe]) -> void:
+func _collect_recipes_in_folder(folder_path: String, recursive: bool, out_results: Array) -> void:
 	_get_recipe_repository().collect_recipes_in_folder(self, folder_path, recursive, out_results)
 
 

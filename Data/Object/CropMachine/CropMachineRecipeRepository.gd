@@ -6,7 +6,7 @@ func reload_available_recipes(machine: Node) -> void:
 	if machine == null:
 		return
 
-	var merged: Array[CropRecipe] = []
+	var merged: Array = []
 	var seen: Dictionary = {}
 
 	for recipe in machine.available_recipes:
@@ -18,7 +18,7 @@ func reload_available_recipes(machine: Node) -> void:
 	machine.available_recipes = merged
 
 
-func append_unique_recipe(target: Array[CropRecipe], seen: Dictionary, recipe: CropRecipe) -> bool:
+func append_unique_recipe(target: Array, seen: Dictionary, recipe: CropRecipe) -> bool:
 	if recipe == null:
 		return false
 	if not recipe.is_valid_recipe():
@@ -45,8 +45,8 @@ func get_recipe_unique_key(recipe: CropRecipe) -> String:
 	return recipe.get_display_name()
 
 
-func load_recipes_from_folder(machine: Node, folder_path: String, recursive: bool) -> Array[CropRecipe]:
-	var results: Array[CropRecipe] = []
+func load_recipes_from_folder(machine: Node, folder_path: String, recursive: bool) -> Array:
+	var results: Array = []
 	if folder_path.is_empty():
 		return results
 	if not DirAccess.dir_exists_absolute(folder_path):
@@ -57,7 +57,7 @@ func load_recipes_from_folder(machine: Node, folder_path: String, recursive: boo
 	return results
 
 
-func collect_recipes_in_folder(machine: Node, folder_path: String, recursive: bool, out_results: Array[CropRecipe]) -> void:
+func collect_recipes_in_folder(machine: Node, folder_path: String, recursive: bool, out_results: Array) -> void:
 	var dir: DirAccess = DirAccess.open(folder_path)
 	if dir == null:
 		_log_error(machine, "栽培レシピフォルダを開けない: %s" % folder_path)

@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="CropRecipe" format=3 uid="uid://cev3wfm2yy8as"]
 
 [ext_resource type="Resource" uid="uid://bs3ihu05l28xx" path="res://Data/Items/Item_defs/Crops/Corn.tres" id="1_ga33d"]
-[ext_resource type="Script" uid="uid://dnnc3x601bsis" path="res://Scripts/CropRecipe.gd" id="2_0ictg"]
+[ext_resource type="Script" uid="uid://dnnc3x601bsis" path="res://Data/Object/CropMachine/CropRecipe.gd" id="2_0ictg"]
 [ext_resource type="Resource" uid="uid://oqeogjc0xwb" path="res://Data/Items/Item_defs/Seed/Seed_Corn.tres" id="3_0ictg"]
 
 [resource]

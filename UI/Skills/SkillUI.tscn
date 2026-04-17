@@ -37,7 +37,7 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("1_q5v4b")
 skill_row_scene = ExtResource("2_0f8wx")
-role_skill_resources = Array[Resource]([null])
+role_skill_resources = []
 
 [node name="ColorRect" type="ColorRect" parent="." unique_id=1029995937]
 layout_mode = 1

@@ -24,7 +24,7 @@ const SUPPORTED_SKILLS: Array[Dictionary] = [
 ]
 
 @export var skill_row_scene: PackedScene
-@export var role_skill_resources: Array[Resource] = []
+@export var role_skill_resources: Array = []
 
 @onready var panel: Panel = $CenterContainer/Panel
 @onready var title_label: Label = $CenterContainer/Panel/MarginContainer/RootVBox/HeaderHBox/TitleLabel
@@ -339,7 +339,7 @@ func _refresh_active_skill_section() -> void:
 	_ensure_skill_select_overlay()
 	_bind_skill_hotbar()
 
-	var role_skills: Array[RoleSkillData] = _get_role_skills()
+	var role_skills: Array = _get_role_skills()
 	var hotbar: Node = _observed_hotbar
 
 	if role_skills.is_empty():
@@ -413,7 +413,7 @@ func _refresh_skill_select_page() -> void:
 		_skill_select_list.remove_child(child)
 		child.queue_free()
 
-	var role_skills: Array[RoleSkillData] = _get_role_skills()
+	var role_skills: Array = _get_role_skills()
 	if role_skills.is_empty():
 		_skill_select_name_label.text = "ロールスキルなし"
 		_skill_select_icon.texture = null
@@ -666,8 +666,8 @@ func _build_role_skill_detail_text(skill: RoleSkillData) -> String:
 	]
 
 
-func _get_role_skills() -> Array[RoleSkillData]:
-	var result: Array[RoleSkillData] = []
+func _get_role_skills() -> Array:
+	var result: Array = []
 	var seen_keys: Dictionary = {}
 
 	for resource in role_skill_resources:
@@ -733,8 +733,8 @@ func _load_role_skill_from_path(path: String) -> RoleSkillData:
 	return _variant_to_role_skill(loaded)
 
 
-func _scan_role_skills_in_directory(dir_path: String) -> Array[RoleSkillData]:
-	var found: Array[RoleSkillData] = []
+func _scan_role_skills_in_directory(dir_path: String) -> Array:
+	var found: Array = []
 	if dir_path.is_empty() or not DirAccess.dir_exists_absolute(dir_path):
 		return found
 
