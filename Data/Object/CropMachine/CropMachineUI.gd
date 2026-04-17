@@ -734,7 +734,7 @@ func _get_player_item_count(item_data: ItemData) -> int:
 	if item_data == null:
 		return -1
 
-	var targets: Array[Node] = _collect_item_count_targets()
+	var targets: Array = _collect_item_count_targets()
 	var method_names: Array[String] = [
 		"get_item_count_by_data",
 		"get_item_count",
@@ -756,8 +756,8 @@ func _get_player_item_count(item_data: ItemData) -> int:
 	return best_result
 
 
-func _collect_item_count_targets() -> Array[Node]:
-	var targets: Array[Node] = []
+func _collect_item_count_targets() -> Array:
+	var targets: Array = []
 	_append_item_count_target(targets, current_player)
 
 	if current_player != null:
@@ -772,7 +772,7 @@ func _collect_item_count_targets() -> Array[Node]:
 	return targets
 
 
-func _append_item_count_target(targets: Array[Node], target: Node) -> void:
+func _append_item_count_target(targets: Array, target: Node) -> void:
 	if target == null:
 		return
 	if targets.has(target):
@@ -817,8 +817,8 @@ func _call_item_count_method(target: Node, method_name: String, item_data: ItemD
 	return best_numeric_result
 
 
-func _collect_inventory_targets() -> Array[Node]:
-	var targets: Array[Node] = []
+func _collect_inventory_targets() -> Array:
+	var targets: Array = []
 
 	if current_player != null:
 		for property_name in ["inventory_ui", "inventory", "inventory_manager"]:

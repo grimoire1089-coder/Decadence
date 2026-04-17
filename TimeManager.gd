@@ -19,6 +19,7 @@ var minute: int = 0
 var tick_timer: Timer
 var _last_period: int = -1
 var _pause_sources: Dictionary = {}
+var is_running: bool = false
 
 
 func _ready() -> void:
@@ -32,13 +33,15 @@ func _ready() -> void:
 
 	tick_timer.timeout.connect(_on_tick)
 	tick_timer.start()
-	tick_timer.paused = false
+	_refresh_tick_timer_state()
 
 	_update_period(true)
 	_emit_time_changed()
 
 
 func _on_tick() -> void:
+	if not is_running:
+		return
 	add_minutes(1)
 
 
@@ -67,11 +70,23 @@ func set_time(target_day: int, target_hour: int, target_minute: int) -> void:
 	_emit_time_changed()
 
 
+func start_time(silent: bool = true) -> void:
+	_set_time_running_internal(true, silent)
+
+
+func stop_time(silent: bool = true) -> void:
+	_set_time_running_internal(false, silent)
+
+
+func set_time_running(value: bool, silent: bool = true) -> void:
+	_set_time_running_internal(value, silent)
+
+
 func request_pause(source: String = "unknown") -> void:
 	if source.is_empty():
 		source = "unknown"
 
-	var was_paused := is_time_paused()
+	var was_paused: bool = _is_effectively_paused()
 	_pause_sources[source] = true
 	_apply_pause_state(was_paused)
 
@@ -80,7 +95,7 @@ func release_pause(source: String = "unknown") -> void:
 	if source.is_empty():
 		source = "unknown"
 
-	var was_paused := is_time_paused()
+	var was_paused: bool = _is_effectively_paused()
 	_pause_sources.erase(source)
 	_apply_pause_state(was_paused)
 
@@ -94,7 +109,7 @@ func resume_time(source: String = "manual") -> void:
 
 
 func is_time_paused() -> bool:
-	return not _pause_sources.is_empty()
+	return _is_effectively_paused()
 
 
 func get_pause_sources() -> PackedStringArray:
@@ -118,8 +133,28 @@ func is_night() -> bool:
 	return get_time_period() == TimePeriod.NIGHT
 
 
+func export_save_data() -> Dictionary:
+	return {
+		"day": day,
+		"hour": hour,
+		"minute": minute,
+	}
+
+
+func import_save_data(data: Dictionary) -> void:
+	if data.is_empty():
+		return
+
+	set_time(
+		int(data.get("day", day)),
+		int(data.get("hour", hour)),
+		int(data.get("minute", minute))
+	)
+	_refresh_tick_timer_state()
+
+
 func _update_period(force: bool = false) -> void:
-	var new_period := get_time_period()
+	var new_period: int = get_time_period()
 	if force or new_period != _last_period:
 		_last_period = new_period
 		period_changed.emit(new_period)
@@ -129,36 +164,55 @@ func _emit_time_changed() -> void:
 	time_changed.emit(day, hour, minute)
 
 
-func _apply_pause_state(was_paused: bool) -> void:
-	var now_paused := is_time_paused()
+func _set_time_running_internal(value: bool, silent: bool) -> void:
+	var was_paused: bool = _is_effectively_paused()
+	is_running = value
+	_apply_pause_state(was_paused, silent)
+
+
+func _is_effectively_paused() -> bool:
+	return (not is_running) or (not _pause_sources.is_empty())
+
+
+func _refresh_tick_timer_state() -> void:
+	var paused: bool = _is_effectively_paused()
 
 	if tick_timer != null:
-		tick_timer.paused = now_paused
+		tick_timer.paused = paused
 
-	_set_customer_timers_paused(now_paused)
+	_set_customer_timers_paused(paused)
+
+
+func _apply_pause_state(was_paused: bool, silent: bool = false) -> void:
+	var now_paused: bool = _is_effectively_paused()
+	_refresh_tick_timer_state()
 
 	if now_paused == was_paused:
 		return
 
 	time_pause_changed.emit(now_paused)
 
+	if silent:
+		return
+
 	if now_paused:
-		var reason_text := _build_pause_reason_text()
+		var reason_text: String = _build_pause_reason_text()
 		_log_system("ゲーム内時間を停止しました%s" % reason_text)
 	else:
 		_log_system("ゲーム内時間が再開しました")
 
 
 func _build_pause_reason_text() -> String:
-	var sources := get_pause_sources()
+	var sources: PackedStringArray = get_pause_sources()
 	if sources.is_empty():
 		return ""
 	return "（%s）" % " / ".join(sources)
 
 
 func _set_customer_timers_paused(paused_value: bool) -> void:
-	var targets: Array[Node] = get_tree().get_nodes_in_group("customer_timer_targets")
-	for target in targets:
+	var targets: Array = get_tree().get_nodes_in_group("customer_timer_targets")
+	for target_variant in targets:
+		var target: Node = target_variant as Node
 		if target == null:
 			continue
 

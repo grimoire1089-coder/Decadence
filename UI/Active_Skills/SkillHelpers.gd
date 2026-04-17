@@ -173,14 +173,15 @@ static func add_system_log(message: String) -> void:
 	if root == null:
 		return
 
-	var log_targets: Array[Node] = [
+	var log_targets: Array = [
 		root.get_node_or_null("/root/MessageLog"),
 		root.get_node_or_null("MessageLog"),
 		root.get_node_or_null("/root/GameMessageLog"),
 		root.get_node_or_null("GameMessageLog")
 	]
 
-	for target in log_targets:
+	for target_variant in log_targets:
+		var target: Node = target_variant as Node
 		if target == null:
 			continue
 

@@ -1,99 +1,99 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene format=3 uid="uid://dof6p8uabjdnl"]
 
-[ext_resource type="Script" path="res://Data/Object/CropMachine/CropRecipeSelectorDialog.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://c6vof74u7kj44" path="res://Data/Object/CropMachine/CropRecipeSelectorDialog.gd" id="1_script"]
 
-[node name="CropRecipeSelectorDialog" type="Control"]
+[node name="CropRecipeSelectorDialog" type="Control" unique_id=709967076]
 visible = false
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 1
 script = ExtResource("1_script")
 
-[node name="Dimmer" type="ColorRect" parent="."]
+[node name="Dimmer" type="ColorRect" parent="." unique_id=578147734]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 1
 color = Color(0, 0, 0, 0.38)
 
-[node name="CenterContainer" type="CenterContainer" parent="."]
+[node name="CenterContainer" type="CenterContainer" parent="." unique_id=1215744414]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-mouse_filter = 1
+grow_horizontal = 2
+grow_vertical = 2
 
-[node name="ContentPanel" type="PanelContainer" parent="CenterContainer"]
+[node name="ContentPanel" type="PanelContainer" parent="CenterContainer" unique_id=1826261763]
 custom_minimum_size = Vector2(820, 560)
 layout_mode = 2
 mouse_filter = 1
 
-[node name="Margin" type="MarginContainer" parent="CenterContainer/ContentPanel"]
+[node name="Margin" type="MarginContainer" parent="CenterContainer/ContentPanel" unique_id=1442575955]
 layout_mode = 2
-offset_left = 18.0
-offset_top = 16.0
-offset_right = 18.0
-offset_bottom = 16.0
 theme_override_constants/margin_left = 18
 theme_override_constants/margin_top = 16
 theme_override_constants/margin_right = 18
 theme_override_constants/margin_bottom = 16
 
-[node name="Body" type="VBoxContainer" parent="CenterContainer/ContentPanel/Margin"]
+[node name="Body" type="VBoxContainer" parent="CenterContainer/ContentPanel/Margin" unique_id=616574958]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_constants/separation = 12
 
-[node name="HeaderRow" type="HBoxContainer" parent="CenterContainer/ContentPanel/Margin/Body"]
+[node name="HeaderRow" type="HBoxContainer" parent="CenterContainer/ContentPanel/Margin/Body" unique_id=1552266522]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="TitleLabel" type="Label" parent="CenterContainer/ContentPanel/Margin/Body/HeaderRow"]
+[node name="TitleLabel" type="Label" parent="CenterContainer/ContentPanel/Margin/Body/HeaderRow" unique_id=962805227]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "植え付ける作物を選択"
 horizontal_alignment = 1
 
-[node name="CloseButton" type="Button" parent="CenterContainer/ContentPanel/Margin/Body/HeaderRow"]
-layout_mode = 2
+[node name="CloseButton" type="Button" parent="CenterContainer/ContentPanel/Margin/Body/HeaderRow" unique_id=275264349]
 custom_minimum_size = Vector2(44, 40)
+layout_mode = 2
 text = "×"
 
-[node name="RecipeSearchInput" type="LineEdit" parent="CenterContainer/ContentPanel/Margin/Body"]
-layout_mode = 2
+[node name="RecipeSearchInput" type="LineEdit" parent="CenterContainer/ContentPanel/Margin/Body" unique_id=1138663797]
 custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
 placeholder_text = "作物名や種名で検索"
 clear_button_enabled = true
 
-[node name="BodySplit" type="HSplitContainer" parent="CenterContainer/ContentPanel/Margin/Body"]
+[node name="BodySplit" type="HSplitContainer" parent="CenterContainer/ContentPanel/Margin/Body" unique_id=894172873]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
+split_offsets = PackedInt32Array(520)
 split_offset = 520
 
-[node name="LeftBox" type="VBoxContainer" parent="CenterContainer/ContentPanel/Margin/Body/BodySplit"]
+[node name="LeftBox" type="VBoxContainer" parent="CenterContainer/ContentPanel/Margin/Body/BodySplit" unique_id=1583295783]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_constants/separation = 8
 
-[node name="ListHeader" type="Label" parent="CenterContainer/ContentPanel/Margin/Body/BodySplit/LeftBox"]
+[node name="ListHeader" type="Label" parent="CenterContainer/ContentPanel/Margin/Body/BodySplit/LeftBox" unique_id=726685551]
 layout_mode = 2
 text = "候補一覧"
 
-[node name="RecipeResultList" type="ItemList" parent="CenterContainer/ContentPanel/Margin/Body/BodySplit/LeftBox"]
+[node name="RecipeResultList" type="ItemList" parent="CenterContainer/ContentPanel/Margin/Body/BodySplit/LeftBox" unique_id=846865699]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-select_mode = 0
 allow_reselect = true
-auto_height = false
 
-[node name="RecipeEmptyLabel" type="Label" parent="CenterContainer/ContentPanel/Margin/Body/BodySplit/LeftBox"]
+[node name="RecipeEmptyLabel" type="Label" parent="CenterContainer/ContentPanel/Margin/Body/BodySplit/LeftBox" unique_id=1736961561]
 visible = false
 layout_mode = 2
 size_flags_vertical = 3
@@ -101,43 +101,36 @@ text = "該当する種がない"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="RightPanel" type="PanelContainer" parent="CenterContainer/ContentPanel/Margin/Body/BodySplit"]
+[node name="RightPanel" type="PanelContainer" parent="CenterContainer/ContentPanel/Margin/Body/BodySplit" unique_id=1167244003]
 custom_minimum_size = Vector2(250, 0)
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="RightBox" type="VBoxContainer" parent="CenterContainer/ContentPanel/Margin/Body/BodySplit/RightPanel"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 14.0
-offset_top = 14.0
-offset_right = -14.0
-offset_bottom = -14.0
+[node name="RightBox" type="VBoxContainer" parent="CenterContainer/ContentPanel/Margin/Body/BodySplit/RightPanel" unique_id=1379864529]
+layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="DetailHeader" type="Label" parent="CenterContainer/ContentPanel/Margin/Body/BodySplit/RightPanel/RightBox"]
+[node name="DetailHeader" type="Label" parent="CenterContainer/ContentPanel/Margin/Body/BodySplit/RightPanel/RightBox" unique_id=1355499883]
 layout_mode = 2
 text = "詳細"
 
-[node name="RecipeDetailLabel" type="Label" parent="CenterContainer/ContentPanel/Margin/Body/BodySplit/RightPanel/RightBox"]
+[node name="RecipeDetailLabel" type="Label" parent="CenterContainer/ContentPanel/Margin/Body/BodySplit/RightPanel/RightBox" unique_id=373740897]
 layout_mode = 2
 size_flags_vertical = 3
 autowrap_mode = 2
 
-[node name="ActionRow" type="HBoxContainer" parent="CenterContainer/ContentPanel/Margin/Body"]
+[node name="ActionRow" type="HBoxContainer" parent="CenterContainer/ContentPanel/Margin/Body" unique_id=102807959]
 custom_minimum_size = Vector2(0, 52)
 layout_mode = 2
-alignment = 1
 theme_override_constants/separation = 16
+alignment = 1
 
-[node name="SelectButton" type="Button" parent="CenterContainer/ContentPanel/Margin/Body/ActionRow"]
-layout_mode = 2
+[node name="SelectButton" type="Button" parent="CenterContainer/ContentPanel/Margin/Body/ActionRow" unique_id=842809764]
 custom_minimum_size = Vector2(140, 42)
+layout_mode = 2
 text = "選択"
 
-[node name="CloseButton" type="Button" parent="CenterContainer/ContentPanel/Margin/Body/ActionRow"]
-layout_mode = 2
+[node name="CloseButton" type="Button" parent="CenterContainer/ContentPanel/Margin/Body/ActionRow" unique_id=829647610]
 custom_minimum_size = Vector2(140, 42)
+layout_mode = 2
 text = "閉じる"

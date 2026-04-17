@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="TEST001"
-run/main_scene="uid://fcxgysrhaca"
+run/main_scene="res://Scenes/System/Boot.tscn"
 config/features=PackedStringArray("4.6", "Forward Plus")
 config/icon="res://icon.svg"
 
@@ -21,6 +21,7 @@ buses/default_bus_layout="uid://qxfeontuqclr"
 
 [autoload]
 
+SaveManager="*uid://ha6dxoxc61ha"
 TimeManager="*uid://duwlmn68q4gp7"
 MessageLog="*uid://pu31vlo00bf1"
 UiModalManager="*uid://slqefgvwqon5"
