@@ -3,7 +3,7 @@ class_name ShopData
 
 @export var store_name: String = "ショップ"
 @export_multiline var description: String = ""
-@export var products: Array[ShopProduct] = []
+@export var products: Array = []
 
 
 func get_store_name() -> String:
@@ -12,11 +12,11 @@ func get_store_name() -> String:
 	return "ショップ"
 
 
-func get_products() -> Array[ShopProduct]:
+func get_products() -> Array:
 	return products
 
 
 func get_product(index: int) -> ShopProduct:
 	if index < 0 or index >= products.size():
 		return null
-	return products[index]
+	return products[index] as ShopProduct

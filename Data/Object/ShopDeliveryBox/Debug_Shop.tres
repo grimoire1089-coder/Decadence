@@ -30,4 +30,4 @@ metadata/_custom_type_script = "uid://c6pfvcblsisnu"
 [resource]
 script = ExtResource("3_0hlav")
 store_name = "デバッグ商店"
-products = Array[ExtResource("1_6mhlv")]([SubResource("Resource_jxv3v"), SubResource("Resource_wbh4w"), SubResource("Resource_qjv64"), SubResource("Resource_egis0")])
+products = [SubResource("Resource_jxv3v"), SubResource("Resource_wbh4w"), SubResource("Resource_qjv64"), SubResource("Resource_egis0")]

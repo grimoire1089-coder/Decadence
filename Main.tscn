@@ -39,9 +39,7 @@
 [ext_resource type="PackedScene" uid="uid://cfs04dhugpasv" path="res://FatigueUI.tscn" id="21_xrxkg"]
 [ext_resource type="PackedScene" uid="uid://3r8u7etfs67j" path="res://VendingMachine.tscn" id="22_3b0ty"]
 [ext_resource type="PackedScene" path="res://VendingMachineUI.tscn" id="23_bg4s2"]
-[ext_resource type="Script" uid="uid://w652pbh12dac" path="res://Data/Object/ShopDeliveryBox/ShopData.gd" id="23_jt61w"]
 [ext_resource type="Resource" uid="uid://blok4iy6royse" path="res://Data/Object/ShopDeliveryBox/Debug_Shop.tres" id="24_v8qla"]
-[ext_resource type="Script" uid="uid://dljnvja3myc3c" path="res://Data/Items/ItemData.gd" id="25_5mvff"]
 [ext_resource type="PackedScene" uid="uid://c0st7x5p7t6xf" path="res://Data/Object/CropMachine/CropMachineUI.tscn" id="27_5mvff"]
 [ext_resource type="PackedScene" uid="uid://c8a2ctiwk8xu5" path="res://Data/Object/ShopDeliveryBox/ShopDeliveryBoxUI.tscn" id="29_40n85"]
 [ext_resource type="PackedScene" uid="uid://bvvfwn3o2ydcw" path="res://Data/Character/_Core/NPC.tscn" id="29_f4ese"]
@@ -120,7 +118,7 @@ interact_prompt_offset = Vector2(0, -120)
 [node name="ShopDeliveryBox" parent="Sortables" unique_id=85732636 instance=ExtResource("19_oye8v")]
 position = Vector2(210, -18)
 scale = Vector2(0.15, 0.15)
-shops = Array[ExtResource("23_jt61w")]([ExtResource("24_v8qla"), ExtResource("17_gb15f")])
+shops = [ExtResource("24_v8qla"), ExtResource("17_gb15f")]
 
 [node name="CropMachine" parent="Sortables" unique_id=60635765 instance=ExtResource("16_w3rk5")]
 position = Vector2(608, -300)
@@ -230,7 +228,7 @@ anchor_bottom = 0.5
 [node name="UniversalCookerUI" parent="UI" unique_id=117530651 instance=ExtResource("32_vi5kq")]
 
 [node name="InventoryUI" parent="UI" unique_id=1092591123 instance=ExtResource("8_trn2v")]
-item_db = Array[ExtResource("25_5mvff")]([])
+item_db = []
 
 [node name="SkillUI" parent="UI" unique_id=894349238 instance=ExtResource("31_oye8v")]
 

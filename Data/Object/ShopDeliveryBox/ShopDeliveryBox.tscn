@@ -1,7 +1,6 @@
 [gd_scene format=3 uid="uid://bni70hbx2qusf"]
 
 [ext_resource type="Script" uid="uid://dvgliurkmdxma" path="res://Data/Object/ShopDeliveryBox/ShopDeliveryBox.gd" id="1_box"]
-[ext_resource type="Script" uid="uid://w652pbh12dac" path="res://Data/Object/ShopDeliveryBox/ShopData.gd" id="2_w0xeh"]
 [ext_resource type="Texture2D" uid="uid://bw7qxcnymtsvs" path="res://Image/Delivery_Box.png" id="2_wvwqu"]
 [ext_resource type="Resource" uid="uid://crmyohhi1jd03" path="res://Data/Object/ShopDeliveryBox/Capsule_Farm.tres" id="3_tdcq1"]
 
@@ -13,7 +12,7 @@ radius = 568.20593
 
 [node name="ShopDeliveryBox" type="StaticBody2D" unique_id=85732636]
 script = ExtResource("1_box")
-shops = Array[ExtResource("2_w0xeh")]([ExtResource("3_tdcq1")])
+shops = [ExtResource("3_tdcq1")]
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=1150591638]
 texture = ExtResource("2_wvwqu")

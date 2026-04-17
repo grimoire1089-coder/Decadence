@@ -6,9 +6,9 @@ class_name ItemCondition
 @export var condition_name: String = ""
 @export_multiline var memo: String = ""
 
-@export var require_all_labels: Array[ItemTag] = []
-@export var require_any_labels: Array[ItemTag] = []
-@export var forbid_labels: Array[ItemTag] = []
+@export var require_all_labels: Array = []
+@export var require_any_labels: Array = []
+@export var forbid_labels: Array = []
 
 
 func get_registry_key() -> String:
@@ -77,11 +77,12 @@ func get_summary_text() -> String:
 	return " / ".join(parts)
 
 
-func _get_label_names(source: Array[ItemTag]) -> PackedStringArray:
+func _get_label_names(source: Array) -> PackedStringArray:
 	var result: PackedStringArray = PackedStringArray()
 	var seen: Dictionary = {}
 
-	for label in source:
+	for label_variant in source:
+		var label: ItemTag = label_variant as ItemTag
 		if label == null:
 			continue
 		if String(label.id).is_empty():

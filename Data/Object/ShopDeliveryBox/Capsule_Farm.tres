@@ -18,4 +18,4 @@ metadata/_custom_type_script = "uid://c6pfvcblsisnu"
 [resource]
 script = ExtResource("3_b7cnk")
 store_name = "カプセルファーム　個人農業支援店"
-products = Array[ExtResource("1_wxk4d")]([SubResource("Resource_0gefq"), SubResource("Resource_b7cnk")])
+products = [SubResource("Resource_0gefq"), SubResource("Resource_b7cnk")]

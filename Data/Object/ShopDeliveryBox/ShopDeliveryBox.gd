@@ -5,7 +5,7 @@ const SAVE_PATH_PREFIX: String = "user://shop_delivery_box_"
 
 @export var object_name: String = "ショップ宅配ボックス"
 @export var shop_data: ShopData
-@export var shops: Array[ShopData] = []
+@export var shops: Array = []
 @export var default_shop_index: int = 0
 @export var delivery_seconds: float = 1.0
 @export var delivery_tick_interval: float = 0.1
@@ -59,7 +59,7 @@ func get_object_display_name() -> String:
 	if not object_name.is_empty():
 		return object_name
 
-	var available_shops: Array[ShopData] = _get_available_shops()
+	var available_shops: Array = _get_available_shops()
 	if available_shops.size() == 1:
 		return available_shops[0].get_store_name()
 
@@ -83,7 +83,7 @@ func get_store_name(shop_index: int = -1) -> String:
 		return shop.get_store_name()
 
 	if shop_index < 0:
-		var available_shops: Array[ShopData] = _get_available_shops()
+		var available_shops: Array = _get_available_shops()
 		if available_shops.size() == 1:
 			return available_shops[0].get_store_name()
 
@@ -97,10 +97,10 @@ func get_shop_description(shop_index: int = -1) -> String:
 	return String(shop.description)
 
 
-func get_products(shop_index: int = -1) -> Array[ShopProduct]:
+func get_products(shop_index: int = -1) -> Array:
 	var shop: ShopData = _resolve_shop(shop_index)
 	if shop == null:
-		var empty_products: Array[ShopProduct] = []
+		var empty_products: Array = []
 		return empty_products
 	return shop.get_products()
 
@@ -379,10 +379,11 @@ func _refresh_ui_if_open() -> void:
 		ui.call("refresh")
 
 
-func _get_available_shops() -> Array[ShopData]:
-	var result: Array[ShopData] = []
+func _get_available_shops() -> Array:
+	var result: Array = []
 
-	for entry in shops:
+	for entry_variant in shops:
+		var entry: ShopData = entry_variant as ShopData
 		if entry != null:
 			result.append(entry)
 
@@ -393,7 +394,7 @@ func _get_available_shops() -> Array[ShopData]:
 
 
 func _resolve_shop(shop_index: int = -1) -> ShopData:
-	var available_shops: Array[ShopData] = _get_available_shops()
+	var available_shops: Array = _get_available_shops()
 	if available_shops.is_empty():
 		return null
 
@@ -403,7 +404,7 @@ func _resolve_shop(shop_index: int = -1) -> ShopData:
 	if shop_index < 0 or shop_index >= available_shops.size():
 		return null
 
-	return available_shops[shop_index]
+	return available_shops[shop_index] as ShopData
 
 
 func _can_stack_item(left_item: ItemData, right_item: ItemData) -> bool:

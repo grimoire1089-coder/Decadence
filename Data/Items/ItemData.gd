@@ -33,7 +33,7 @@ const DRINK_TAG_IDS: Array[StringName] = [&"drink", &"飲料"]
 @export_storage var traits: int = 0
 
 # 新方式：ラベルを 1 本化
-@export var labels: Array[ItemTag] = []
+@export var labels: Array = []
 
 
 func get_sell_price() -> int:
@@ -87,11 +87,12 @@ func get_fatigue_restore() -> int:
 	return fatigue_restore
 
 
-func get_valid_labels() -> Array[ItemTag]:
-	var result: Array[ItemTag] = []
+func get_valid_labels() -> Array:
+	var result: Array = []
 	var seen: Dictionary = {}
 
-	for label in labels:
+	for label_variant in labels:
+		var label: ItemTag = label_variant as ItemTag
 		if label == null:
 			continue
 
@@ -117,7 +118,8 @@ func has_label_id(label_id: StringName) -> bool:
 	if String(label_id).is_empty():
 		return false
 
-	for label in labels:
+	for label_variant in labels:
+		var label: ItemTag = label_variant as ItemTag
 		if label == null:
 			continue
 		if label.id == label_id:
@@ -130,7 +132,8 @@ func has_label_in_category(label_id: StringName, category: StringName) -> bool:
 	if String(label_id).is_empty():
 		return false
 
-	for label in labels:
+	for label_variant in labels:
+		var label: ItemTag = label_variant as ItemTag
 		if label == null:
 			continue
 		if label.id != label_id:
@@ -142,8 +145,9 @@ func has_label_in_category(label_id: StringName, category: StringName) -> bool:
 	return false
 
 
-func has_any_labels(check_labels: Array[ItemTag]) -> bool:
-	for label in check_labels:
+func has_any_labels(check_labels: Array) -> bool:
+	for label_variant in check_labels:
+		var label: ItemTag = label_variant as ItemTag
 		if label == null:
 			continue
 		if has_label_id(label.id):
@@ -151,8 +155,9 @@ func has_any_labels(check_labels: Array[ItemTag]) -> bool:
 	return false
 
 
-func has_all_labels(check_labels: Array[ItemTag]) -> bool:
-	for label in check_labels:
+func has_all_labels(check_labels: Array) -> bool:
+	for label_variant in check_labels:
+		var label: ItemTag = label_variant as ItemTag
 		if label == null:
 			continue
 		if not has_label_id(label.id):
@@ -181,7 +186,7 @@ func remove_label_by_id(label_id: StringName) -> void:
 		return
 
 	for i in range(labels.size() - 1, -1, -1):
-		var label: ItemTag = labels[i]
+		var label: ItemTag = labels[i] as ItemTag
 		if label == null:
 			continue
 		if label.id == label_id:
@@ -192,7 +197,8 @@ func get_label_names(category: StringName = &"") -> PackedStringArray:
 	var result: PackedStringArray = PackedStringArray()
 	var seen: Dictionary = {}
 
-	for label in labels:
+	for label_variant in labels:
+		var label: ItemTag = label_variant as ItemTag
 		if label == null:
 			continue
 		if String(label.id).is_empty():
@@ -255,9 +261,9 @@ func has_trait_id(trait_id: StringName) -> bool:
 
 
 func passes_filter(
-	require_all_labels: Array[ItemTag] = [],
-	require_any_labels: Array[ItemTag] = [],
-	forbid_labels: Array[ItemTag] = []
+	require_all_labels: Array = [],
+	require_any_labels: Array = [],
+	forbid_labels: Array = []
 ) -> bool:
 	if require_all_labels.size() > 0 and not has_all_labels(require_all_labels):
 		return false
