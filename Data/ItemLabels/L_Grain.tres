@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ItemTag" format=3 uid="uid://b6lqfoixu8cim"]
+
+[ext_resource type="Script" uid="uid://yrmp5d5nc6bo" path="res://Data/Items/ItemTag.gd" id="1_g4v15"]
+
+[resource]
+script = ExtResource("1_g4v15")
+id = &"labels_flower"
+display_name = "花"
+category = &"trait"
+metadata/_custom_type_script = "uid://yrmp5d5nc6bo"

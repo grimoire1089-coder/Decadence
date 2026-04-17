@@ -1,0 +1,69 @@
+[gd_scene format=3 uid="uid://dof6p8uabjdnl"]
+
+[ext_resource type="Script" uid="uid://c6vof74u7kj44" path="res://Data/Object/CropMachine/CropRecipeSelectorDialog.gd" id="1_script"]
+
+[node name="CropRecipeSelectorDialog" type="ConfirmationDialog" unique_id=1533834187]
+title = "植え付ける作物を選択"
+size = Vector2i(760, 540)
+min_size = Vector2i(760, 540)
+script = ExtResource("1_script")
+
+[node name="Body" type="VBoxContainer" parent="." unique_id=1367800820]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = 16.0
+offset_right = -16.0
+offset_bottom = -52.0
+theme_override_constants/separation = 10
+
+[node name="RecipeSearchInput" type="LineEdit" parent="Body" unique_id=1644365129]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+placeholder_text = "作物名や種名で検索"
+clear_button_enabled = true
+
+[node name="BodySplit" type="HSplitContainer" parent="Body" unique_id=152040308]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="LeftBox" type="VBoxContainer" parent="Body/BodySplit" unique_id=1519328674]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="ListHeader" type="Label" parent="Body/BodySplit/LeftBox" unique_id=1708762201]
+layout_mode = 2
+text = "候補一覧"
+
+[node name="RecipeEmptyLabel" type="Label" parent="Body/BodySplit/LeftBox" unique_id=775686996]
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+text = "該当する種がない"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="RecipeResultList" type="ItemList" parent="Body/BodySplit/LeftBox" unique_id=159244920]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+allow_reselect = true
+
+[node name="RightBox" type="VBoxContainer" parent="Body/BodySplit" unique_id=328161872]
+custom_minimum_size = Vector2(240, 0)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="DetailHeader" type="Label" parent="Body/BodySplit/RightBox" unique_id=2093469087]
+layout_mode = 2
+text = "詳細"
+
+[node name="RecipeDetailLabel" type="Label" parent="Body/BodySplit/RightBox" unique_id=72189989]
+layout_mode = 2
+size_flags_vertical = 3
+autowrap_mode = 2

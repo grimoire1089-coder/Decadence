@@ -9,6 +9,7 @@
 script = ExtResource("2_116v4")
 id = &"seed_potato"
 item_name = "ジャガイモの種"
+description = "栽培機で使用します。"
 icon = ExtResource("1_8ogsj")
 price = 1
 buy_price = 5

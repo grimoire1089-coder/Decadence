@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ItemData" format=3 uid="uid://oqeogjc0xwb"]
+
+[ext_resource type="Texture2D" uid="uid://dyuc6kidd8jep" path="res://Image/Seed/Seed_Potato.png" id="1_wtvak"]
+[ext_resource type="Script" uid="uid://yrmp5d5nc6bo" path="res://Data/Items/ItemTag.gd" id="2_72115"]
+[ext_resource type="Resource" uid="uid://7nrdx7jclmh3" path="res://Data/ItemTags/Seed.tres" id="3_7v7j6"]
+[ext_resource type="Script" uid="uid://dljnvja3myc3c" path="res://Data/Items/ItemData.gd" id="4_j1qfy"]
+
+[resource]
+script = ExtResource("4_j1qfy")
+id = &"seed_corn"
+item_name = "トウモロコシの種"
+description = "栽培機で使用します。"
+icon = ExtResource("1_wtvak")
+price = 1
+buy_price = 5
+tags = 8
+labels = Array[ExtResource("2_72115")]([ExtResource("3_7v7j6")])
+metadata/_custom_type_script = "uid://dljnvja3myc3c"

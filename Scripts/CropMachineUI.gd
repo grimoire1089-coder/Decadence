@@ -37,6 +37,8 @@ const SLOT_UPGRADE_BUTTON_HEIGHT: int = 28
 const SLOT_UPGRADE_BUTTON_TEXT: String = "強化"
 const SLOT_CELL_SEPARATION: int = 6
 const UPGRADE_DIALOG_SIZE: Vector2 = Vector2(420, 320)
+const RECIPE_SELECTOR_DIALOG_SIZE: Vector2 = Vector2(760, 540)
+const RECIPE_SELECTOR_DIALOG_SCENE_PATH: String = "res://Data/Object/CropMachine/CropRecipeSelectorDialog.tscn"
 
 var current_machine: CropMachine = null
 var current_player: Node = null
@@ -62,6 +64,7 @@ var dimmer: ColorRect = null
 @onready var cancel_confirm_dialog: ConfirmationDialog = $CancelConfirmDialog
 
 var unlock_slot_button: Button = null
+var unlock_slot_button_row: HBoxContainer = null
 var page_navigation_row: HBoxContainer = null
 var prev_page_button: Button = null
 var next_page_button: Button = null
@@ -71,6 +74,10 @@ var slot_upgrade_dialog: AcceptDialog = null
 var slot_upgrade_title_label: Label = null
 var slot_upgrade_info_label: Label = null
 var slot_upgrade_slot_index: int = -1
+var recipe_selector_row: HBoxContainer = null
+var recipe_selector_summary_label: Label = null
+var recipe_selector_button: Button = null
+var recipe_selector_dialog: CropRecipeSelectorDialog = null
 
 
 func _ready() -> void:
@@ -95,11 +102,13 @@ func _ready() -> void:
 	cancel_button.pressed.connect(_on_cancel_pressed)
 	close_button.pressed.connect(_on_close_pressed)
 	plant_count_spinbox.value_changed.connect(_on_plant_count_changed)
-	recipe_option.item_selected.connect(_on_recipe_selected)
 	cancel_confirm_dialog.confirmed.connect(_on_cancel_confirmed)
 	grid.columns = SLOT_COLUMNS_PER_PAGE
 	_ensure_page_controls()
+	_ensure_unlock_slot_button_row()
 	_ensure_unlock_slot_button()
+	_ensure_recipe_selector_row()
+	_ensure_recipe_selector_dialog()
 	_ensure_bottom_spacer()
 	_ensure_slot_upgrade_dialog()
 
@@ -121,6 +130,9 @@ func _unhandled_input(event: InputEvent) -> void:
 			cancel_confirm_dialog.hide()
 			pending_cancel_slot_index = -1
 			pending_cancel_preview.clear()
+			return
+		if recipe_selector_dialog != null and recipe_selector_dialog.visible:
+			recipe_selector_dialog.hide()
 			return
 		close()
 
@@ -215,6 +227,8 @@ func _setup_content_layout() -> void:
 
 	plant_count_spinbox.custom_minimum_size = Vector2(0, 40)
 	plant_count_spinbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	recipe_option.visible = false
+	recipe_option.custom_minimum_size = Vector2(0, 0)
 	plant_button.custom_minimum_size = Vector2(0, 40)
 	harvest_button.custom_minimum_size = Vector2(0, 40)
 	cancel_button.custom_minimum_size = Vector2(0, 40)
@@ -277,22 +291,110 @@ func _ensure_page_controls() -> void:
 		next_page_button.pressed.connect(_on_next_page_pressed)
 
 
-func _ensure_unlock_slot_button() -> void:
-	if action_button_row == null:
+func _ensure_unlock_slot_button_row() -> void:
+	if root_vbox == null or action_button_row == null:
 		return
 
-	var existing: Node = action_button_row.get_node_or_null("UnlockSlotButton")
+	var existing_row: Node = root_vbox.get_node_or_null("UnlockSlotButtonRow")
+	if existing_row is HBoxContainer:
+		unlock_slot_button_row = existing_row as HBoxContainer
+	else:
+		unlock_slot_button_row = HBoxContainer.new()
+		unlock_slot_button_row.name = "UnlockSlotButtonRow"
+		unlock_slot_button_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		unlock_slot_button_row.alignment = BoxContainer.ALIGNMENT_END
+		root_vbox.add_child(unlock_slot_button_row)
+
+	var target_index: int = action_button_row.get_index() + 1
+	if unlock_slot_button_row.get_index() != target_index:
+		root_vbox.move_child(unlock_slot_button_row, target_index)
+
+
+func _ensure_unlock_slot_button() -> void:
+	if unlock_slot_button_row == null:
+		return
+
+	var existing: Node = unlock_slot_button_row.get_node_or_null("UnlockSlotButton")
 	if existing is Button:
 		unlock_slot_button = existing as Button
 	else:
 		unlock_slot_button = Button.new()
 		unlock_slot_button.name = "UnlockSlotButton"
 		unlock_slot_button.text = "スロット解放"
+		unlock_slot_button.custom_minimum_size = Vector2(0, 40)
 		unlock_slot_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		action_button_row.add_child(unlock_slot_button)
+		unlock_slot_button_row.add_child(unlock_slot_button)
 
 	if not unlock_slot_button.pressed.is_connected(_on_unlock_slot_pressed):
 		unlock_slot_button.pressed.connect(_on_unlock_slot_pressed)
+
+func _ensure_recipe_selector_row() -> void:
+	if root_vbox == null or recipe_option == null:
+		return
+
+	var existing_row: Node = root_vbox.get_node_or_null("RecipeSelectorRow")
+	if existing_row is HBoxContainer:
+		recipe_selector_row = existing_row as HBoxContainer
+	else:
+		recipe_selector_row = HBoxContainer.new()
+		recipe_selector_row.name = "RecipeSelectorRow"
+		recipe_selector_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		recipe_selector_row.add_theme_constant_override("separation", 12)
+		root_vbox.add_child(recipe_selector_row)
+
+	var target_index: int = recipe_option.get_index()
+	if recipe_selector_row.get_index() != target_index:
+		root_vbox.move_child(recipe_selector_row, target_index)
+
+	var existing_label: Node = recipe_selector_row.get_node_or_null("RecipeSelectorSummaryLabel")
+	if existing_label is Label:
+		recipe_selector_summary_label = existing_label as Label
+	else:
+		recipe_selector_summary_label = Label.new()
+		recipe_selector_summary_label.name = "RecipeSelectorSummaryLabel"
+		recipe_selector_summary_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		recipe_selector_summary_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		recipe_selector_summary_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		recipe_selector_row.add_child(recipe_selector_summary_label)
+
+	var existing_button: Node = recipe_selector_row.get_node_or_null("RecipeSelectorButton")
+	if existing_button is Button:
+		recipe_selector_button = existing_button as Button
+	else:
+		recipe_selector_button = Button.new()
+		recipe_selector_button.name = "RecipeSelectorButton"
+		recipe_selector_button.text = "変更"
+		recipe_selector_button.custom_minimum_size = Vector2(140, 40)
+		recipe_selector_row.add_child(recipe_selector_button)
+
+	if not recipe_selector_button.pressed.is_connected(_on_open_recipe_selector_pressed):
+		recipe_selector_button.pressed.connect(_on_open_recipe_selector_pressed)
+
+	_update_recipe_selector_summary()
+
+
+func _ensure_recipe_selector_dialog() -> void:
+	var existing_dialog: Node = get_node_or_null("RecipeSelectorDialog")
+	if existing_dialog is CropRecipeSelectorDialog:
+		recipe_selector_dialog = existing_dialog as CropRecipeSelectorDialog
+	else:
+		if existing_dialog != null:
+			existing_dialog.queue_free()
+
+		var dialog_scene: PackedScene = load(RECIPE_SELECTOR_DIALOG_SCENE_PATH) as PackedScene
+		if dialog_scene == null:
+			push_warning("CropRecipeSelectorDialog.tscn が見つからない: %s" % RECIPE_SELECTOR_DIALOG_SCENE_PATH)
+			return
+
+		recipe_selector_dialog = dialog_scene.instantiate() as CropRecipeSelectorDialog
+		if recipe_selector_dialog == null:
+			return
+
+		recipe_selector_dialog.name = "RecipeSelectorDialog"
+		add_child(recipe_selector_dialog)
+
+	if not recipe_selector_dialog.recipe_selected.is_connected(_on_recipe_selector_recipe_selected):
+		recipe_selector_dialog.recipe_selected.connect(_on_recipe_selector_recipe_selected)
 
 
 func _ensure_bottom_spacer() -> void:
@@ -418,7 +520,10 @@ func close() -> void:
 	pending_cancel_slot_index = -1
 	pending_cancel_preview.clear()
 	cancel_confirm_dialog.hide()
+	if recipe_selector_dialog != null:
+		recipe_selector_dialog.reset_selector_state()
 	info_label.text = ""
+	_update_recipe_selector_summary()
 
 
 func refresh() -> void:
@@ -670,37 +775,23 @@ func _on_next_page_pressed() -> void:
 
 func _refresh_recipe_options() -> void:
 	var previous_key: String = selected_recipe_key
-	if previous_key.is_empty():
-		previous_key = _get_recipe_key(_get_selected_recipe())
+	var first_valid_key: String = ""
+	var has_previous_key: bool = false
 
-	recipe_option.clear()
-	selected_recipe_key = ""
+	if current_machine != null:
+		for recipe in current_machine.available_recipes:
+			if recipe == null or not recipe.is_valid_recipe():
+				continue
 
-	if current_machine == null:
-		return
+			var recipe_key: String = _get_recipe_key(recipe)
+			if first_valid_key.is_empty():
+				first_valid_key = recipe_key
+			if recipe_key == previous_key:
+				has_previous_key = true
 
-	var selected_index: int = -1
-	for recipe in current_machine.available_recipes:
-		if recipe == null or not recipe.is_valid_recipe():
-			continue
-
-		var display_name: String = _build_recipe_option_text(recipe)
-		var item_index: int = recipe_option.item_count
-		recipe_option.add_item(display_name)
-		recipe_option.set_item_metadata(item_index, recipe)
-
-		var recipe_key: String = _get_recipe_key(recipe)
-		if selected_index < 0 and recipe_key == previous_key:
-			selected_index = item_index
-
-	if recipe_option.item_count <= 0:
-		return
-
-	if selected_index < 0:
-		selected_index = 0
-
-	recipe_option.select(selected_index)
-	selected_recipe_key = _get_recipe_key(_get_selected_recipe())
+	selected_recipe_key = previous_key if has_previous_key else first_valid_key
+	_update_recipe_selector_summary()
+	_refresh_recipe_selector_dialog()
 
 
 func _build_recipe_option_text(recipe: CropRecipe) -> String:
@@ -721,6 +812,165 @@ func _get_recipe_key(recipe: CropRecipe) -> String:
 	if not str(recipe.id).is_empty():
 		return str(recipe.id)
 	return recipe.get_display_name()
+
+
+func _find_recipe_by_key(recipe_key: String) -> CropRecipe:
+	if current_machine == null or recipe_key.is_empty():
+		return null
+
+	for recipe in current_machine.available_recipes:
+		if recipe == null or not recipe.is_valid_recipe():
+			continue
+		if _get_recipe_key(recipe) == recipe_key:
+			return recipe
+
+	return null
+
+
+func _set_selected_recipe_by_key(recipe_key: String) -> void:
+	var recipe: CropRecipe = _find_recipe_by_key(recipe_key)
+	selected_recipe_key = _get_recipe_key(recipe) if recipe != null else ""
+
+	_update_recipe_selector_summary()
+	_refresh_recipe_selector_dialog()
+	if visible:
+		_update_selected_slot_info()
+		_update_action_buttons()
+
+
+func _update_recipe_selector_summary() -> void:
+	if recipe_selector_summary_label == null:
+		return
+
+	var recipe: CropRecipe = _get_selected_recipe()
+	if recipe == null:
+		recipe_selector_summary_label.text = "植え付ける作物: 未選択"
+		if recipe_selector_button != null:
+			recipe_selector_button.disabled = current_machine == null or current_machine.available_recipes.is_empty()
+		return
+
+	recipe_selector_summary_label.text = "植え付ける作物: %s" % _build_recipe_option_text(recipe)
+	if recipe_selector_button != null:
+		recipe_selector_button.disabled = false
+
+
+func _on_open_recipe_selector_pressed() -> void:
+	_open_recipe_selector_dialog()
+
+
+func _open_recipe_selector_dialog() -> void:
+	if recipe_selector_dialog == null or current_machine == null:
+		return
+
+	_refresh_recipe_selector_dialog()
+	recipe_selector_dialog.open_selector()
+
+
+func _refresh_recipe_selector_dialog() -> void:
+	if recipe_selector_dialog == null:
+		return
+
+	var recipes: Array = []
+	if current_machine != null:
+		recipes = current_machine.available_recipes
+
+	recipe_selector_dialog.configure_selector(
+		recipes,
+		selected_recipe_key,
+		Callable(self, "_get_player_item_count"),
+		Callable(self, "_get_recipe_farming_exp_per_cycle")
+	)
+
+
+func _on_recipe_selector_recipe_selected(recipe_key: String) -> void:
+	_set_selected_recipe_by_key(recipe_key)
+
+
+func _get_player_item_count(item_data: ItemData) -> int:
+	if item_data == null:
+		return -1
+
+	var targets: Array[Node] = _collect_item_count_targets()
+	var method_names: Array[String] = [
+		"get_item_count_by_data",
+		"get_item_count",
+		"get_inventory_item_count",
+		"get_item_quantity",
+		"count_item_in_inventory",
+		"get_total_item_count"
+	]
+
+	var best_result: int = -1
+	for target in targets:
+		for method_name in method_names:
+			var result: int = _call_item_count_method(target, method_name, item_data)
+			if result > 0:
+				return result
+			if result == 0:
+				best_result = 0
+
+	return best_result
+
+
+func _collect_item_count_targets() -> Array[Node]:
+	var targets: Array[Node] = []
+	_append_item_count_target(targets, current_player)
+
+	if current_player != null:
+		for property_name in ["inventory_ui", "inventory", "inventory_manager"]:
+			var value: Variant = current_player.get(property_name)
+			if value is Node:
+				_append_item_count_target(targets, value as Node)
+
+	var inventory_ui: Node = get_tree().get_first_node_in_group("inventory_ui")
+	_append_item_count_target(targets, inventory_ui)
+
+	return targets
+
+
+func _append_item_count_target(targets: Array[Node], target: Node) -> void:
+	if target == null:
+		return
+	if targets.has(target):
+		return
+	targets.append(target)
+
+
+func _call_item_count_method(target: Node, method_name: String, item_data: ItemData) -> int:
+	if target == null or item_data == null:
+		return -1
+	if not target.has_method(method_name):
+		return -1
+
+	var attempts: Array = []
+	match method_name:
+		"get_item_count_by_data":
+			attempts.append(item_data)
+		"get_item_count", "get_inventory_item_count", "get_item_quantity", "count_item_in_inventory", "get_total_item_count":
+			if not str(item_data.id).is_empty():
+				attempts.append(StringName(item_data.id))
+			if not item_data.resource_path.is_empty():
+				attempts.append(item_data.resource_path)
+			if not item_data.item_name.is_empty():
+				attempts.append(item_data.item_name)
+		_:
+			attempts.append(item_data)
+			if not str(item_data.id).is_empty():
+				attempts.append(StringName(item_data.id))
+			if not item_data.resource_path.is_empty():
+				attempts.append(item_data.resource_path)
+			if not item_data.item_name.is_empty():
+				attempts.append(item_data.item_name)
+
+	var best_numeric_result: int = -1
+	for arg in attempts:
+		var value: Variant = target.call(method_name, arg)
+		if typeof(value) == TYPE_INT or typeof(value) == TYPE_FLOAT:
+			best_numeric_result = max(best_numeric_result, max(int(value), 0))
+			if int(value) > 0:
+				return int(value)
+
+	return best_numeric_result
 
 
 func _update_selected_slot_info() -> void:
@@ -795,16 +1045,18 @@ func _update_action_buttons() -> void:
 
 
 func _get_selected_recipe() -> CropRecipe:
-	if current_machine == null or recipe_option.item_count <= 0:
+	if current_machine == null:
 		return null
 
-	var option_index: int = recipe_option.selected
-	if option_index < 0:
-		option_index = 0
+	if not selected_recipe_key.is_empty():
+		var selected_recipe: CropRecipe = _find_recipe_by_key(selected_recipe_key)
+		if selected_recipe != null:
+			return selected_recipe
 
-	var meta: Variant = recipe_option.get_item_metadata(option_index)
-	if meta is CropRecipe:
-		return meta as CropRecipe
+	for recipe in current_machine.available_recipes:
+		if recipe != null and recipe.is_valid_recipe():
+			return recipe
+
 	return null
 
 
@@ -818,15 +1070,6 @@ func _on_plant_count_changed(_value: float) -> void:
 		_update_selected_slot_info()
 		_update_action_buttons()
 
-
-func _on_recipe_selected(index: int) -> void:
-	if index < 0 or index >= recipe_option.item_count:
-		selected_recipe_key = ""
-	else:
-		selected_recipe_key = _get_recipe_key(_get_selected_recipe())
-	if visible:
-		_update_selected_slot_info()
-		_update_action_buttons()
 
 
 func _on_plant_pressed() -> void:

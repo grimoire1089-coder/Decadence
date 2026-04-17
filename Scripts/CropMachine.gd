@@ -4,8 +4,10 @@ class_name CropMachine
 const SAVE_PATH_PREFIX: String = "user://crop_machine_"
 
 @export var machine_name: String = "栽培機"
-@export_range(1, 99) var slot_count: int = 1
-@export_range(1, 99) var max_slot_count: int = 8
+@export var interact_action_text: String = "開く"
+@export var interact_prompt_offset: Vector2 = Vector2(0, -56)
+@export_range(1, 240) var slot_count: int = 1
+@export_range(1, 240) var max_slot_count: int = 240
 @export_range(0, 999999999) var slot_unlock_cost_base: int = 100
 @export_range(1.0, 100.0, 0.1) var slot_unlock_cost_multiplier: float = 1.5
 @export var available_recipes: Array[CropRecipe] = []
@@ -255,6 +257,14 @@ func _advance_growth(delta_minutes: int) -> void:
 	if changed:
 		save_data()
 		_refresh_open_ui()
+
+
+func get_interact_action_text() -> String:
+	return interact_action_text
+
+
+func get_interact_prompt_offset() -> Vector2:
+	return interact_prompt_offset
 
 
 func interact(player: Node) -> void:
