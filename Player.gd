@@ -41,7 +41,7 @@ var _walk_anim_time: float = 0.0
 
 
 var current_interactable: Node2D = null
-var nearby_interactables: Array[Node2D] = []
+var nearby_interactables: Array = []
 
 var selected_item_data: Resource = null
 var selected_item_amount: int = 0
@@ -383,7 +383,11 @@ func _update_current_interactable() -> void:
 	var nearest: Node2D = null
 	var nearest_distance: float = INF
 
-	for target in nearby_interactables:
+	for target_variant in nearby_interactables:
+		var target: Node2D = target_variant as Node2D
+		if target == null:
+			continue
+
 		var dist: float = global_position.distance_squared_to(target.global_position)
 		if dist < nearest_distance:
 			nearest_distance = dist

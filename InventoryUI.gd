@@ -1,14 +1,14 @@
 extends Control
 
 @export var slot_scene: PackedScene
-@export var item_db: Array[ItemData] = []
+@export var item_db: Array = []
 @export var item_data_folders: PackedStringArray = ["res://Data/Items/Item_defs"]
 
 @onready var panel: Control = $Panel
 @onready var grid: GridContainer = $Panel/ScrollContainer/GridContainer
 @onready var tooltip: Control = $InventoryTooltip
 
-var items: Array[InventoryEntry] = []
+var items: Array = []
 var item_map: Dictionary = {}
 var selected_item_data: ItemData = null
 
@@ -381,7 +381,7 @@ func remove_highest_quality_items_by_id(item_id: StringName, amount: int = 1) ->
 	if get_item_count(item_id) < amount:
 		return result
 
-	var candidates: Array[InventoryEntry] = []
+	var candidates: Array = []
 	for entry_obj in items:
 		var entry: InventoryEntry = entry_obj
 		if entry.item_data != null and entry.item_data.id == item_id:
