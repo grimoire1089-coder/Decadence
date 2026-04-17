@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://n3kpat5nk0ff"]
 
-[ext_resource type="Script" uid="uid://c1ssbik1hy2p8" path="res://Scripts/CropMachine.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://c1ssbik1hy2p8" path="res://Data/Object/CropMachine/CropMachine.gd" id="1_script"]
 [ext_resource type="Texture2D" uid="uid://ckdn342kp3dv8" path="res://Image/Cultivation_Machine.png" id="2_2apj4"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]

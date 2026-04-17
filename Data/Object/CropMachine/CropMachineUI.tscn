@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://c0st7x5p7t6xf"]
 
-[ext_resource type="Script" uid="uid://s8piawmi021i" path="res://Scripts/CropMachineUI.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://s8piawmi021i" path="res://Data/Object/CropMachine/CropMachineUI.gd" id="1_script"]
 
 [node name="CropMachineUI" type="Control" unique_id=1968814147]
 layout_mode = 3

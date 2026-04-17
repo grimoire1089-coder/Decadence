@@ -78,6 +78,7 @@ var recipe_selector_row: HBoxContainer = null
 var recipe_selector_summary_label: Label = null
 var recipe_selector_button: Button = null
 var recipe_selector_dialog: CropRecipeSelectorDialog = null
+var slot_grid_module: CropMachineSlotGridModule = null
 
 
 func _ready() -> void:
@@ -85,6 +86,7 @@ func _ready() -> void:
 	add_to_group("crop_machine_ui")
 
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_ensure_slot_grid_module()
 	panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	_setup_root_layout()
 	_setup_dimmer()
@@ -485,7 +487,16 @@ func _ensure_slot_upgrade_dialog() -> void:
 		slot_upgrade_info_label = body.get_node_or_null("UpgradeInfoLabel") as Label
 
 
+func _ensure_slot_grid_module() -> void:
+	if slot_grid_module != null:
+		return
+	slot_grid_module = CropMachineSlotGridModule.new()
+	slot_grid_module.setup(self)
+
+
 func _get_slot_cell_height() -> int:
+	if slot_grid_module != null:
+		return slot_grid_module.get_slot_cell_height()
 	return SLOT_BUTTON_HEIGHT + SLOT_CELL_SEPARATION + SLOT_UPGRADE_BUTTON_HEIGHT
 
 
@@ -502,7 +513,8 @@ func open_machine(machine: CropMachine, player: Node) -> void:
 	else:
 		selected_slot_index = -1
 
-	_sync_page_to_selected_slot()
+	if slot_grid_module != null:
+		slot_grid_module.sync_page_to_selected_slot()
 	visible = true
 	move_to_front()
 	_acquire_ui_lock()
@@ -538,109 +550,23 @@ func refresh() -> void:
 	]
 	_refresh_recipe_options()
 
-	for child in grid.get_children():
-		grid.remove_child(child)
-		child.queue_free()
-
-	var total_slots: int = current_machine.slots.size()
-	if total_slots <= 0:
-		selected_slot_index = -1
-		current_page_index = 0
-		info_label.text = "スロットがない"
-		_update_page_controls(0)
+	if slot_grid_module != null:
+		slot_grid_module.refresh_slot_grid()
+	else:
+		_update_selected_slot_info()
 		_update_action_buttons()
-		return
-
-	selected_slot_index = clamp(selected_slot_index, 0, total_slots - 1)
-	_sync_page_to_selected_slot(total_slots)
-
-	var start_index: int = current_page_index * SLOTS_PER_PAGE
-	var end_index: int = min(start_index + SLOTS_PER_PAGE, total_slots)
-
-	for i in range(start_index, end_index):
-		var is_selected: bool = i == selected_slot_index
-		var slot_cell: VBoxContainer = VBoxContainer.new()
-		slot_cell.alignment = BoxContainer.ALIGNMENT_CENTER
-		slot_cell.add_theme_constant_override("separation", SLOT_CELL_SEPARATION)
-		slot_cell.custom_minimum_size = Vector2(SLOT_BUTTON_WIDTH, _get_slot_cell_height())
-		slot_cell.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-
-		var button: Button = Button.new()
-		var harvest_item: ItemData = current_machine.get_slot_harvest_item(i)
-		var slot_icon: Texture2D = null
-		var has_icon: bool = false
-
-		if harvest_item != null and harvest_item.icon != null:
-			slot_icon = harvest_item.icon
-			has_icon = true
-
-		button.custom_minimum_size = Vector2(SLOT_BUTTON_WIDTH, SLOT_BUTTON_HEIGHT)
-		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		button.mouse_filter = Control.MOUSE_FILTER_STOP
-		button.clip_contents = true
-
-		var slot_text: String = _format_slot_text_for_ui(current_machine.get_slot_status_text(i))
-		if has_icon:
-			button.text = slot_text
-		else:
-			button.text = "[%d]\n%s" % [i + 1, slot_text]
-
-		button.alignment = HORIZONTAL_ALIGNMENT_CENTER
-		button.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
-		button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		button.add_theme_stylebox_override("normal", _make_slot_stylebox(is_selected, false, has_icon))
-		button.add_theme_stylebox_override("hover", _make_slot_stylebox(is_selected, true, has_icon))
-		button.add_theme_stylebox_override("pressed", _make_slot_stylebox(is_selected, true, has_icon))
-		button.add_theme_stylebox_override("focus", _make_slot_stylebox(is_selected, true, has_icon))
-		button.add_theme_stylebox_override("disabled", _make_slot_stylebox(is_selected, false, has_icon))
-
-		if is_selected:
-			button.add_theme_color_override("font_color", Color.WHITE)
-			button.add_theme_color_override("font_hover_color", Color.WHITE)
-			button.add_theme_color_override("font_pressed_color", Color.WHITE)
-			button.add_theme_color_override("font_focus_color", Color.WHITE)
-
-		if slot_icon != null:
-			_add_slot_icon(button, slot_icon)
-
-		button.pressed.connect(_on_slot_pressed.bind(i))
-		slot_cell.add_child(button)
-
-		var upgrade_button: Button = Button.new()
-		upgrade_button.text = SLOT_UPGRADE_BUTTON_TEXT
-		upgrade_button.custom_minimum_size = Vector2(SLOT_BUTTON_WIDTH, SLOT_UPGRADE_BUTTON_HEIGHT)
-		upgrade_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		upgrade_button.pressed.connect(_on_open_slot_upgrade_pressed.bind(i))
-		slot_cell.add_child(upgrade_button)
-
-		grid.add_child(slot_cell)
-
-	for _dummy_index in range(end_index - start_index, SLOTS_PER_PAGE):
-		var placeholder: Control = Control.new()
-		placeholder.custom_minimum_size = Vector2(SLOT_BUTTON_WIDTH, _get_slot_cell_height())
-		placeholder.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		grid.add_child(placeholder)
-
-	_update_page_controls(total_slots)
-	_update_selected_slot_info()
-	_update_action_buttons()
 
 
 func _format_slot_text_for_ui(slot_text: String) -> String:
-	if slot_text.is_empty():
-		return slot_text
-
-	var lines: PackedStringArray = slot_text.split("\n")
-	for i in range(lines.size()):
-		var line: String = lines[i]
-		if line.contains("現在:") and line.contains("%"):
-			var parts: PackedStringArray = line.split(" / ")
-			if parts.size() > 0:
-				lines[i] = parts[0]
-	return "\n".join(lines)
+	if slot_grid_module != null:
+		return slot_grid_module.format_slot_text_for_ui(slot_text)
+	return slot_text
 
 
 func _make_slot_stylebox(is_selected: bool, is_hover: bool, has_icon: bool = false) -> StyleBoxFlat:
+	if slot_grid_module != null:
+		return slot_grid_module.make_slot_stylebox(is_selected, is_hover, has_icon)
+
 	var style: StyleBoxFlat = StyleBoxFlat.new()
 	style.corner_radius_top_left = SLOT_CORNER_RADIUS
 	style.corner_radius_top_right = SLOT_CORNER_RADIUS
@@ -650,127 +576,45 @@ func _make_slot_stylebox(is_selected: bool, is_hover: bool, has_icon: bool = fal
 	style.content_margin_top = SLOT_CONTENT_TOP_WITH_ICON if has_icon else 10
 	style.content_margin_right = 12
 	style.content_margin_bottom = 10
-
-	if is_selected:
-		style.bg_color = SLOT_BG_SELECTED_HOVER if is_hover else SLOT_BG_SELECTED
-		style.border_color = SLOT_SELECTED_BORDER_COLOR
-		style.border_width_left = SLOT_SELECTED_BORDER_WIDTH
-		style.border_width_top = SLOT_SELECTED_BORDER_WIDTH
-		style.border_width_right = SLOT_SELECTED_BORDER_WIDTH
-		style.border_width_bottom = SLOT_SELECTED_BORDER_WIDTH
-	else:
-		style.bg_color = SLOT_BG_HOVER if is_hover else SLOT_BG_NORMAL
-		style.border_color = SLOT_BORDER_HOVER if is_hover else SLOT_BORDER_NORMAL
-		style.border_width_left = SLOT_NORMAL_BORDER_WIDTH
-		style.border_width_top = SLOT_NORMAL_BORDER_WIDTH
-		style.border_width_right = SLOT_NORMAL_BORDER_WIDTH
-		style.border_width_bottom = SLOT_NORMAL_BORDER_WIDTH
-
 	return style
 
 
 func _add_slot_icon(button: Button, icon_texture: Texture2D) -> void:
-	if button == null or icon_texture == null:
-		return
-
-	var icon_rect: TextureRect = TextureRect.new()
-	icon_rect.texture = icon_texture
-	icon_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	icon_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	icon_rect.z_index = 1
-
-	icon_rect.anchor_left = 0.5
-	icon_rect.anchor_right = 0.5
-	icon_rect.anchor_top = 0.0
-	icon_rect.anchor_bottom = 0.0
-
-	icon_rect.offset_left = -SLOT_ICON_SIZE * 0.5
-	icon_rect.offset_top = SLOT_ICON_TOP_OFFSET
-	icon_rect.offset_right = SLOT_ICON_SIZE * 0.5
-	icon_rect.offset_bottom = SLOT_ICON_TOP_OFFSET + SLOT_ICON_SIZE
-
-	button.add_child(icon_rect)
+	if slot_grid_module != null:
+		slot_grid_module.add_slot_icon(button, icon_texture)
 
 
 func _get_total_pages(total_slots: int) -> int:
+	if slot_grid_module != null:
+		return slot_grid_module.get_total_pages(total_slots)
 	if total_slots <= 0:
 		return 1
 	return int(ceil(float(total_slots) / float(SLOTS_PER_PAGE)))
 
 
 func _sync_page_to_selected_slot(total_slots: int = -1) -> void:
-	if current_machine == null:
-		current_page_index = 0
-		return
-
-	if total_slots < 0:
-		total_slots = current_machine.slots.size()
-
-	var total_pages: int = _get_total_pages(total_slots)
-	current_page_index = clamp(current_page_index, 0, max(total_pages - 1, 0))
-
-	if selected_slot_index < 0 or selected_slot_index >= total_slots:
-		return
-
-	var selected_page: int = int(selected_slot_index / SLOTS_PER_PAGE)
-	current_page_index = clamp(selected_page, 0, max(total_pages - 1, 0))
+	if slot_grid_module != null:
+		slot_grid_module.sync_page_to_selected_slot(total_slots)
 
 
 func _select_first_slot_on_current_page() -> void:
-	if current_machine == null:
-		selected_slot_index = -1
-		return
-
-	var total_slots: int = current_machine.slots.size()
-	if total_slots <= 0:
-		selected_slot_index = -1
-		return
-
-	var start_index: int = current_page_index * SLOTS_PER_PAGE
-	selected_slot_index = clamp(start_index, 0, total_slots - 1)
+	if slot_grid_module != null:
+		slot_grid_module.select_first_slot_on_current_page()
 
 
 func _update_page_controls(total_slots: int) -> void:
-	if page_navigation_row == null:
-		return
-
-	var total_pages: int = _get_total_pages(total_slots)
-	var has_multiple_pages: bool = total_pages > 1
-	page_navigation_row.visible = has_multiple_pages
-
-	if page_label != null:
-		page_label.text = "ページ %d / %d" % [current_page_index + 1, total_pages]
-
-	if prev_page_button != null:
-		prev_page_button.disabled = not has_multiple_pages or current_page_index <= 0
-
-	if next_page_button != null:
-		next_page_button.disabled = not has_multiple_pages or current_page_index >= total_pages - 1
+	if slot_grid_module != null:
+		slot_grid_module.update_page_controls(total_slots)
 
 
 func _on_prev_page_pressed() -> void:
-	if current_machine == null:
-		return
-	if current_page_index <= 0:
-		return
-
-	current_page_index -= 1
-	_select_first_slot_on_current_page()
-	refresh()
+	if slot_grid_module != null:
+		slot_grid_module.on_prev_page_pressed()
 
 
 func _on_next_page_pressed() -> void:
-	if current_machine == null:
-		return
-
-	var total_pages: int = _get_total_pages(current_machine.slots.size())
-	if current_page_index >= total_pages - 1:
-		return
-
-	current_page_index += 1
-	_select_first_slot_on_current_page()
-	refresh()
+	if slot_grid_module != null:
+		slot_grid_module.on_next_page_pressed()
 
 
 func _refresh_recipe_options() -> void:
@@ -1061,6 +905,9 @@ func _get_selected_recipe() -> CropRecipe:
 
 
 func _on_slot_pressed(index: int) -> void:
+	if slot_grid_module != null:
+		slot_grid_module.on_slot_pressed(index)
+		return
 	selected_slot_index = index
 	refresh()
 

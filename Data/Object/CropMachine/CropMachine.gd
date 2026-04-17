@@ -1,8 +1,6 @@
 extends StaticBody2D
 class_name CropMachine
 
-const SAVE_PATH_PREFIX: String = "user://crop_machine_"
-
 @export var machine_name: String = "栽培機"
 @export var interact_action_text: String = "開く"
 @export var interact_prompt_offset: Vector2 = Vector2(0, -56)
@@ -16,6 +14,7 @@ const SAVE_PATH_PREFIX: String = "user://crop_machine_"
 
 var slots: Array[Dictionary] = []
 var _last_total_minutes: int = -1
+var _save_module: CropMachineSaveModule = CropMachineSaveModule.new()
 
 @onready var interact_area: Area2D = $InteractArea
 
@@ -678,96 +677,34 @@ func _is_valid_slot_index(slot_index: int) -> bool:
 	return slot_index >= 0 and slot_index < slots.size()
 
 
+func _get_save_module() -> CropMachineSaveModule:
+	if _save_module == null:
+		_save_module = CropMachineSaveModule.new()
+	return _save_module
+
+
+func get_save_key() -> String:
+	return _get_save_module().get_machine_save_key(self)
+
+
 func _get_save_path() -> String:
-	var unique_name: String = str(name)
-	if unique_name.is_empty():
-		unique_name = machine_name
-	if unique_name.is_empty():
-		unique_name = "default"
-	return SAVE_PATH_PREFIX + unique_name + ".json"
+	return _get_save_module().get_save_path(self)
+
+
+func get_save_payload() -> Dictionary:
+	return _get_save_module().build_save_payload(self)
+
+
+func apply_save_payload(data: Dictionary) -> void:
+	_get_save_module().apply_save_payload(self, data)
 
 
 func save_data() -> void:
-	var data: Dictionary = {
-		"slot_count": slot_count,
-		"slots": slots
-	}
-
-	var file: FileAccess = FileAccess.open(_get_save_path(), FileAccess.WRITE)
-	if file == null:
-		push_error("栽培機セーブ失敗: %s" % _get_save_path())
-		return
-
-	file.store_string(JSON.stringify(data))
+	_get_save_module().save_machine(self)
 
 
 func load_data() -> void:
-	var save_path: String = _get_save_path()
-	if not FileAccess.file_exists(save_path):
-		return
-
-	var file: FileAccess = FileAccess.open(save_path, FileAccess.READ)
-	if file == null:
-		push_error("栽培機ロード失敗: %s" % save_path)
-		return
-
-	var text: String = file.get_as_text()
-	var json: JSON = JSON.new()
-	var err: int = json.parse(text)
-	if err != OK:
-		push_error("栽培機JSON読み込み失敗: %s" % save_path)
-		return
-
-	var data: Variant = json.data
-	if typeof(data) != TYPE_DICTIONARY:
-		return
-
-	var saved_slot_count: int = clamp(int(data.get("slot_count", slot_count)), 1, max_slot_count)
-	if saved_slot_count != slot_count:
-		_resize_slots_to_count(saved_slot_count)
-
-	var loaded_slots_variant: Variant = data.get("slots", [])
-	if typeof(loaded_slots_variant) != TYPE_ARRAY:
-		return
-
-	var loaded_slots: Array = loaded_slots_variant
-	var count: int = min(slot_count, loaded_slots.size())
-	for i in range(count):
-		var slot_variant: Variant = loaded_slots[i]
-		if typeof(slot_variant) != TYPE_DICTIONARY:
-			continue
-
-		var incoming: Dictionary = slot_variant
-		var slot: Dictionary = _make_empty_slot()
-		slot["seed_item_path"] = str(incoming.get("seed_item_path", ""))
-		slot["harvest_item_path"] = str(incoming.get("harvest_item_path", ""))
-		slot["display_name"] = str(incoming.get("display_name", ""))
-		slot["total_minutes"] = max(int(incoming.get("total_minutes", 0)), 0)
-		slot["harvest_amount"] = max(int(incoming.get("harvest_amount", 0)), 0)
-		slot["recipe_key"] = str(incoming.get("recipe_key", ""))
-
-		if incoming.has("queued_count") or incoming.has("ready_count"):
-			slot["remaining_minutes"] = max(int(incoming.get("remaining_minutes", 0)), 0)
-			slot["queued_count"] = max(int(incoming.get("queued_count", 0)), 0)
-			slot["ready_count"] = max(int(incoming.get("ready_count", 0)), 0)
-		else:
-			var old_ready: bool = bool(incoming.get("ready", false))
-			if old_ready:
-				slot["remaining_minutes"] = 0
-				slot["queued_count"] = 0
-				slot["ready_count"] = 1
-			else:
-				slot["remaining_minutes"] = max(int(incoming.get("remaining_minutes", 0)), 0)
-				if not str(slot.get("harvest_item_path", "")).is_empty():
-					slot["queued_count"] = 1
-				else:
-					slot["queued_count"] = 0
-				slot["ready_count"] = 0
-
-		if max(int(slot.get("queued_count", 0)), 0) <= 0 and max(int(slot.get("ready_count", 0)), 0) <= 0:
-			slot = _make_empty_slot()
-
-		slots[i] = slot
+	_get_save_module().load_machine(self)
 
 
 func _refresh_open_ui() -> void:
