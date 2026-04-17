@@ -24,7 +24,7 @@ const SUPPORTED_SKILLS: Array[Dictionary] = [
 ]
 
 @export var skill_row_scene: PackedScene
-@export var role_skill_resources: Array = []
+@export var role_skill_resources: Array[Resource] = []
 
 @onready var panel: Panel = $CenterContainer/Panel
 @onready var title_label: Label = $CenterContainer/Panel/MarginContainer/RootVBox/HeaderHBox/TitleLabel
@@ -81,6 +81,7 @@ func _ready() -> void:
 	_connect_stats_manager()
 	_connect_role_manager()
 	_bind_skill_hotbar()
+	call_deferred("_bind_skill_hotbar")
 	_refresh_all()
 
 
@@ -339,7 +340,7 @@ func _refresh_active_skill_section() -> void:
 	_ensure_skill_select_overlay()
 	_bind_skill_hotbar()
 
-	var role_skills: Array = _get_role_skills()
+	var role_skills: Array[RoleSkillData] = _get_role_skills()
 	var hotbar: Node = _observed_hotbar
 
 	if role_skills.is_empty():
@@ -413,7 +414,7 @@ func _refresh_skill_select_page() -> void:
 		_skill_select_list.remove_child(child)
 		child.queue_free()
 
-	var role_skills: Array = _get_role_skills()
+	var role_skills: Array[RoleSkillData] = _get_role_skills()
 	if role_skills.is_empty():
 		_skill_select_name_label.text = "ロールスキルなし"
 		_skill_select_icon.texture = null
@@ -666,8 +667,8 @@ func _build_role_skill_detail_text(skill: RoleSkillData) -> String:
 	]
 
 
-func _get_role_skills() -> Array:
-	var result: Array = []
+func _get_role_skills() -> Array[RoleSkillData]:
+	var result: Array[RoleSkillData] = []
 	var seen_keys: Dictionary = {}
 
 	for resource in role_skill_resources:
@@ -733,8 +734,8 @@ func _load_role_skill_from_path(path: String) -> RoleSkillData:
 	return _variant_to_role_skill(loaded)
 
 
-func _scan_role_skills_in_directory(dir_path: String) -> Array:
-	var found: Array = []
+func _scan_role_skills_in_directory(dir_path: String) -> Array[RoleSkillData]:
+	var found: Array[RoleSkillData] = []
 	if dir_path.is_empty() or not DirAccess.dir_exists_absolute(dir_path):
 		return found
 
@@ -1102,16 +1103,51 @@ func _find_role_manager() -> Node:
 
 
 func _find_skill_hotbar() -> Node:
+	var direct_paths: Array[NodePath] = [
+		NodePath("/root/Main/UI/SkillHotbarUI"),
+		NodePath("/root/Main/UI/SkillHotbarUI"),
+		NodePath("/root/SkillHotbarUI"),
+		NodePath("UI/SkillHotbarUI"),
+		NodePath("../UI/SkillHotbarUI")
+	]
+	for path in direct_paths:
+		var direct: Node = get_node_or_null(path)
+		if direct != null:
+			return direct
+
 	var by_group: Node = get_tree().get_first_node_in_group("skill_hotbar_ui")
 	if by_group != null:
 		return by_group
 
-	for child in get_tree().root.get_children():
-		var script_value: Variant = child.get_script()
+	var root: Node = get_tree().root
+	var found_by_name: Node = root.find_child("SkillHotbarUI", true, false)
+	if found_by_name != null:
+		return found_by_name
+
+	return _find_node_by_script_file(root, SKILL_HOTBAR_SCRIPT_NAME)
+
+
+func _find_node_by_script_file(root: Node, file_name: String) -> Node:
+	if root == null:
+		return null
+
+	var stack: Array = [root]
+	while not stack.is_empty():
+		var current_obj: Variant = stack.pop_back()
+		var current: Node = current_obj as Node
+		if current == null:
+			continue
+
+		var script_value: Variant = current.get_script()
 		if script_value is Script:
 			var script_ref: Script = script_value as Script
-			if script_ref != null and script_ref.resource_path.get_file() == SKILL_HOTBAR_SCRIPT_NAME:
-				return child
+			if script_ref != null and script_ref.resource_path.get_file() == file_name:
+				return current
+
+		for child_obj in current.get_children():
+			var child: Node = child_obj as Node
+			if child != null:
+				stack.append(child)
 
 	return null
 

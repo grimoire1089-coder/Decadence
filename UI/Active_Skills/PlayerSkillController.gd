@@ -27,6 +27,15 @@ func _ready() -> void:
 	_connect_hotbar_signals()
 	_connect_skill_caster_signals()
 	_refresh_all_hotbar_cooldowns()
+	call_deferred("_late_bind_ui_references")
+
+
+func _late_bind_ui_references() -> void:
+	await get_tree().process_frame
+	_resolve_references()
+	_connect_hotbar_signals()
+	_connect_skill_caster_signals()
+	_refresh_all_hotbar_cooldowns()
 
 
 func _resolve_references() -> void:
@@ -41,18 +50,33 @@ func _find_hotbar() -> CanvasLayer:
 		if by_path is CanvasLayer:
 			return by_path as CanvasLayer
 
+	var by_root_path: Node = get_node_or_null("/root/Main/UI/SkillHotbarUI")
+	if by_root_path is CanvasLayer:
+		return by_root_path as CanvasLayer
+
 	var by_group: Node = get_tree().get_first_node_in_group("skill_hotbar_ui")
 	if by_group is CanvasLayer:
 		return by_group as CanvasLayer
 
 	var current_scene: Node = get_tree().current_scene
 	if current_scene != null:
+		var direct_ui: Node = current_scene.get_node_or_null("UI/SkillHotbarUI")
+		if direct_ui is CanvasLayer:
+			return direct_ui as CanvasLayer
+
 		var found: Node = current_scene.find_child("SkillHotbarUI", true, false)
 		if found is CanvasLayer:
 			return found as CanvasLayer
 
-	return null
+	for child_variant in get_tree().root.get_children():
+		var child: Node = child_variant as Node
+		if child == null:
+			continue
+		var found_child: Node = child.find_child("SkillHotbarUI", true, false)
+		if found_child is CanvasLayer:
+			return found_child as CanvasLayer
 
+	return null
 
 func _find_skill_caster() -> Node:
 	if not skill_caster_path.is_empty():
