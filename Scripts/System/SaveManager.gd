@@ -269,9 +269,24 @@ func _apply_player_state(scene_root: Node, player_data: Dictionary) -> void:
 
 
 func _find_player_node(scene_root: Node) -> Node:
-	for node in get_tree().get_nodes_in_group("player"):
-		if _is_descendant_of(scene_root, node):
+	for node_obj in get_tree().get_nodes_in_group("player"):
+		var node: Node = node_obj as Node
+		if node != null and _is_descendant_of(scene_root, node):
 			return node
+
+	var candidate_paths: Array = [
+		"Player",
+		"Sortables/Player",
+	]
+	for path_obj in candidate_paths:
+		var by_path: Node = scene_root.get_node_or_null(String(path_obj))
+		if by_path != null:
+			return by_path
+
+	var found: Node = scene_root.find_child("Player", true, false)
+	if found != null:
+		return found
+
 	return null
 
 
@@ -295,9 +310,20 @@ func _is_descendant_of(root: Node, candidate: Node) -> bool:
 	return false
 
 
-
 func get_last_loaded_save_data() -> Dictionary:
 	return _last_loaded_save_data.duplicate(true)
+
+
+func _collect_save_persistent_nodes(scene_root: Node) -> Array:
+	var result: Array = []
+	for node_obj in get_tree().get_nodes_in_group("save_persistent"):
+		var node: Node = node_obj as Node
+		if node == null:
+			continue
+		if not _is_descendant_of(scene_root, node):
+			continue
+		result.append(node)
+	return result
 
 
 func reapply_player_state_to_scene(scene_root: Node) -> void:
@@ -316,18 +342,48 @@ func reapply_player_state_deferred(scene_root: Node, frames: int = 2) -> void:
 
 
 func _reapply_player_state_after_frames(scene_root: Node, frames: int = 2) -> void:
-	var attempts: Array[int] = [max(frames, 0), max(frames + 2, 2), max(frames + 8, 8)]
-	var previous_target: int = 0
-	for target_frames in attempts:
-		var wait_frames: int = max(target_frames - previous_target, 0)
-		while wait_frames > 0:
-			await get_tree().process_frame
-			wait_frames -= 1
-		previous_target = target_frames
-		reapply_player_state_to_scene(scene_root)
-
-	await get_tree().create_timer(0.35).timeout
+	var remaining: int = max(frames, 0)
+	while remaining > 0:
+		await get_tree().process_frame
+		remaining -= 1
 	reapply_player_state_to_scene(scene_root)
+	await get_tree().process_frame
+	reapply_player_state_to_scene(scene_root)
+	await get_tree().create_timer(0.25).timeout
+	reapply_player_state_to_scene(scene_root)
+
+
+func reapply_persistent_nodes_to_scene(scene_root: Node) -> void:
+	if not is_instance_valid(scene_root):
+		return
+	if _last_loaded_save_data.is_empty():
+		return
+	var world_data: Dictionary = _last_loaded_save_data.get("world", {}) as Dictionary
+	var persistent_map: Dictionary = world_data.get("persistent_nodes", {}) as Dictionary
+	for node_obj in _collect_save_persistent_nodes(scene_root):
+		var node: Node = node_obj as Node
+		if node == null:
+			continue
+		if not node.has_method("import_save_data"):
+			continue
+		var pid: String = _get_persistent_id(node)
+		if pid.is_empty() or not persistent_map.has(pid):
+			continue
+		node.call("import_save_data", persistent_map.get(pid, {}))
+
+
+func reapply_persistent_nodes_deferred(scene_root: Node, frames: int = 2) -> void:
+	if not is_instance_valid(scene_root):
+		return
+	call_deferred("_reapply_persistent_nodes_after_frames", scene_root, frames)
+
+
+func _reapply_persistent_nodes_after_frames(scene_root: Node, frames: int = 2) -> void:
+	var remaining: int = max(frames, 0)
+	while remaining > 0:
+		await get_tree().process_frame
+		remaining -= 1
+	reapply_persistent_nodes_to_scene(scene_root)
 
 
 func _normalize_save_data(raw_data: Dictionary) -> Dictionary:

@@ -122,8 +122,9 @@ func _rebuild_label_chips(item_data: ItemData) -> void:
 	if item_data == null:
 		return
 
-	var labels: Array[ItemTag] = item_data.get_valid_labels()
-	for label_res: ItemTag in labels:
+	var labels: Array = item_data.get_valid_labels()
+	for label_obj in labels:
+		var label_res: ItemTag = label_obj as ItemTag
 		if label_res == null:
 			continue
 		label_chip_flow.add_child(_create_label_chip(label_res))

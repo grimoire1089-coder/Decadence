@@ -11,6 +11,9 @@ extends Control
 var items: Array = []
 var item_map: Dictionary = {}
 var selected_item_data: ItemData = null
+@export var persistent_id: String = "inventory_ui"
+@export var add_debug_start_items: bool = false
+var _boot_initialized: bool = false
 
 const PANEL_BG: Color = Color(0.05, 0.08, 0.12, 0.94)
 const PANEL_BORDER: Color = Color(0.30, 0.75, 1.0, 0.70)
@@ -24,8 +27,8 @@ const SLOT_SIZE := 72
 
 func _ready() -> void:
 	add_to_group("inventory_ui")
+	add_to_group("save_persistent")
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	
 	$Panel.mouse_filter = Control.MOUSE_FILTER_STOP
 
 	z_index = 300
@@ -35,28 +38,75 @@ func _ready() -> void:
 	grid.columns = GRID_COLUMNS
 	_apply_inventory_theme()
 	_update_grid_size()
+	_hide_tooltip_immediately()
+	boot_initialize()
 
+
+func boot_initialize() -> void:
+	if _boot_initialized:
+		return
+	_boot_initialized = true
 	grid.columns = GRID_COLUMNS
+	_update_grid_size()
 	_load_items_from_folders()
 	_rebuild_item_map()
-	_hide_tooltip_immediately()
+	if add_debug_start_items:
+		add_item_by_id("apple", 1)
+		add_item_by_id("avocado", 1)
+		add_item_by_id("lemon", 1)
+		add_item_by_id("mangosteen", 1)
+		add_item_by_id("orange", 1)
+		add_item_by_id("peach", 1)
+		add_item_by_id("seed_potato", 100)
+		add_item_by_id("seed_wheat", 100)
+	refresh()
 
-	# テスト用。不要なら消してOK
-	add_item_by_id("apple", 1)
-	add_item_by_id("avocado", 1)
-	add_item_by_id("lemon", 1)
-	add_item_by_id("mangosteen", 1)
-	add_item_by_id("orange", 1)
-	add_item_by_id("peach", 1)
-	add_item_by_id("seed_potato", 100)
-	add_item_by_id("seed_wheat", 100)
 
-	print("InventoryUI ready")
-	print("item_db size =", item_db.size())
-	print("item_map keys =", item_map.keys())
-	print("panel global =", $Panel.global_position)
-	print("scroll global =", $Panel/ScrollContainer.global_position)
-	print("grid global =", grid.global_position)
+func get_persistent_save_id() -> String:
+	return persistent_id.strip_edges()
+
+
+func export_save_data() -> Dictionary:
+	var entries: Array = []
+	for entry_obj in items:
+		var entry: InventoryEntry = entry_obj as InventoryEntry
+		if entry == null or entry.item_data == null:
+			continue
+		entries.append({
+			"item_id": String(entry.item_data.id),
+			"count": entry.count,
+		})
+	return {
+		"entries": entries,
+		"selected_item_id": "" if selected_item_data == null else String(selected_item_data.id),
+	}
+
+
+func import_save_data(data: Dictionary) -> void:
+	boot_initialize()
+	items.clear()
+	selected_item_data = null
+
+	var entries: Array = data.get("entries", []) as Array
+	for row_obj in entries:
+		if typeof(row_obj) != TYPE_DICTIONARY:
+			continue
+		var row: Dictionary = row_obj as Dictionary
+		var item_id: String = String(row.get("item_id", "")).strip_edges()
+		var count: int = int(row.get("count", 0))
+		if item_id.is_empty() or count <= 0:
+			continue
+		var item_data: ItemData = item_map.get(item_id, null) as ItemData
+		if item_data == null:
+			continue
+		items.append(InventoryEntry.new(item_data, count))
+
+	var selected_id: String = String(data.get("selected_item_id", "")).strip_edges()
+	if not selected_id.is_empty():
+		selected_item_data = item_map.get(selected_id, null) as ItemData
+
+	refresh()
+
 
 func _load_items_from_folders() -> void:
 	var loaded_by_id: Dictionary = {}
@@ -100,30 +150,6 @@ func _load_item_data_from_folder_recursive(folder_path: String, loaded_by_id: Di
 				loaded_by_id[item_data.id] = item_data
 
 	dir.list_dir_end()
-
-	item_db.clear()
-	for value in loaded_by_id.values():
-		item_db.append(value)
-
-		dir.list_dir_begin()
-		while true:
-			var file_name := dir.get_next()
-			if file_name == "":
-				break
-
-			if dir.current_is_dir():
-				continue
-			if not file_name.ends_with(".tres"):
-				continue
-
-			var full_path := folder_path.path_join(file_name)
-			var res := load(full_path)
-			if res is ItemData:
-				var item_data: ItemData = res as ItemData
-				if item_data != null and str(item_data.id) != "":
-					loaded_by_id[item_data.id] = item_data
-
-		dir.list_dir_end()
 
 	item_db.clear()
 	for value in loaded_by_id.values():
@@ -381,7 +407,7 @@ func remove_highest_quality_items_by_id(item_id: StringName, amount: int = 1) ->
 	if get_item_count(item_id) < amount:
 		return result
 
-	var candidates: Array = []
+	var candidates: Array[InventoryEntry] = []
 	for entry_obj in items:
 		var entry: InventoryEntry = entry_obj
 		if entry.item_data != null and entry.item_data.id == item_id:
