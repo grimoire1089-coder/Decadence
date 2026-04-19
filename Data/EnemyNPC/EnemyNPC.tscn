@@ -13,6 +13,9 @@ radius = 521.1765
 
 [node name="EnemyNPC" type="CharacterBody2D" unique_id=1240293277]
 script = ExtResource("1_enemy_script")
+dps_dummy_disable_chase = true
+dps_dummy_disable_attack = true
+dps_dummy_ignore_player_hostility = true
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=91303980]
 position = Vector2(0, -16)

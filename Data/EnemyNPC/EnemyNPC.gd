@@ -18,6 +18,11 @@ signal defeated(enemy)
 @export_range(0.0, 64.0, 1.0) var overlap_release_margin: float = 6.0
 @export_range(0.0, 1.0, 0.05) var overlap_release_speed_ratio: float = 0.65
 
+@export_group("DPSカカシ")
+@export var dps_dummy_disable_chase: bool = false
+@export var dps_dummy_disable_attack: bool = false
+@export var dps_dummy_ignore_player_hostility: bool = false
+
 @export_group("見た目")
 @export var sprite_offset: Vector2 = Vector2(0, -16)
 @export var face_move_direction: bool = true
@@ -69,7 +74,8 @@ func _ready() -> void:
 
 
 func _physics_process(_delta: float) -> void:
-	if not chase_player:
+	if _is_player_hostility_disabled():
+		_clear_player_hostility_state()
 		velocity = Vector2.ZERO
 		move_and_slide()
 		return
@@ -97,7 +103,9 @@ func _physics_process(_delta: float) -> void:
 	var effective_stop_distance: float = max(max(stop_distance, 0.0), body_stop_distance)
 	var overlap_release_distance: float = max(body_stop_distance - max(overlap_release_margin, 0.0), 0.0)
 
-	if distance_to_player < overlap_release_distance:
+	if not _can_chase_player_now():
+		velocity = Vector2.ZERO
+	elif distance_to_player < overlap_release_distance:
 		velocity = _get_overlap_release_velocity(to_player)
 	elif can_attack_now or distance_to_player <= effective_stop_distance:
 		velocity = Vector2.ZERO
@@ -113,6 +121,9 @@ func take_damage(amount: int) -> void:
 
 	current_hp = max(current_hp - amount, 0)
 	_emit_hp_changed()
+
+	if _is_player_hostility_disabled():
+		_clear_player_hostility_state()
 
 	if current_hp <= 0:
 		die()
@@ -191,11 +202,17 @@ func die() -> void:
 func _on_search_area_body_entered(body: Node) -> void:
 	if not body.is_in_group("player"):
 		return
+	if _is_player_hostility_disabled():
+		return
 	if body is Node2D:
 		_target_player = body as Node2D
 
 
 func _on_search_area_body_exited(body: Node) -> void:
+	if _is_player_hostility_disabled():
+		_clear_player_hostility_state()
+		return
+
 	if body != _target_player:
 		return
 
@@ -207,12 +224,14 @@ func _on_attack_area_body_entered(body: Node) -> void:
 		return
 	if not (body is Node2D):
 		return
+	if _is_player_hostility_disabled():
+		return
 
 	var player_node: Node2D = body as Node2D
 	if not _players_in_attack_area.has(player_node):
 		_players_in_attack_area.append(player_node)
 
-	if attack_on_touch_enter:
+	if _can_attack_player_now() and attack_on_touch_enter:
 		_deal_damage_to_player(player_node)
 
 	_refresh_attack_timer()
@@ -227,7 +246,7 @@ func _on_attack_area_body_exited(body: Node) -> void:
 func _on_attack_timer_timeout() -> void:
 	_cleanup_attack_targets()
 
-	if _players_in_attack_area.is_empty():
+	if not _can_attack_player_now() or _players_in_attack_area.is_empty():
 		if attack_timer != null:
 			attack_timer.stop()
 		return
@@ -241,7 +260,7 @@ func _refresh_attack_timer() -> void:
 
 	_cleanup_attack_targets()
 
-	if contact_damage <= 0 or _players_in_attack_area.is_empty():
+	if not _can_attack_player_now() or _players_in_attack_area.is_empty():
 		attack_timer.stop()
 		return
 
@@ -258,6 +277,8 @@ func _cleanup_attack_targets() -> void:
 
 
 func _can_attack_target_now(target: Node2D) -> bool:
+	if not _can_attack_player_now():
+		return false
 	if target == null or not is_instance_valid(target):
 		return false
 
@@ -272,6 +293,25 @@ func _can_attack_target_now(target: Node2D) -> bool:
 			return true
 
 	return false
+
+
+func _is_player_hostility_disabled() -> bool:
+	return dps_dummy_ignore_player_hostility
+
+
+func _can_chase_player_now() -> bool:
+	return chase_player and not dps_dummy_disable_chase and not _is_player_hostility_disabled()
+
+
+func _can_attack_player_now() -> bool:
+	return contact_damage > 0 and not dps_dummy_disable_attack and not _is_player_hostility_disabled()
+
+
+func _clear_player_hostility_state() -> void:
+	_target_player = null
+	_players_in_attack_area.clear()
+	if attack_timer != null:
+		attack_timer.stop()
 
 
 func _get_body_world_position(node: Node2D) -> Vector2:
@@ -335,7 +375,7 @@ func _get_overlap_release_velocity(to_player: Vector2) -> Vector2:
 
 
 func _find_player_in_search_area() -> Node2D:
-	if search_area == null:
+	if search_area == null or _is_player_hostility_disabled():
 		return null
 
 	for body in search_area.get_overlapping_bodies():
@@ -348,7 +388,7 @@ func _find_player_in_search_area() -> Node2D:
 func _deal_damage_to_player(player: Node) -> void:
 	if player == null or not is_instance_valid(player):
 		return
-	if contact_damage <= 0:
+	if not _can_attack_player_now():
 		return
 
 	var applied_damage: int = 0
