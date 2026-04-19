@@ -22,6 +22,7 @@ const SAVEABLE_AUTOLOADS: PackedStringArray = [
 
 var _last_loaded_save_data: Dictionary = {}
 
+
 func get_save_path(slot_name: String = DEFAULT_SLOT_NAME) -> String:
 	var normalized: String = slot_name.strip_edges()
 	if normalized.is_empty():
@@ -97,9 +98,33 @@ func load_save(slot_name: String = DEFAULT_SLOT_NAME) -> Dictionary:
 func load_or_create_boot_save(slot_name: String = DEFAULT_SLOT_NAME) -> Dictionary:
 	if has_save(slot_name):
 		return load_save(slot_name)
+
 	var save_data: Dictionary = new_empty_save()
 	save_data["meta"]["slot_name"] = slot_name
 	_last_loaded_save_data = save_data.duplicate(true)
+	return save_data
+
+
+func create_new_game_save(slot_name: String = DEFAULT_SLOT_NAME, start_scene_path: String = "res://Main.tscn") -> Dictionary:
+	ensure_save_directory()
+	var save_data: Dictionary = new_empty_save()
+	var normalized_slot: String = slot_name.strip_edges()
+	if normalized_slot.is_empty():
+		normalized_slot = DEFAULT_SLOT_NAME
+	var normalized_scene_path: String = start_scene_path.strip_edges()
+	if normalized_scene_path.is_empty():
+		normalized_scene_path = "res://Main.tscn"
+
+	save_data["meta"]["slot_name"] = normalized_slot
+	save_data["meta"]["saved_at_unix"] = Time.get_unix_time_from_system()
+	save_data["scene"]["current_scene"] = normalized_scene_path
+
+	var save_path: String = get_save_path(normalized_slot)
+	if not _write_save_data_to_path(save_path, save_data):
+		return save_data
+
+	_last_loaded_save_data = save_data.duplicate(true)
+	emit_signal("save_saved", save_path, save_data)
 	return save_data
 
 
@@ -118,13 +143,10 @@ func save_game(current_scene: Node = null, slot_name: String = DEFAULT_SLOT_NAME
 		save_data["scene"]["current_scene"] = String(current_scene.scene_file_path)
 
 	var save_path: String = get_save_path(slot_name)
-	var file: FileAccess = FileAccess.open(save_path, FileAccess.WRITE)
-	if file == null:
-		_emit_load_error("セーブファイルを書き込めませんでした: %s" % save_path)
+	if not _write_save_data_to_path(save_path, save_data):
 		return false
 
-	file.store_string(JSON.stringify(save_data, "\t"))
-	file.close()
+	_last_loaded_save_data = save_data.duplicate(true)
 	emit_signal("save_saved", save_path, save_data)
 	return true
 
@@ -152,7 +174,7 @@ func export_scene_data(scene_root: Node) -> Dictionary:
 		if typeof(exported_root) == TYPE_DICTIONARY:
 			world_data["scene_root"] = exported_root
 
-	var player := _find_player_node(scene_root)
+	var player: Node = _find_player_node(scene_root)
 	if player != null and player is Node2D:
 		world_data["player"] = {
 			"path": String(scene_root.get_path_to(player)),
@@ -166,13 +188,16 @@ func export_scene_data(scene_root: Node) -> Dictionary:
 			if typeof(player_export) == TYPE_DICTIONARY:
 				world_data["player"]["data"] = player_export
 
-	for node in get_tree().get_nodes_in_group("save_persistent"):
+	for node_obj in get_tree().get_nodes_in_group("save_persistent"):
+		var node: Node = node_obj as Node
+		if node == null:
+			continue
 		if not _is_descendant_of(scene_root, node):
 			continue
 		if not node.has_method("export_save_data"):
 			continue
 
-		var persistent_id := _get_persistent_id(node)
+		var persistent_id: String = _get_persistent_id(node)
 		if persistent_id.is_empty():
 			continue
 
@@ -196,12 +221,15 @@ func apply_world_state(scene_root: Node, save_data: Dictionary) -> void:
 
 	var persistent_map: Dictionary = world_data.get("persistent_nodes", {}) as Dictionary
 	if not persistent_map.is_empty():
-		for node in get_tree().get_nodes_in_group("save_persistent"):
+		for node_obj in get_tree().get_nodes_in_group("save_persistent"):
+			var node: Node = node_obj as Node
+			if node == null:
+				continue
 			if not _is_descendant_of(scene_root, node):
 				continue
 			if not node.has_method("import_save_data"):
 				continue
-			var persistent_id := _get_persistent_id(node)
+			var persistent_id: String = _get_persistent_id(node)
 			if persistent_id.is_empty():
 				continue
 			if persistent_map.has(persistent_id):
@@ -256,11 +284,12 @@ func _apply_player_state(scene_root: Node, player_data: Dictionary) -> void:
 		return
 
 	if player is Node2D:
+		var player_node_2d: Node2D = player as Node2D
 		var position_data: Dictionary = player_data.get("position", {}) as Dictionary
 		if not position_data.is_empty():
-			player.global_position = Vector2(
-				float(position_data.get("x", player.global_position.x)),
-				float(position_data.get("y", player.global_position.y))
+			player_node_2d.global_position = Vector2(
+				float(position_data.get("x", player_node_2d.global_position.x)),
+				float(position_data.get("y", player_node_2d.global_position.y))
 			)
 
 	var player_save_data: Dictionary = player_data.get("data", {}) as Dictionary
@@ -366,10 +395,10 @@ func reapply_persistent_nodes_to_scene(scene_root: Node) -> void:
 			continue
 		if not node.has_method("import_save_data"):
 			continue
-		var pid: String = _get_persistent_id(node)
-		if pid.is_empty() or not persistent_map.has(pid):
+		var persistent_id: String = _get_persistent_id(node)
+		if persistent_id.is_empty() or not persistent_map.has(persistent_id):
 			continue
-		node.call("import_save_data", persistent_map.get(pid, {}))
+		node.call("import_save_data", persistent_map.get(persistent_id, {}))
 
 
 func reapply_persistent_nodes_deferred(scene_root: Node, frames: int = 2) -> void:
@@ -403,6 +432,17 @@ func _normalize_save_data(raw_data: Dictionary) -> Dictionary:
 		save_data["save_version"] = SAVE_VERSION
 
 	return save_data
+
+
+func _write_save_data_to_path(save_path: String, save_data: Dictionary) -> bool:
+	var file: FileAccess = FileAccess.open(save_path, FileAccess.WRITE)
+	if file == null:
+		_emit_load_error("セーブファイルを書き込めませんでした: %s" % save_path)
+		return false
+
+	file.store_string(JSON.stringify(save_data, "\t"))
+	file.close()
+	return true
 
 
 func _emit_load_error(message: String) -> void:

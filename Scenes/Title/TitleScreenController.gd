@@ -117,7 +117,6 @@ func _set_settings_open(open: bool) -> void:
 func _play_title_bgm() -> void:
 	if title_bgm_player == null:
 		return
-
 	if title_bgm_path.strip_edges().is_empty():
 		return
 
@@ -173,10 +172,6 @@ func _start_boot(mode: String) -> void:
 
 	if boot_root.has_method("configure_startup"):
 		boot_root.call("configure_startup", mode, slot_name, new_game_scene_path)
-	else:
-		boot_root.set("boot_mode", mode)
-		boot_root.set("slot_name", slot_name)
-		boot_root.set("new_game_scene_path", new_game_scene_path)
 
 	if title_bgm_player != null:
 		title_bgm_player.stop()
