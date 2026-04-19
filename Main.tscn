@@ -236,9 +236,6 @@ item_db = []
 
 [node name="PauseMenuUI" parent="UI" unique_id=1969610948 instance=ExtResource("45_y1tbi")]
 
-[node name="RecipeJsonEditor" parent="UI" unique_id=1347608019 instance=ExtResource("41_1w2xm")]
-visible = false
-
 [node name="BgmNowPlayingPanel" parent="UI" unique_id=1536034256 instance=ExtResource("45_c2s76")]
 
 [node name="InteractPromptUI" parent="UI" unique_id=2090487009 instance=ExtResource("48_rchyr")]
@@ -256,6 +253,11 @@ target_path = NodePath("../../Sortables/Player")
 
 [node name="TargetInfoUI" parent="UI" unique_id=915790272 instance=ExtResource("69_mplfx")]
 anchors_preset = 5
+offset_top = 0.0
+offset_bottom = 110.0
+
+[node name="RecipeJsonEditor" parent="UI" unique_id=1347608019 instance=ExtResource("41_1w2xm")]
+visible = false
 
 [editable path="Sortables/Player"]
 [editable path="Sortables/EnemyNPC"]

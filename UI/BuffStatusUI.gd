@@ -66,12 +66,31 @@ func _resolve_target() -> void:
 	if not target_path.is_empty():
 		var by_path: Node = get_node_or_null(target_path)
 		if by_path != null:
+			var nested_player: Node = _find_descendant_player_node(by_path)
+			if nested_player != null:
+				_target = nested_player
+				return
 			_target = by_path
 			return
 
 	var player_node: Node = get_tree().get_first_node_in_group("player")
 	if player_node != null:
 		_target = player_node
+
+
+func _find_descendant_player_node(root: Node) -> Node:
+	if root == null or not is_instance_valid(root):
+		return null
+
+	if root.is_in_group("player"):
+		return root
+
+	for child in root.get_children():
+		var found: Node = _find_descendant_player_node(child)
+		if found != null:
+			return found
+
+	return null
 
 
 func _refresh_views() -> void:
@@ -112,8 +131,11 @@ func _collect_visible_effects() -> Array:
 			continue
 		if not child.has_method("is_buff_visible"):
 			continue
-		if not bool(child.call("is_buff_visible")):
+
+		var visible_result: Variant = child.call("is_buff_visible")
+		if visible_result != true:
 			continue
+
 		results.append(child)
 
 	results.sort_custom(func(a, b):
