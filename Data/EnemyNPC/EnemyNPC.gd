@@ -15,6 +15,8 @@ signal defeated(enemy)
 @export var contact_damage: int = 5
 @export_range(0.05, 30.0, 0.05) var attack_interval: float = 1.0
 @export var attack_on_touch_enter: bool = true
+@export_range(0.0, 64.0, 1.0) var overlap_release_margin: float = 6.0
+@export_range(0.0, 1.0, 0.05) var overlap_release_speed_ratio: float = 0.65
 
 @export_group("見た目")
 @export var sprite_offset: Vector2 = Vector2(0, -16)
@@ -61,6 +63,8 @@ func _ready() -> void:
 		if not attack_timer.timeout.is_connected(_on_attack_timer_timeout):
 			attack_timer.timeout.connect(_on_attack_timer_timeout)
 
+	motion_mode = CharacterBody2D.MOTION_MODE_FLOATING
+
 	_emit_hp_changed()
 
 
@@ -78,13 +82,24 @@ func _physics_process(_delta: float) -> void:
 		move_and_slide()
 		return
 
-	var to_player: Vector2 = _target_player.global_position - global_position
+	_cleanup_attack_targets()
+
+	var own_body_position: Vector2 = _get_body_world_position(self)
+	var target_body_position: Vector2 = _get_body_world_position(_target_player)
+	var to_player: Vector2 = target_body_position - own_body_position
 
 	if face_move_direction and sprite != null and absf(to_player.x) > 0.001:
 		sprite.flip_h = to_player.x < 0.0
 
 	var distance_to_player: float = to_player.length()
-	if distance_to_player <= max(stop_distance, 0.0):
+	var can_attack_now: bool = _can_attack_target_now(_target_player)
+	var body_stop_distance: float = _get_body_separation_distance(_target_player)
+	var effective_stop_distance: float = max(max(stop_distance, 0.0), body_stop_distance)
+	var overlap_release_distance: float = max(body_stop_distance - max(overlap_release_margin, 0.0), 0.0)
+
+	if distance_to_player < overlap_release_distance:
+		velocity = _get_overlap_release_velocity(to_player)
+	elif can_attack_now or distance_to_player <= effective_stop_distance:
 		velocity = Vector2.ZERO
 	else:
 		velocity = to_player.normalized() * move_speed
@@ -240,6 +255,83 @@ func _cleanup_attack_targets() -> void:
 		var node: Node2D = _players_in_attack_area[i]
 		if node == null or not is_instance_valid(node):
 			_players_in_attack_area.remove_at(i)
+
+
+func _can_attack_target_now(target: Node2D) -> bool:
+	if target == null or not is_instance_valid(target):
+		return false
+
+	if _players_in_attack_area.has(target):
+		return true
+
+	if attack_area == null:
+		return false
+
+	for body in attack_area.get_overlapping_bodies():
+		if body == target:
+			return true
+
+	return false
+
+
+func _get_body_world_position(node: Node2D) -> Vector2:
+	if node == null:
+		return Vector2.ZERO
+
+	var body_collision: CollisionShape2D = null
+	if node == self:
+		body_collision = _get_body_collision_shape_node()
+	else:
+		body_collision = node.get_node_or_null("CollisionShape2D") as CollisionShape2D
+
+	if body_collision != null:
+		return body_collision.global_position
+
+	return node.global_position
+
+
+func _get_body_separation_distance(target: Node2D) -> float:
+	var own_radius: float = _get_collision_stop_radius(_get_body_collision_shape_node(), self)
+	var target_collision: CollisionShape2D = null
+	if target != null:
+		target_collision = target.get_node_or_null("CollisionShape2D") as CollisionShape2D
+	var target_radius: float = _get_collision_stop_radius(target_collision, target)
+	return own_radius + target_radius + 6.0
+
+
+func _get_collision_stop_radius(collision: CollisionShape2D, owner_node: Node2D) -> float:
+	if collision == null or collision.shape == null:
+		return 0.0
+
+	var scale_x: float = 1.0
+	var scale_y: float = 1.0
+	if owner_node != null:
+		scale_x = absf(owner_node.global_scale.x)
+		scale_y = absf(owner_node.global_scale.y)
+
+	var shape: Shape2D = collision.shape
+	if shape is RectangleShape2D:
+		var rect: RectangleShape2D = shape as RectangleShape2D
+		var scaled_width: float = rect.size.x * scale_x
+		var scaled_height: float = rect.size.y * scale_y
+		return min(scaled_width, scaled_height) * 0.5
+	if shape is CircleShape2D:
+		var circle: CircleShape2D = shape as CircleShape2D
+		return circle.radius * max(scale_x, scale_y)
+	if shape is CapsuleShape2D:
+		var capsule: CapsuleShape2D = shape as CapsuleShape2D
+		return capsule.radius * max(scale_x, scale_y)
+
+	return 0.0
+
+
+func _get_overlap_release_velocity(to_player: Vector2) -> Vector2:
+	var away_direction: Vector2 = -to_player.normalized()
+	if away_direction.length_squared() <= 0.0001:
+		away_direction = Vector2.DOWN
+
+	var release_speed: float = max(move_speed * clampf(overlap_release_speed_ratio, 0.0, 1.0), 24.0)
+	return away_direction * release_speed
 
 
 func _find_player_in_search_area() -> Node2D:
