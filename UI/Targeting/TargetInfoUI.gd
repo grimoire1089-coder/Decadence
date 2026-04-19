@@ -136,6 +136,10 @@ func _refresh_from_targeting_controller(force: bool) -> void:
 
 
 func _set_current_target(target: Node) -> void:
+	if target == _current_target:
+		_refresh_full_ui()
+		return
+
 	if _current_target != null and is_instance_valid(_current_target):
 		_disconnect_target_signals(_current_target)
 
@@ -161,7 +165,9 @@ func _connect_target_signals(target: Node) -> void:
 		if not target.is_connected("defeated", defeated_callback):
 			target.connect("defeated", defeated_callback)
 
-	target.tree_exited.connect(_on_target_tree_exited.bind(target), CONNECT_ONE_SHOT)
+	var tree_exited_callback := Callable(self, "_on_target_tree_exited").bind(target)
+	if not target.tree_exited.is_connected(tree_exited_callback):
+		target.tree_exited.connect(tree_exited_callback, CONNECT_ONE_SHOT)
 
 
 func _disconnect_target_signals(target: Node) -> void:
@@ -177,6 +183,10 @@ func _disconnect_target_signals(target: Node) -> void:
 		var defeated_callback := Callable(self, "_on_target_defeated")
 		if target.is_connected("defeated", defeated_callback):
 			target.disconnect("defeated", defeated_callback)
+
+	var tree_exited_callback := Callable(self, "_on_target_tree_exited").bind(target)
+	if target.tree_exited.is_connected(tree_exited_callback):
+		target.tree_exited.disconnect(tree_exited_callback)
 
 
 func _refresh_full_ui() -> void:

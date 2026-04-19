@@ -232,6 +232,15 @@ func _on_hotbar_skill_slot_pressed(slot_index: int) -> void:
 func _resolve_cast_target(skill_resource: Resource) -> Node2D:
 	var selected_target: Node2D = _get_selected_target()
 	var effect_type: String = _get_skill_effect_type(skill_resource)
+	var target_type: String = _get_skill_target_type(skill_resource)
+
+	if target_type == "self":
+		return _self_target
+
+	if target_type == "enemy" or effect_type == "damage":
+		if _can_use_selected_target_for_damage(selected_target):
+			return selected_target
+		return null
 
 	match effect_type:
 		"heal", "heal_over_time":
@@ -268,10 +277,26 @@ func _get_skill_effect_type(skill_resource: Resource) -> String:
 	return ""
 
 
+func _get_skill_target_type(skill_resource: Resource) -> String:
+	if skill_resource == null:
+		return ""
+	if skill_resource.has_method("get"):
+		return String(skill_resource.get("target_type"))
+	return ""
+
+
 func _can_use_selected_target_for_heal(target: Node2D) -> bool:
 	if target == null or not is_instance_valid(target):
 		return false
 	if _is_target_marked_hostile(target):
+		return false
+	return SkillHelpers.resolve_stats_manager(target) != null
+
+
+func _can_use_selected_target_for_damage(target: Node2D) -> bool:
+	if target == null or not is_instance_valid(target):
+		return false
+	if not _is_target_marked_hostile(target):
 		return false
 	return SkillHelpers.resolve_stats_manager(target) != null
 

@@ -5,6 +5,7 @@
 [ext_resource type="PackedScene" uid="uid://ufqrur381hty" path="res://Robin.tscn" id="1_glv2v"]
 [ext_resource type="Script" uid="uid://bcirkmd64lohx" path="res://WorldEnvironment.gd" id="1_kjvhd"]
 [ext_resource type="AudioStream" uid="uid://du3lbp1wjvext" path="res://BGM/Townwind Syntax.ogg" id="1_r0du0"]
+[ext_resource type="PackedScene" path="res://UI/Effects/ProjectileGlowWorldEnvironment.tscn" id="2_gyych"]
 [ext_resource type="AudioStream" uid="uid://dpc2usil5kfj5" path="res://BGM/Decadence_Megalopolis_001.ogg" id="2_sc1dx"]
 [ext_resource type="TileSet" uid="uid://fbnwwhcglo74" path="res://Image/TG_grass/TG_grass.tres" id="3_3dxm6"]
 [ext_resource type="AudioStream" uid="uid://dhx245ncpavu1" path="res://BGM/春風.ogg" id="3_devvj"]
@@ -72,6 +73,8 @@
 
 [node name="Main" type="Node2D" unique_id=2061062064]
 script = ExtResource("99_main_script")
+
+[node name="ProjectileGlowWorldEnvironment" parent="." unique_id=1537191459 instance=ExtResource("2_gyych")]
 
 [node name="BGMManager" type="Node" parent="." unique_id=2131174254]
 script = ExtResource("1_2gh4u")

@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://cqv52k4g6cmut"]
+
+[ext_resource type="Script" uid="uid://dkl61l3fpi6v" path="res://UI/Active_Skills/SkillProjectileOrb.gd" id="1_orb"]
+
+[node name="SkillProjectileOrb" type="Node2D" unique_id=1198001110]
+script = ExtResource("1_orb")

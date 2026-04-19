@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="RoleSkillData" format=3 uid="uid://b5ud85y41awsk"]
+
+[ext_resource type="Texture2D" uid="uid://ji40vfb4ycq1" path="res://Image/Active_Skills/Punishment.png" id="1_6qvfv"]
+[ext_resource type="Script" uid="uid://832agx08ubjy" path="res://UI/Active_Skills/RoleSkillData.gd" id="1_role"]
+[ext_resource type="PackedScene" uid="uid://cqv52k4g6cmut" path="res://UI/Active_Skills/SkillProjectileOrb.tscn" id="2_projectile"]
+
+[resource]
+script = ExtResource("1_role")
+skill_id = "punishment"
+display_name = "パニッシュメント"
+description = "25m以内にいる選択した敵ターゲットに20の無属性魔法ダメージを与えます。詠唱後、見やすい投射物が対象へ飛びます。"
+role_name = "ヒーラーロールスキル"
+required_main_role = "healer"
+mp_cost = 5
+cast_time_seconds = 2.0
+cooldown_seconds = 2.0
+range_meters = 25.0
+effect_type = "damage"
+target_type = "enemy"
+damage_amount = 20
+use_projectile = true
+projectile_scene = ExtResource("2_projectile")
+projectile_texture = ExtResource("1_6qvfv")
+projectile_speed_pixels_per_second = 220.0
+projectile_hit_radius = 12.0
+icon = ExtResource("1_6qvfv")

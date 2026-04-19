@@ -161,6 +161,34 @@ static func heal_target(subject: Node, amount: int) -> bool:
 	return false
 
 
+static func damage_target(subject: Node, amount: int, indicator_type: String = "normal_damage") -> bool:
+	if amount <= 0:
+		return true
+
+	var stats_manager: Node = resolve_stats_manager(subject)
+	if stats_manager == null:
+		add_system_log("ダメージ失敗: 対象のステータス管理が見つかりません")
+		return false
+
+	if stats_manager.has_method("damage_hp"):
+		stats_manager.call("damage_hp", amount)
+		_show_indicator_for_subject(subject, amount, indicator_type)
+		return true
+
+	if stats_manager.has_method("apply_damage"):
+		stats_manager.call("apply_damage", amount)
+		_show_indicator_for_subject(subject, amount, indicator_type)
+		return true
+
+	if stats_manager.has_method("take_damage"):
+		stats_manager.call("take_damage", amount)
+		_show_indicator_for_subject(subject, amount, indicator_type)
+		return true
+
+	add_system_log("ダメージ失敗: HPダメージメソッドが見つかりません")
+	return false
+
+
 static func add_system_log(message: String) -> void:
 	if message.is_empty():
 		return

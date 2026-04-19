@@ -23,11 +23,21 @@ class_name RoleSkillData
 @export var pixels_per_meter: float = 16.0
 
 @export_group("Effect")
-@export_enum("heal", "heal_over_time") var effect_type: String = "heal_over_time"
+@export_enum("heal", "heal_over_time", "damage") var effect_type: String = "heal_over_time"
+@export_enum("ally", "enemy", "self", "any") var target_type: String = "ally"
 @export var heal_amount: int = 0
+@export var damage_amount: int = 0
 @export var effect_duration_seconds: float = 0.0
 @export var tick_interval_seconds: float = 1.0
 @export var hp_heal_per_tick: int = 0
+
+@export_group("Projectile")
+@export var use_projectile: bool = false
+@export var projectile_scene: PackedScene = null
+@export var projectile_texture: Texture2D = null
+@export var projectile_speed_pixels_per_second: float = 480.0
+@export var projectile_hit_radius: float = 10.0
+@export var projectile_scale: float = 1.0
 
 @export_group("UI")
 @export var icon: Texture2D = null

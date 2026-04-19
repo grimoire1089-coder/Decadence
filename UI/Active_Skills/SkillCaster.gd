@@ -66,7 +66,7 @@ func validate_cast(skill: RoleSkillData, target: Node2D) -> Dictionary:
 
 	var target_stats: Node = SkillHelpers.resolve_stats_manager(target)
 	if target_stats == null:
-		return {"ok": false, "reason": "対象を回復できません"}
+		return {"ok": false, "reason": "対象に効果を適用できません"}
 
 	var allowed_distance: float = _get_effective_range_pixels(skill)
 	if allowed_distance > 0.0 and caster.global_position.distance_to(target.global_position) > allowed_distance:
@@ -184,7 +184,7 @@ func _validate_cast_finish(skill: RoleSkillData, target: Node2D) -> Dictionary:
 
 	var target_stats: Node = SkillHelpers.resolve_stats_manager(target)
 	if target_stats == null:
-		return {"ok": false, "reason": "対象を回復できません"}
+		return {"ok": false, "reason": "対象に効果を適用できません"}
 
 	var allowed_distance: float = _get_effective_range_pixels(skill)
 	if allowed_distance > 0.0 and caster.global_position.distance_to(target.global_position) > allowed_distance:
@@ -208,18 +208,20 @@ func _finish_cast(skill: RoleSkillData, target: Node2D) -> void:
 
 
 func _apply_skill_effect(skill: RoleSkillData, target: Node2D) -> bool:
-	var success: bool = false
+	if skill == null or target == null or not is_instance_valid(target):
+		return false
 
-	match skill.effect_type:
-		"heal":
-			success = SkillHelpers.heal_target(target, skill.heal_amount)
-		"heal_over_time":
-			_apply_heal_over_time(skill, target)
-			success = true
-		_:
-			skill_cast_failed.emit(skill.skill_id, "未対応の効果タイプです")
+	if skill.projectile_scene != null and _should_use_projectile(skill):
+		if not _spawn_projectile(skill, target):
+			skill_cast_failed.emit(skill.skill_id, "投射物の生成に失敗しました")
 			return false
 
+		_start_cooldown(skill.skill_id, skill.cooldown_seconds)
+		SkillHelpers.add_system_log("%s を発動した" % skill.display_name)
+		skill_cast_succeeded.emit(skill.skill_id, target)
+		return true
+
+	var success: bool = _apply_skill_effect_immediate(skill, target)
 	if not success:
 		skill_cast_failed.emit(skill.skill_id, "効果の適用に失敗しました")
 		return false
@@ -228,6 +230,83 @@ func _apply_skill_effect(skill: RoleSkillData, target: Node2D) -> bool:
 	SkillHelpers.add_system_log("%s を発動した" % skill.display_name)
 	skill_cast_succeeded.emit(skill.skill_id, target)
 	return true
+
+
+func _apply_skill_effect_immediate(skill: RoleSkillData, target: Node2D) -> bool:
+	match skill.effect_type:
+		"heal":
+			return SkillHelpers.heal_target(target, skill.heal_amount)
+		"heal_over_time":
+			_apply_heal_over_time(skill, target)
+			return true
+		"damage":
+			return SkillHelpers.damage_target(target, skill.damage_amount, "normal_damage")
+		_:
+			skill_cast_failed.emit(skill.skill_id, "未対応の効果タイプです")
+			return false
+
+
+func _should_use_projectile(skill: RoleSkillData) -> bool:
+	if skill == null:
+		return false
+	if skill.effect_type != "damage":
+		return false
+	return skill.use_projectile
+
+
+func _spawn_projectile(skill: RoleSkillData, target: Node2D) -> bool:
+	if skill == null or skill.projectile_scene == null:
+		return false
+
+	var caster: Node2D = _get_caster_node()
+	if caster == null:
+		return false
+
+	var projectile: Node = skill.projectile_scene.instantiate()
+	if projectile == null:
+		return false
+
+	var host: Node = get_tree().current_scene
+	if host == null:
+		host = get_tree().root
+	if host == null:
+		projectile.queue_free()
+		return false
+
+	host.add_child(projectile)
+
+	if projectile.has_signal("hit"):
+		projectile.connect("hit", Callable(self, "_on_projectile_hit").bind(skill), CONNECT_ONE_SHOT)
+	elif projectile.has_signal("hit_target"):
+		projectile.connect("hit_target", Callable(self, "_on_projectile_hit").bind(skill), CONNECT_ONE_SHOT)
+
+	if projectile.has_method("set"):
+		projectile.set("image_texture", skill.projectile_texture)
+		projectile.set("image_scale", max(skill.projectile_scale, 0.01))
+
+	if projectile.has_method("setup"):
+		projectile.call(
+			"setup",
+			caster,
+			target,
+			max(skill.projectile_speed_pixels_per_second, 1.0),
+			max(skill.projectile_hit_radius, 1.0)
+		)
+		return true
+
+	projectile.queue_free()
+	return false
+
+
+func _on_projectile_hit(hit_target: Node2D, skill: RoleSkillData) -> void:
+	if skill == null:
+		return
+	if hit_target == null or not is_instance_valid(hit_target):
+		return
+
+	var success: bool = _apply_skill_effect_immediate(skill, hit_target)
+	if not success:
+		skill_cast_failed.emit(skill.skill_id, "投射物命中時の効果適用に失敗しました")
 
 
 func _apply_heal_over_time(skill: RoleSkillData, target: Node2D) -> void:
