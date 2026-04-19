@@ -84,11 +84,6 @@ func cast_skill(skill: RoleSkillData, target: Node2D) -> bool:
 		skill_cast_failed.emit(failed_skill_id, String(check.get("reason", "発動できません")))
 		return false
 
-	var caster: Node2D = _get_caster_node()
-	if not SkillHelpers.spend_mp(caster, skill.mp_cost):
-		skill_cast_failed.emit(skill.skill_id, "MPの消費に失敗しました")
-		return false
-
 	var cast_time: float = max(skill.cast_time_seconds, 0.0)
 	if cast_time > 0.0:
 		_begin_cast(skill, target, cast_time)
@@ -190,6 +185,9 @@ func _validate_cast_finish(skill: RoleSkillData, target: Node2D) -> Dictionary:
 	if allowed_distance > 0.0 and caster.global_position.distance_to(target.global_position) > allowed_distance:
 		return {"ok": false, "reason": "射程外です"}
 
+	if not SkillHelpers.can_spend_mp(caster, skill.mp_cost):
+		return {"ok": false, "reason": "MPが足りません"}
+
 	return {"ok": true, "reason": ""}
 
 
@@ -209,6 +207,11 @@ func _finish_cast(skill: RoleSkillData, target: Node2D) -> void:
 
 func _apply_skill_effect(skill: RoleSkillData, target: Node2D) -> bool:
 	if skill == null or target == null or not is_instance_valid(target):
+		return false
+
+	var caster: Node2D = _get_caster_node()
+	if not SkillHelpers.spend_mp(caster, skill.mp_cost):
+		skill_cast_failed.emit(skill.skill_id, "MPの消費に失敗しました")
 		return false
 
 	if skill.projectile_scene != null and _should_use_projectile(skill):
