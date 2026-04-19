@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="AutoAttackModifierData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://UI/AutoAttack/AutoAttackModifierData.gd" id="1_modifier"]
+
+[resource]
+script = ExtResource("1_modifier")
+modifier_id = "aa_physical_melee"
+display_name = "物理・近距離"
+description = "物理攻撃力を参照する近距離の通常攻撃。ダメージ補正なし。"
+attack_source = "physical"
+range_type = "melee"
+range_meters = 2.0
+damage_multiplier = 1.0

@@ -8,6 +8,8 @@
 [ext_resource type="Script" uid="uid://6uuw2beg8gd6" path="res://UI/Active_Skills/PlayerSkillController.gd" id="6_jiwum"]
 [ext_resource type="Script" path="res://UI/Targeting/TargetingController.gd" id="7_targeting"]
 [ext_resource type="Script" path="res://UI/Targeting/TargetMarker2D.gd" id="8_target_marker"]
+[ext_resource type="Script" path="res://UI/AutoAttack/AutoAttackController.gd" id="9_auto_attack"]
+[ext_resource type="Resource" path="res://UI/AutoAttack/Modifiers/AA_Physical_Melee.tres" id="10_auto_modifier"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ux4uq"]
 size = Vector2(240, 486.66663)
@@ -50,3 +52,12 @@ script = ExtResource("6_jiwum")
 skill_caster_path = NodePath("../SkillCaster")
 self_target_path = NodePath("../CharacterBody2D")
 targeting_controller_path = NodePath("../TargetingController")
+
+[node name="AutoAttackController" type="Node" parent="."]
+script = ExtResource("9_auto_attack")
+attacker_path = NodePath("../CharacterBody2D")
+stats_subject_path = NodePath("../CharacterBody2D")
+skill_caster_path = NodePath("../SkillCaster")
+targeting_controller_path = NodePath("../TargetingController")
+current_modifier = ExtResource("10_auto_modifier")
+write_state_log = true

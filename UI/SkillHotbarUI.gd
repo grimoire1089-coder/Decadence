@@ -4,6 +4,7 @@ signal active_slot_changed(slot_index: int)
 signal skill_slot_pressed(slot_index: int)
 signal slot_skill_assigned(slot_index: int, skill_id: String)
 signal slot_cleared(slot_index: int)
+signal auto_attack_toggled(enabled: bool)
 
 const DEFAULT_KEY_LABELS: PackedStringArray = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"]
 
@@ -15,12 +16,22 @@ const DEFAULT_KEY_LABELS: PackedStringArray = ["1", "2", "3", "4", "5", "6", "7"
 @export var allow_mouse_select: bool = true
 @export var show_empty_tooltip: bool = false
 
+@export_group("Auto Attack")
+@export var show_auto_attack_button: bool = true
+@export var auto_attack_button_size: Vector2 = Vector2(72, 72)
+@export var tab_toggles_auto_attack: bool = true
+@export var auto_attack_label_text: String = "AT"
+
 @onready var _bottom_margin: MarginContainer = $BottomMargin
 @onready var _slot_row: HBoxContainer = $BottomMargin/CenterContainer/SlotRow
 
 var active_slot_index: int = 0
 var _slots: Array = []
 var _slot_views: Array = []
+
+var _auto_attack_enabled: bool = false
+var _auto_attack_view: Dictionary = {}
+var _auto_attack_icon: Texture2D = null
 
 
 func _ready() -> void:
@@ -29,11 +40,19 @@ func _ready() -> void:
 	_ensure_slot_data_size()
 	_rebuild_slots()
 	select_slot(active_slot_index, false)
+	_refresh_auto_attack_view()
 
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not visible:
 		return
+
+	if tab_toggles_auto_attack and event is InputEventKey:
+		var key_event: InputEventKey = event as InputEventKey
+		if key_event != null and key_event.pressed and not key_event.echo and _is_auto_attack_toggle_key(key_event):
+			toggle_auto_attack()
+			get_viewport().set_input_as_handled()
+			return
 
 	if event is InputEventKey and event.pressed and not event.echo:
 		var slot_index: int = _event_to_slot_index(event)
@@ -166,6 +185,28 @@ func get_slot_skill_resource_path(slot_index: int) -> String:
 	return String(_slots[slot_index].get("resource_path", ""))
 
 
+func is_auto_attack_enabled() -> bool:
+	return _auto_attack_enabled
+
+
+func set_auto_attack_enabled(enabled: bool, emit_signal_flag: bool = true) -> void:
+	var changed: bool = _auto_attack_enabled != enabled
+	_auto_attack_enabled = enabled
+	_refresh_auto_attack_view()
+
+	if changed and emit_signal_flag:
+		auto_attack_toggled.emit(_auto_attack_enabled)
+
+
+func toggle_auto_attack() -> void:
+	set_auto_attack_enabled(not _auto_attack_enabled)
+
+
+func set_auto_attack_icon(icon: Texture2D) -> void:
+	_auto_attack_icon = icon
+	_refresh_auto_attack_view()
+
+
 func _configure_layout() -> void:
 	_bottom_margin.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_bottom_margin.add_theme_constant_override("margin_bottom", bottom_offset)
@@ -210,6 +251,10 @@ func _rebuild_slots() -> void:
 		child.queue_free()
 
 	_slot_views.clear()
+	_auto_attack_view = {}
+
+	if show_auto_attack_button:
+		_build_auto_attack_button()
 
 	for i in range(slot_count):
 		var panel: PanelContainer = PanelContainer.new()
@@ -308,6 +353,81 @@ func _rebuild_slots() -> void:
 	_refresh_slot_visuals()
 	for i in range(slot_count):
 		_refresh_slot(i)
+	_refresh_auto_attack_view()
+
+
+func _build_auto_attack_button() -> void:
+	var panel: PanelContainer = PanelContainer.new()
+	panel.name = "AutoAttackButton"
+	panel.custom_minimum_size = auto_attack_button_size
+	panel.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	panel.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	panel.clip_contents = true
+	panel.gui_input.connect(_on_auto_attack_gui_input)
+	_slot_row.add_child(panel)
+
+	var root: Control = Control.new()
+	root.set_anchors_preset(Control.PRESET_FULL_RECT)
+	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.add_child(root)
+
+	var icon_holder: Control = Control.new()
+	icon_holder.set_anchors_preset(Control.PRESET_FULL_RECT)
+	icon_holder.offset_left = 5.0
+	icon_holder.offset_top = 5.0
+	icon_holder.offset_right = -5.0
+	icon_holder.offset_bottom = -5.0
+	icon_holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(icon_holder)
+
+	var icon: TextureRect = TextureRect.new()
+	icon.name = "Icon"
+	icon.set_anchors_preset(Control.PRESET_FULL_RECT)
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon_holder.add_child(icon)
+
+	var key_label: Label = Label.new()
+	key_label.name = "KeyLabel"
+	key_label.text = "Tab"
+	key_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	key_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+	key_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	key_label.position = Vector2(6.0, 3.0)
+	key_label.size = Vector2(max(auto_attack_button_size.x - 12.0, 20.0), 18.0)
+	key_label.z_index = 5
+	root.add_child(key_label)
+
+	var center_label: Label = Label.new()
+	center_label.name = "CenterLabel"
+	center_label.text = auto_attack_label_text
+	center_label.set_anchors_preset(Control.PRESET_FULL_RECT)
+	center_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	center_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	center_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	center_label.z_index = 5
+	root.add_child(center_label)
+
+	var state_label: Label = Label.new()
+	state_label.name = "StateLabel"
+	state_label.text = "OFF"
+	state_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	state_label.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+	state_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	state_label.position = Vector2(0.0, auto_attack_button_size.y - 22.0)
+	state_label.size = Vector2(auto_attack_button_size.x, 18.0)
+	state_label.z_index = 5
+	root.add_child(state_label)
+
+	_auto_attack_view = {
+		"panel": panel,
+		"icon": icon,
+		"center_label": center_label,
+		"state_label": state_label,
+		"key_label": key_label
+	}
 
 
 func _refresh_slot_visuals() -> void:
@@ -364,6 +484,41 @@ func _refresh_slot(slot_index: int) -> void:
 		cooldown_cover.offset_right = 0.0
 
 	_apply_slot_panel_style(panel, slot_index == active_slot_index)
+
+
+func _refresh_auto_attack_view() -> void:
+	if _auto_attack_view.is_empty():
+		return
+
+	var panel: PanelContainer = _auto_attack_view.get("panel", null) as PanelContainer
+	var icon: TextureRect = _auto_attack_view.get("icon", null) as TextureRect
+	var center_label: Label = _auto_attack_view.get("center_label", null) as Label
+	var state_label: Label = _auto_attack_view.get("state_label", null) as Label
+	if panel == null:
+		return
+
+	if icon != null:
+		icon.texture = _auto_attack_icon
+		icon.visible = _auto_attack_icon != null
+	if center_label != null:
+		center_label.visible = _auto_attack_icon == null
+		center_label.text = auto_attack_label_text
+	if state_label != null:
+		state_label.text = "ON" if _auto_attack_enabled else "OFF"
+
+	var style: StyleBoxFlat = StyleBoxFlat.new()
+	style.bg_color = Color(0.10, 0.16, 0.18, 0.95) if _auto_attack_enabled else Color(0.07, 0.09, 0.12, 0.88)
+	style.border_color = Color(0.22, 0.95, 0.82, 1.0) if _auto_attack_enabled else Color(0.42, 0.46, 0.54, 0.9)
+	style.border_width_left = 3 if _auto_attack_enabled else 2
+	style.border_width_top = 3 if _auto_attack_enabled else 2
+	style.border_width_right = 3 if _auto_attack_enabled else 2
+	style.border_width_bottom = 3 if _auto_attack_enabled else 2
+	style.corner_radius_top_left = 8
+	style.corner_radius_top_right = 8
+	style.corner_radius_bottom_left = 8
+	style.corner_radius_bottom_right = 8
+	panel.add_theme_stylebox_override("panel", style)
+	panel.tooltip_text = "オート通常攻撃 %s" % ("ON" if _auto_attack_enabled else "OFF")
 
 
 func _apply_slot_panel_style(panel: PanelContainer, active: bool) -> void:
@@ -424,9 +579,21 @@ func _on_slot_gui_input(event: InputEvent, slot_index: int) -> void:
 		get_viewport().set_input_as_handled()
 
 
+func _on_auto_attack_gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		toggle_auto_attack()
+		get_viewport().set_input_as_handled()
+
+
 func _on_slot_resized(slot_index: int) -> void:
 	_refresh_slot(slot_index)
 
 
 func _is_valid_slot_index(slot_index: int) -> bool:
 	return slot_index >= 0 and slot_index < slot_count and slot_index < _slots.size()
+
+
+func _is_auto_attack_toggle_key(event: InputEventKey) -> bool:
+	if event.keycode == KEY_TAB or event.physical_keycode == KEY_TAB:
+		return true
+	return false
