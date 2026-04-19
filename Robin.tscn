@@ -6,9 +6,9 @@
 [ext_resource type="Texture2D" uid="uid://bb4d84om17c41" path="res://Image/Player/Robin_Game_003.png" id="4_rxaeq"]
 [ext_resource type="Script" uid="uid://dkhlppyn1e054" path="res://UI/Active_Skills/SkillCaster.gd" id="5_kbytb"]
 [ext_resource type="Script" uid="uid://6uuw2beg8gd6" path="res://UI/Active_Skills/PlayerSkillController.gd" id="6_jiwum"]
-[ext_resource type="Script" path="res://UI/Targeting/TargetingController.gd" id="7_targeting"]
-[ext_resource type="Script" path="res://UI/Targeting/TargetMarker2D.gd" id="8_target_marker"]
-[ext_resource type="Script" path="res://UI/AutoAttack/AutoAttackController.gd" id="9_auto_attack"]
+[ext_resource type="Script" uid="uid://cg50do0bvcfdl" path="res://UI/Targeting/TargetingController.gd" id="7_targeting"]
+[ext_resource type="Script" uid="uid://dyvs5xqhq72db" path="res://UI/Targeting/TargetMarker2D.gd" id="8_target_marker"]
+[ext_resource type="Script" uid="uid://dll6okwrlopgq" path="res://UI/AutoAttack/AutoAttackController.gd" id="9_auto_attack"]
 [ext_resource type="Resource" path="res://UI/AutoAttack/Modifiers/AA_Physical_Melee.tres" id="10_auto_modifier"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ux4uq"]
@@ -39,13 +39,12 @@ zoom = Vector2(2, 2)
 script = ExtResource("5_kbytb")
 caster_path = NodePath("../CharacterBody2D")
 
-[node name="TargetMarker2D" type="Node2D" parent="."]
+[node name="TargetMarker2D" type="Node2D" parent="." unique_id=1815546762]
 script = ExtResource("8_target_marker")
 
-[node name="TargetingController" type="Node2D" parent="."]
+[node name="TargetingController" type="Node2D" parent="." unique_id=147039681]
 script = ExtResource("7_targeting")
 marker_path = NodePath("../TargetMarker2D")
-player_path = NodePath("../CharacterBody2D")
 
 [node name="PlayerSkillController" type="Node2D" parent="." unique_id=1016286863]
 script = ExtResource("6_jiwum")
@@ -53,11 +52,11 @@ skill_caster_path = NodePath("../SkillCaster")
 self_target_path = NodePath("../CharacterBody2D")
 targeting_controller_path = NodePath("../TargetingController")
 
-[node name="AutoAttackController" type="Node" parent="."]
+[node name="AutoAttackController" type="Node" parent="." unique_id=543058529]
 script = ExtResource("9_auto_attack")
 attacker_path = NodePath("../CharacterBody2D")
 stats_subject_path = NodePath("../CharacterBody2D")
-skill_caster_path = NodePath("../SkillCaster")
 targeting_controller_path = NodePath("../TargetingController")
+skill_caster_path = NodePath("../SkillCaster")
 current_modifier = ExtResource("10_auto_modifier")
 write_state_log = true

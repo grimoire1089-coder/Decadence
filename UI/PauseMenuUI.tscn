@@ -20,7 +20,7 @@ corner_radius_bottom_left = 18
 shadow_color = Color(0, 0, 0, 0.35)
 shadow_size = 8
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_audio_panel"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_inner_panel"]
 content_margin_left = 14.0
 content_margin_top = 12.0
 content_margin_right = 14.0
@@ -81,7 +81,7 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="Panel" type="Panel" parent="CenterContainer"]
-custom_minimum_size = Vector2(560, 470)
+custom_minimum_size = Vector2(620, 520)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
@@ -107,101 +107,8 @@ vertical_alignment = 1
 
 [node name="DescriptionLabel" type="Label" parent="CenterContainer/Panel/VBoxContainer"]
 layout_mode = 2
-text = "ESCで閉じる / ゲームに戻る / BGM音量とボイス音量の調整"
+text = "ESCで閉じる / ゲームに戻る / 設定を開く"
 horizontal_alignment = 1
-autowrap_mode = 3
-
-[node name="AudioSection" type="PanelContainer" parent="CenterContainer/Panel/VBoxContainer"]
-layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_audio_panel")
-
-[node name="AudioVBox" type="VBoxContainer" parent="CenterContainer/Panel/VBoxContainer/AudioSection"]
-layout_mode = 2
-theme_override_constants/separation = 10
-
-[node name="AudioTitleLabel" type="Label" parent="CenterContainer/Panel/VBoxContainer/AudioSection/AudioVBox"]
-layout_mode = 2
-text = "音量設定"
-
-[node name="BgmRow" type="HBoxContainer" parent="CenterContainer/Panel/VBoxContainer/AudioSection/AudioVBox"]
-layout_mode = 2
-theme_override_constants/separation = 12
-alignment = 1
-
-[node name="BgmLabel" type="Label" parent="CenterContainer/Panel/VBoxContainer/AudioSection/AudioVBox/BgmRow"]
-custom_minimum_size = Vector2(90, 0)
-layout_mode = 2
-text = "BGM音量"
-vertical_alignment = 1
-
-[node name="BgmSlider" type="HSlider" parent="CenterContainer/Panel/VBoxContainer/AudioSection/AudioVBox/BgmRow"]
-custom_minimum_size = Vector2(280, 0)
-layout_mode = 2
-size_flags_horizontal = 3
-max_value = 100.0
-step = 1.0
-value = 70.0
-
-[node name="BgmPercentLabel" type="Label" parent="CenterContainer/Panel/VBoxContainer/AudioSection/AudioVBox/BgmRow"]
-custom_minimum_size = Vector2(54, 0)
-layout_mode = 2
-text = "70%"
-horizontal_alignment = 2
-vertical_alignment = 1
-
-[node name="VoiceRow" type="HBoxContainer" parent="CenterContainer/Panel/VBoxContainer/AudioSection/AudioVBox"]
-layout_mode = 2
-theme_override_constants/separation = 12
-alignment = 1
-
-[node name="VoiceLabel" type="Label" parent="CenterContainer/Panel/VBoxContainer/AudioSection/AudioVBox/VoiceRow"]
-custom_minimum_size = Vector2(90, 0)
-layout_mode = 2
-text = "ボイス音量"
-vertical_alignment = 1
-
-[node name="VoiceSlider" type="HSlider" parent="CenterContainer/Panel/VBoxContainer/AudioSection/AudioVBox/VoiceRow"]
-custom_minimum_size = Vector2(280, 0)
-layout_mode = 2
-size_flags_horizontal = 3
-max_value = 100.0
-step = 1.0
-value = 100.0
-
-[node name="VoicePercentLabel" type="Label" parent="CenterContainer/Panel/VBoxContainer/AudioSection/AudioVBox/VoiceRow"]
-custom_minimum_size = Vector2(54, 0)
-layout_mode = 2
-text = "100%"
-horizontal_alignment = 2
-vertical_alignment = 1
-
-[node name="AudioButtonsRow" type="HBoxContainer" parent="CenterContainer/Panel/VBoxContainer/AudioSection/AudioVBox"]
-layout_mode = 2
-theme_override_constants/separation = 10
-alignment = 1
-
-[node name="BgmResetButton" type="Button" parent="CenterContainer/Panel/VBoxContainer/AudioSection/AudioVBox/AudioButtonsRow"]
-custom_minimum_size = Vector2(160, 40)
-layout_mode = 2
-text = "BGMを初期値に戻す"
-theme_override_styles/normal = SubResource("StyleBoxFlat_button")
-theme_override_styles/hover = SubResource("StyleBoxFlat_button")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_button")
-theme_override_styles/focus = SubResource("StyleBoxFlat_button")
-
-[node name="VoiceResetButton" type="Button" parent="CenterContainer/Panel/VBoxContainer/AudioSection/AudioVBox/AudioButtonsRow"]
-custom_minimum_size = Vector2(170, 40)
-layout_mode = 2
-text = "ボイスを初期値に戻す"
-theme_override_styles/normal = SubResource("StyleBoxFlat_button")
-theme_override_styles/hover = SubResource("StyleBoxFlat_button")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_button")
-theme_override_styles/focus = SubResource("StyleBoxFlat_button")
-
-[node name="AudioStatusLabel" type="Label" parent="CenterContainer/Panel/VBoxContainer/AudioSection/AudioVBox"]
-custom_minimum_size = Vector2(0, 22)
-layout_mode = 2
-text = "現在のBGM音量: 70% / ボイス音量: 100%"
 autowrap_mode = 3
 
 [node name="ButtonRow" type="HBoxContainer" parent="CenterContainer/Panel/VBoxContainer"]
@@ -209,8 +116,18 @@ layout_mode = 2
 theme_override_constants/separation = 12
 alignment = 1
 
+[node name="SettingsButton" type="Button" parent="CenterContainer/Panel/VBoxContainer/ButtonRow"]
+custom_minimum_size = Vector2(160, 46)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "設定"
+theme_override_styles/normal = SubResource("StyleBoxFlat_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button")
+theme_override_styles/focus = SubResource("StyleBoxFlat_button")
+
 [node name="ResumeButton" type="Button" parent="CenterContainer/Panel/VBoxContainer/ButtonRow"]
-custom_minimum_size = Vector2(200, 46)
+custom_minimum_size = Vector2(180, 46)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "ゲームに戻る"
@@ -220,7 +137,7 @@ theme_override_styles/pressed = SubResource("StyleBoxFlat_button")
 theme_override_styles/focus = SubResource("StyleBoxFlat_button")
 
 [node name="QuitButton" type="Button" parent="CenterContainer/Panel/VBoxContainer/ButtonRow"]
-custom_minimum_size = Vector2(200, 46)
+custom_minimum_size = Vector2(180, 46)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "ゲーム終了"
@@ -228,6 +145,185 @@ theme_override_styles/normal = SubResource("StyleBoxFlat_button")
 theme_override_styles/hover = SubResource("StyleBoxFlat_button")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_button")
 theme_override_styles/focus = SubResource("StyleBoxFlat_button")
+
+[node name="SettingsSection" type="PanelContainer" parent="CenterContainer/Panel/VBoxContainer"]
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_inner_panel")
+
+[node name="SettingsVBox" type="VBoxContainer" parent="CenterContainer/Panel/VBoxContainer/SettingsSection"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="SettingsHeaderRow" type="HBoxContainer" parent="CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="SettingsTitleLabel" type="Label" parent="CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsHeaderRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "設定"
+vertical_alignment = 1
+
+[node name="SettingsCloseButton" type="Button" parent="CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsHeaderRow"]
+custom_minimum_size = Vector2(140, 38)
+layout_mode = 2
+text = "設定を閉じる"
+theme_override_styles/normal = SubResource("StyleBoxFlat_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button")
+theme_override_styles/focus = SubResource("StyleBoxFlat_button")
+
+[node name="SettingsTabs" type="TabContainer" parent="CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox"]
+custom_minimum_size = Vector2(0, 260)
+layout_mode = 2
+size_flags_vertical = 3
+current_tab = 0
+
+[node name="Audio" type="VBoxContainer" parent="CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs"]
+visible = true
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="AudioIntroLabel" type="Label" parent="CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Audio"]
+layout_mode = 2
+text = "オーディオ設定"
+
+[node name="AudioVBox" type="VBoxContainer" parent="CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Audio"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="BgmRow" type="HBoxContainer" parent="CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Audio/AudioVBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="BgmLabel" type="Label" parent="CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Audio/AudioVBox/BgmRow"]
+custom_minimum_size = Vector2(90, 0)
+layout_mode = 2
+text = "BGM音量"
+vertical_alignment = 1
+
+[node name="BgmSlider" type="HSlider" parent="CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Audio/AudioVBox/BgmRow"]
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 100.0
+step = 1.0
+value = 70.0
+
+[node name="BgmPercentLabel" type="Label" parent="CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Audio/AudioVBox/BgmRow"]
+custom_minimum_size = Vector2(54, 0)
+layout_mode = 2
+text = "70%"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="VoiceRow" type="HBoxContainer" parent="CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Audio/AudioVBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="VoiceLabel" type="Label" parent="CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Audio/AudioVBox/VoiceRow"]
+custom_minimum_size = Vector2(90, 0)
+layout_mode = 2
+text = "ボイス音量"
+vertical_alignment = 1
+
+[node name="VoiceSlider" type="HSlider" parent="CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Audio/AudioVBox/VoiceRow"]
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 100.0
+step = 1.0
+value = 100.0
+
+[node name="VoicePercentLabel" type="Label" parent="CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Audio/AudioVBox/VoiceRow"]
+custom_minimum_size = Vector2(54, 0)
+layout_mode = 2
+text = "100%"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="AudioButtonsRow" type="HBoxContainer" parent="CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Audio/AudioVBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="BgmResetButton" type="Button" parent="CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Audio/AudioVBox/AudioButtonsRow"]
+custom_minimum_size = Vector2(160, 40)
+layout_mode = 2
+text = "BGMを初期値に戻す"
+theme_override_styles/normal = SubResource("StyleBoxFlat_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button")
+theme_override_styles/focus = SubResource("StyleBoxFlat_button")
+
+[node name="VoiceResetButton" type="Button" parent="CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Audio/AudioVBox/AudioButtonsRow"]
+custom_minimum_size = Vector2(170, 40)
+layout_mode = 2
+text = "ボイスを初期値に戻す"
+theme_override_styles/normal = SubResource("StyleBoxFlat_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button")
+theme_override_styles/focus = SubResource("StyleBoxFlat_button")
+
+[node name="AudioStatusLabel" type="Label" parent="CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Audio/AudioVBox"]
+custom_minimum_size = Vector2(0, 22)
+layout_mode = 2
+text = "現在のBGM音量: 70% / ボイス音量: 100%"
+autowrap_mode = 3
+
+[node name="Graphics" type="VBoxContainer" parent="CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="GraphicsVBox" type="VBoxContainer" parent="CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Graphics"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="GraphicsIntroLabel" type="Label" parent="CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Graphics/GraphicsVBox"]
+layout_mode = 2
+text = "グラフィック設定"
+
+[node name="CameraPresetRow" type="HBoxContainer" parent="CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Graphics/GraphicsVBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="CameraPresetLabel" type="Label" parent="CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Graphics/GraphicsVBox/CameraPresetRow"]
+custom_minimum_size = Vector2(130, 0)
+layout_mode = 2
+text = "カメラの引き"
+vertical_alignment = 1
+
+[node name="CameraPresetOption" type="OptionButton" parent="CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Graphics/GraphicsVBox/CameraPresetRow"]
+custom_minimum_size = Vector2(260, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="CameraResetButton" type="Button" parent="CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Graphics/GraphicsVBox"]
+custom_minimum_size = Vector2(180, 40)
+layout_mode = 2
+text = "カメラを初期値に戻す"
+theme_override_styles/normal = SubResource("StyleBoxFlat_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button")
+theme_override_styles/focus = SubResource("StyleBoxFlat_button")
+
+[node name="GraphicsHintLabel" type="Label" parent="CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Graphics/GraphicsVBox"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "100% = 現在のプレイヤー付属カメラ。引き設定は表示範囲だけ広げる"
+autowrap_mode = 3
+
+[node name="GraphicsStatusLabel" type="Label" parent="CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Graphics/GraphicsVBox"]
+custom_minimum_size = Vector2(0, 22)
+layout_mode = 2
+text = "現在のカメラ設定: 100%（現在）"
+autowrap_mode = 3
 
 [node name="CloseHintLabel" type="Label" parent="CenterContainer/Panel/VBoxContainer"]
 custom_minimum_size = Vector2(0, 42)

@@ -7,21 +7,30 @@ const BGM_SETTINGS_MANAGER_SCRIPT_NAME: String = "BgmSettingsManager.gd"
 
 var _suppress_bgm_slider_callback: bool = false
 var _suppress_voice_slider_callback: bool = false
+var _suppress_camera_preset_callback: bool = false
 
 @onready var backdrop: ColorRect = $Backdrop
 @onready var panel: Panel = $CenterContainer/Panel
 @onready var title_label: Label = $CenterContainer/Panel/VBoxContainer/TitleLabel
 @onready var description_label: Label = $CenterContainer/Panel/VBoxContainer/DescriptionLabel
-@onready var bgm_slider: HSlider = $CenterContainer/Panel/VBoxContainer/AudioSection/AudioVBox/BgmRow/BgmSlider
-@onready var bgm_percent_label: Label = $CenterContainer/Panel/VBoxContainer/AudioSection/AudioVBox/BgmRow/BgmPercentLabel
-@onready var voice_slider: HSlider = $CenterContainer/Panel/VBoxContainer/AudioSection/AudioVBox/VoiceRow/VoiceSlider
-@onready var voice_percent_label: Label = $CenterContainer/Panel/VBoxContainer/AudioSection/AudioVBox/VoiceRow/VoicePercentLabel
-@onready var audio_status_label: Label = $CenterContainer/Panel/VBoxContainer/AudioSection/AudioVBox/AudioStatusLabel
+@onready var settings_button: Button = $CenterContainer/Panel/VBoxContainer/ButtonRow/SettingsButton
 @onready var resume_button: Button = $CenterContainer/Panel/VBoxContainer/ButtonRow/ResumeButton
 @onready var quit_button: Button = $CenterContainer/Panel/VBoxContainer/ButtonRow/QuitButton
+@onready var settings_section: PanelContainer = $CenterContainer/Panel/VBoxContainer/SettingsSection
+@onready var settings_close_button: Button = $CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsHeaderRow/SettingsCloseButton
+@onready var settings_tabs: TabContainer = $CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs
+@onready var bgm_slider: HSlider = $CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Audio/AudioVBox/BgmRow/BgmSlider
+@onready var bgm_percent_label: Label = $CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Audio/AudioVBox/BgmRow/BgmPercentLabel
+@onready var voice_slider: HSlider = $CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Audio/AudioVBox/VoiceRow/VoiceSlider
+@onready var voice_percent_label: Label = $CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Audio/AudioVBox/VoiceRow/VoicePercentLabel
+@onready var audio_status_label: Label = $CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Audio/AudioVBox/AudioStatusLabel
+@onready var bgm_reset_button: Button = $CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Audio/AudioVBox/AudioButtonsRow/BgmResetButton
+@onready var voice_reset_button: Button = $CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Audio/AudioVBox/AudioButtonsRow/VoiceResetButton
+@onready var camera_preset_option: OptionButton = $CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Graphics/GraphicsVBox/CameraPresetRow/CameraPresetOption
+@onready var camera_hint_label: Label = $CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Graphics/GraphicsVBox/GraphicsHintLabel
+@onready var graphics_status_label: Label = $CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Graphics/GraphicsVBox/GraphicsStatusLabel
+@onready var camera_reset_button: Button = $CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Graphics/GraphicsVBox/CameraResetButton
 @onready var close_hint_label: Label = $CenterContainer/Panel/VBoxContainer/CloseHintLabel
-@onready var bgm_reset_button: Button = $CenterContainer/Panel/VBoxContainer/AudioSection/AudioVBox/AudioButtonsRow/BgmResetButton
-@onready var voice_reset_button: Button = $CenterContainer/Panel/VBoxContainer/AudioSection/AudioVBox/AudioButtonsRow/VoiceResetButton
 @onready var quit_confirm_dialog: ConfirmationDialog = $QuitConfirmDialog
 
 
@@ -39,17 +48,31 @@ func _ready() -> void:
 	if title_label != null:
 		title_label.text = "メニュー"
 	if description_label != null:
-		description_label.text = "ESCで閉じる / ゲームに戻る / BGM音量とボイス音量の調整"
+		description_label.text = "ESCで閉じる / ゲームに戻る / 設定を開く"
 	if close_hint_label != null:
 		close_hint_label.text = "作業UIが開いていない時に ESC でこのメニューを開ける"
+	if settings_section != null:
+		settings_section.visible = false
+	if settings_tabs != null:
+		if settings_tabs.get_tab_count() >= 1:
+			settings_tabs.set_tab_title(0, "オーディオ")
+		if settings_tabs.get_tab_count() >= 2:
+			settings_tabs.set_tab_title(1, "グラフィック")
 
 	_setup_slider(bgm_slider, _on_bgm_slider_value_changed)
 	_setup_slider(voice_slider, _on_voice_slider_value_changed)
+	_setup_camera_preset_option()
 
+	if settings_button != null and not settings_button.pressed.is_connected(_on_settings_pressed):
+		settings_button.pressed.connect(_on_settings_pressed)
+	if settings_close_button != null and not settings_close_button.pressed.is_connected(_on_settings_close_pressed):
+		settings_close_button.pressed.connect(_on_settings_close_pressed)
 	if bgm_reset_button != null and not bgm_reset_button.pressed.is_connected(_on_bgm_reset_pressed):
 		bgm_reset_button.pressed.connect(_on_bgm_reset_pressed)
 	if voice_reset_button != null and not voice_reset_button.pressed.is_connected(_on_voice_reset_pressed):
 		voice_reset_button.pressed.connect(_on_voice_reset_pressed)
+	if camera_reset_button != null and not camera_reset_button.pressed.is_connected(_on_camera_reset_pressed):
+		camera_reset_button.pressed.connect(_on_camera_reset_pressed)
 	if resume_button != null and not resume_button.pressed.is_connected(_on_resume_pressed):
 		resume_button.pressed.connect(_on_resume_pressed)
 	if quit_button != null and not quit_button.pressed.is_connected(_on_quit_pressed):
@@ -58,6 +81,7 @@ func _ready() -> void:
 		quit_confirm_dialog.confirmed.connect(_on_quit_confirmed)
 
 	_refresh_audio_controls()
+	_refresh_graphics_controls()
 
 
 func _setup_slider(slider: HSlider, changed_callable: Callable) -> void:
@@ -68,6 +92,13 @@ func _setup_slider(slider: HSlider, changed_callable: Callable) -> void:
 	slider.step = 1.0
 	if not slider.value_changed.is_connected(changed_callable):
 		slider.value_changed.connect(changed_callable)
+
+
+func _setup_camera_preset_option() -> void:
+	if camera_preset_option == null:
+		return
+	if not camera_preset_option.item_selected.is_connected(_on_camera_preset_selected):
+		camera_preset_option.item_selected.connect(_on_camera_preset_selected)
 
 
 func _exit_tree() -> void:
@@ -85,6 +116,11 @@ func _input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 			return
 
+		if settings_section != null and settings_section.visible:
+			_hide_settings_section()
+			get_viewport().set_input_as_handled()
+			return
+
 		close_menu()
 		get_viewport().set_input_as_handled()
 
@@ -92,6 +128,7 @@ func _input(event: InputEvent) -> void:
 func open_menu() -> void:
 	if visible:
 		_refresh_audio_controls()
+		_refresh_graphics_controls()
 		if resume_button != null:
 			resume_button.grab_focus()
 		return
@@ -99,7 +136,9 @@ func open_menu() -> void:
 	visible = true
 	move_to_front()
 	_acquire_time_pause()
+	_hide_settings_section()
 	_refresh_audio_controls()
+	_refresh_graphics_controls()
 
 	if resume_button != null:
 		resume_button.grab_focus()
@@ -112,6 +151,7 @@ func close_menu() -> void:
 	if quit_confirm_dialog != null:
 		quit_confirm_dialog.hide()
 
+	_hide_settings_section()
 	_release_time_pause()
 	visible = false
 
@@ -140,6 +180,32 @@ func open() -> void:
 
 func hide_menu() -> void:
 	close_menu()
+
+
+func _on_settings_pressed() -> void:
+	_show_settings_section(0)
+
+
+func _on_settings_close_pressed() -> void:
+	_hide_settings_section()
+	if settings_button != null:
+		settings_button.grab_focus()
+
+
+func _show_settings_section(tab_index: int = 0) -> void:
+	if settings_section != null:
+		settings_section.visible = true
+	if settings_tabs != null:
+		settings_tabs.current_tab = clampi(tab_index, 0, max(settings_tabs.get_tab_count() - 1, 0))
+	_refresh_audio_controls()
+	_refresh_graphics_controls()
+	if settings_tabs != null:
+		settings_tabs.grab_focus()
+
+
+func _hide_settings_section() -> void:
+	if settings_section != null:
+		settings_section.visible = false
 
 
 func _on_resume_pressed() -> void:
@@ -177,6 +243,17 @@ func _on_voice_reset_pressed() -> void:
 	_refresh_audio_controls()
 
 
+func _on_camera_reset_pressed() -> void:
+	var manager: Node = _find_bgm_settings_manager()
+	if manager == null:
+		_refresh_graphics_controls()
+		return
+
+	if manager.has_method("reset_camera_to_default"):
+		manager.call("reset_camera_to_default")
+	_refresh_graphics_controls()
+
+
 func _on_bgm_slider_value_changed(value: float) -> void:
 	if _suppress_bgm_slider_callback:
 		return
@@ -186,7 +263,7 @@ func _on_bgm_slider_value_changed(value: float) -> void:
 
 	var manager: Node = _find_bgm_settings_manager()
 	if manager == null:
-		_update_audio_status_label("音量設定マネージャーが見つからない")
+		_update_audio_status_label("設定マネージャーが見つからない")
 		return
 
 	if manager.has_method("set_bgm_percent"):
@@ -206,7 +283,7 @@ func _on_voice_slider_value_changed(value: float) -> void:
 
 	var manager: Node = _find_bgm_settings_manager()
 	if manager == null:
-		_update_audio_status_label("音量設定マネージャーが見つからない")
+		_update_audio_status_label("設定マネージャーが見つからない")
 		return
 
 	if manager.has_method("set_voice_percent"):
@@ -215,6 +292,25 @@ func _on_voice_slider_value_changed(value: float) -> void:
 		manager.call("set_voice_ratio", float(percent) / 100.0)
 
 	_update_audio_status_label("ボイス音量を %d%% に設定 / BGM音量 %s" % [percent, _get_percent_text(bgm_slider, bgm_percent_label)])
+
+
+func _on_camera_preset_selected(index: int) -> void:
+	if _suppress_camera_preset_callback:
+		return
+	if camera_preset_option == null:
+		return
+	if index < 0 or index >= camera_preset_option.item_count:
+		return
+
+	var preset_id: String = str(camera_preset_option.get_item_metadata(index))
+	var manager: Node = _find_bgm_settings_manager()
+	if manager == null:
+		_update_graphics_status_label("設定マネージャーが見つからない")
+		return
+
+	if manager.has_method("set_camera_preset"):
+		manager.call("set_camera_preset", preset_id)
+	_refresh_graphics_controls()
 
 
 func _refresh_audio_controls() -> void:
@@ -263,6 +359,91 @@ func _refresh_audio_controls() -> void:
 	_update_audio_status_label("現在のBGM音量: %d%% / ボイス音量: %d%%" % [bgm_percent, voice_percent])
 
 
+func _refresh_graphics_controls() -> void:
+	var manager: Node = _find_bgm_settings_manager()
+	var has_manager: bool = manager != null
+
+	if camera_preset_option != null:
+		camera_preset_option.disabled = not has_manager
+	if camera_reset_button != null:
+		camera_reset_button.disabled = not has_manager
+
+	_reload_camera_preset_options(manager)
+
+	if not has_manager:
+		if camera_hint_label != null:
+			camera_hint_label.text = "100% = 現在のプレイヤー付属カメラ"
+		_update_graphics_status_label("グラフィック設定マネージャーが未接続")
+		return
+
+	var current_preset: String = _default_camera_preset_text()
+	if manager.has_method("get_camera_preset"):
+		current_preset = str(manager.call("get_camera_preset"))
+	var current_label: String = "100%（現在）"
+	if manager.has_method("get_camera_preset_label"):
+		current_label = str(manager.call("get_camera_preset_label"))
+
+	var selected_index: int = _find_camera_preset_option_index(current_preset)
+	if camera_preset_option != null and selected_index >= 0:
+		_suppress_camera_preset_callback = true
+		camera_preset_option.select(selected_index)
+		_suppress_camera_preset_callback = false
+
+	var zoom_text: String = ""
+	if manager.has_method("get_camera_zoom"):
+		var zoom_variant: Variant = manager.call("get_camera_zoom")
+		if zoom_variant is Vector2:
+			var zoom_value: Vector2 = zoom_variant
+			zoom_text = " / 現在 zoom: %.2f, %.2f" % [zoom_value.x, zoom_value.y]
+
+	if camera_hint_label != null:
+		camera_hint_label.text = "100%% = 現在のプレイヤー付属カメラ。引き設定は表示範囲だけ広げる%s" % zoom_text
+	_update_graphics_status_label("現在のカメラ設定: %s" % current_label)
+
+
+func _default_camera_preset_text() -> String:
+	return "100"
+
+
+func _reload_camera_preset_options(manager: Node) -> void:
+	if camera_preset_option == null:
+		return
+
+	camera_preset_option.clear()
+
+	var options: Array = []
+	if manager != null and manager.has_method("get_camera_preset_options"):
+		options = manager.call("get_camera_preset_options")
+	else:
+		options = [
+			{"id": "100", "label": "100%（現在）"},
+			{"id": "125", "label": "125%（少し引き）"},
+			{"id": "150", "label": "150%（かなり引き）"}
+		]
+
+	for entry in options:
+		if not (entry is Dictionary):
+			continue
+		var entry_dict: Dictionary = entry
+		var preset_id: String = str(entry_dict.get("id", ""))
+		var preset_label: String = str(entry_dict.get("label", preset_id))
+		if preset_id.is_empty():
+			continue
+		camera_preset_option.add_item(preset_label)
+		var item_index: int = camera_preset_option.item_count - 1
+		camera_preset_option.set_item_metadata(item_index, preset_id)
+
+
+func _find_camera_preset_option_index(preset_id: String) -> int:
+	if camera_preset_option == null:
+		return -1
+
+	for i in range(camera_preset_option.item_count):
+		if str(camera_preset_option.get_item_metadata(i)) == preset_id:
+			return i
+	return -1
+
+
 func _apply_slider_enabled_state(slider: HSlider, enabled: bool) -> void:
 	if slider == null:
 		return
@@ -283,6 +464,11 @@ func _update_voice_percent_label(percent: int) -> void:
 func _update_audio_status_label(text: String) -> void:
 	if audio_status_label != null:
 		audio_status_label.text = text
+
+
+func _update_graphics_status_label(text: String) -> void:
+	if graphics_status_label != null:
+		graphics_status_label.text = text
 
 
 func _get_percent_text(slider: HSlider, label: Label) -> String:
