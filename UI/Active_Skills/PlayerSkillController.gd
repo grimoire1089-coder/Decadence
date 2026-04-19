@@ -12,6 +12,7 @@ const MODAL_UI_GROUPS: Array[StringName] = [
 @export_node_path("CanvasLayer") var hotbar_path: NodePath
 @export_node_path("Node") var skill_caster_path: NodePath
 @export_node_path("Node2D") var self_target_path: NodePath
+@export_node_path("Node") var targeting_controller_path: NodePath
 @export var use_self_as_default_target: bool = true
 @export var show_fail_log: bool = true
 @export var show_setup_log: bool = true
@@ -19,6 +20,7 @@ const MODAL_UI_GROUPS: Array[StringName] = [
 var _hotbar: CanvasLayer = null
 var _skill_caster: Node = null
 var _self_target: Node2D = null
+var _targeting_controller: Node = null
 
 
 func _ready() -> void:
@@ -42,6 +44,7 @@ func _resolve_references() -> void:
 	_hotbar = _find_hotbar()
 	_skill_caster = _find_skill_caster()
 	_self_target = _find_self_target()
+	_targeting_controller = _find_targeting_controller()
 
 
 func _find_hotbar() -> CanvasLayer:
@@ -78,6 +81,7 @@ func _find_hotbar() -> CanvasLayer:
 
 	return null
 
+
 func _find_skill_caster() -> Node:
 	if not skill_caster_path.is_empty():
 		var by_path: Node = get_node_or_null(skill_caster_path)
@@ -108,17 +112,36 @@ func _find_skill_caster() -> Node:
 
 
 func _find_self_target() -> Node2D:
-	var parent_node: Node = get_parent()
-	if parent_node is Node2D:
-		return parent_node as Node2D
-
 	if not self_target_path.is_empty():
 		var by_path: Node = get_node_or_null(self_target_path)
 		if by_path is Node2D:
 			return by_path as Node2D
 
+	var parent_node: Node = get_parent()
+	if parent_node is Node2D:
+		return parent_node as Node2D
+
 	if owner is Node2D:
 		return owner as Node2D
+
+	return null
+
+
+func _find_targeting_controller() -> Node:
+	if not targeting_controller_path.is_empty():
+		var by_path: Node = get_node_or_null(targeting_controller_path)
+		if by_path != null:
+			return by_path
+
+	var parent_node: Node = get_parent()
+	if parent_node != null:
+		var sibling: Node = parent_node.get_node_or_null("TargetingController")
+		if sibling != null:
+			return sibling
+
+	var by_group: Node = get_tree().get_first_node_in_group("player_targeting_controller")
+	if by_group != null:
+		return by_group
 
 	return null
 
@@ -133,6 +156,8 @@ func _log_missing_references() -> void:
 		SkillHelpers.add_system_log("[Skill] SkillCaster が見つかりません")
 	if _self_target == null:
 		SkillHelpers.add_system_log("[Skill] 自己対象ノードが見つかりません")
+	if _targeting_controller == null:
+		SkillHelpers.add_system_log("[Target] TargetingController が見つかりません")
 
 
 func _connect_hotbar_signals() -> void:
@@ -204,10 +229,59 @@ func _on_hotbar_skill_slot_pressed(slot_index: int) -> void:
 	_skill_caster.call("cast_skill", skill_resource, target)
 
 
-func _resolve_cast_target(_skill_resource: Resource) -> Node2D:
-	if use_self_as_default_target:
-		return _self_target
-	return _self_target
+func _resolve_cast_target(skill_resource: Resource) -> Node2D:
+	var selected_target: Node2D = _get_selected_target()
+	var effect_type: String = _get_skill_effect_type(skill_resource)
+
+	match effect_type:
+		"heal", "heal_over_time":
+			if _can_use_selected_target_for_heal(selected_target):
+				return selected_target
+			if use_self_as_default_target:
+				return _self_target
+			return null
+		_:
+			if selected_target != null:
+				return selected_target
+			if use_self_as_default_target:
+				return _self_target
+			return null
+
+
+func _get_selected_target() -> Node2D:
+	if _targeting_controller == null:
+		return null
+	if not _targeting_controller.has_method("get_current_target"):
+		return null
+
+	var value: Variant = _targeting_controller.call("get_current_target")
+	if value is Node2D:
+		return value as Node2D
+	return null
+
+
+func _get_skill_effect_type(skill_resource: Resource) -> String:
+	if skill_resource == null:
+		return ""
+	if skill_resource.has_method("get"):
+		return String(skill_resource.get("effect_type"))
+	return ""
+
+
+func _can_use_selected_target_for_heal(target: Node2D) -> bool:
+	if target == null or not is_instance_valid(target):
+		return false
+	if _is_target_marked_hostile(target):
+		return false
+	return SkillHelpers.resolve_stats_manager(target) != null
+
+
+func _is_target_marked_hostile(target: Node) -> bool:
+	if target == null or not is_instance_valid(target):
+		return false
+	if target.is_in_group("hostile_target"):
+		return true
+	return target is EnemyNPC
 
 
 func _on_skill_cooldown_updated(skill_id: String, remaining: float, total: float) -> void:

@@ -1,0 +1,81 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://UI/Targeting/TargetInfoUI.gd" id="1_target_info"]
+
+[node name="TargetInfoUI" type="Control"]
+custom_minimum_size = Vector2(360, 110)
+layout_mode = 3
+anchors_preset = 10
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -180.0
+offset_top = 18.0
+offset_right = 180.0
+offset_bottom = 128.0
+grow_horizontal = 2
+mouse_filter = 2
+script = ExtResource("1_target_info")
+visible = false
+
+[node name="Panel" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 12
+
+[node name="RootBox" type="VBoxContainer" parent="Panel/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="NameLabel" type="Label" parent="Panel/MarginContainer/RootBox"]
+layout_mode = 2
+text = "TARGET"
+horizontal_alignment = 1
+
+[node name="SubtitleLabel" type="Label" parent="Panel/MarginContainer/RootBox"]
+layout_mode = 2
+text = "ENEMY TARGET"
+horizontal_alignment = 1
+
+[node name="DistanceLabel" type="Label" parent="Panel/MarginContainer/RootBox"]
+layout_mode = 2
+text = "距離 0.0m"
+horizontal_alignment = 1
+
+[node name="HpBox" type="VBoxContainer" parent="Panel/MarginContainer/RootBox"]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="HpBar" type="ProgressBar" parent="Panel/MarginContainer/RootBox/HpBox"]
+custom_minimum_size = Vector2(0, 18)
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 100.0
+value = 100.0
+show_percentage = false
+
+[node name="HpValueLabel" type="Label" parent="Panel/MarginContainer/RootBox/HpBox/HpBar"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "100 / 100"
+horizontal_alignment = 1
+vertical_alignment = 1
+mouse_filter = 2

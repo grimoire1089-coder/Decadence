@@ -6,6 +6,8 @@
 [ext_resource type="Texture2D" uid="uid://bb4d84om17c41" path="res://Image/Player/Robin_Game_003.png" id="4_rxaeq"]
 [ext_resource type="Script" uid="uid://dkhlppyn1e054" path="res://UI/Active_Skills/SkillCaster.gd" id="5_kbytb"]
 [ext_resource type="Script" uid="uid://6uuw2beg8gd6" path="res://UI/Active_Skills/PlayerSkillController.gd" id="6_jiwum"]
+[ext_resource type="Script" path="res://UI/Targeting/TargetingController.gd" id="7_targeting"]
+[ext_resource type="Script" path="res://UI/Targeting/TargetMarker2D.gd" id="8_target_marker"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ux4uq"]
 size = Vector2(240, 486.66663)
@@ -33,9 +35,18 @@ zoom = Vector2(2, 2)
 
 [node name="SkillCaster" type="Node2D" parent="." unique_id=1051362412]
 script = ExtResource("5_kbytb")
-caster_path = NodePath("..")
+caster_path = NodePath("../CharacterBody2D")
+
+[node name="TargetMarker2D" type="Node2D" parent="."]
+script = ExtResource("8_target_marker")
+
+[node name="TargetingController" type="Node2D" parent="."]
+script = ExtResource("7_targeting")
+marker_path = NodePath("../TargetMarker2D")
+player_path = NodePath("../CharacterBody2D")
 
 [node name="PlayerSkillController" type="Node2D" parent="." unique_id=1016286863]
 script = ExtResource("6_jiwum")
 skill_caster_path = NodePath("../SkillCaster")
 self_target_path = NodePath("../CharacterBody2D")
+targeting_controller_path = NodePath("../TargetingController")

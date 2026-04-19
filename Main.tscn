@@ -67,6 +67,7 @@
 [ext_resource type="PackedScene" path="res://UI/SkillHotbarUI.tscn" id="63_gdb40"]
 [ext_resource type="PackedScene" uid="uid://bfo7iktm6ciks" path="res://UI/Active_Skills/RoleSelectUI.tscn" id="65_8h1yq"]
 [ext_resource type="PackedScene" uid="uid://dnovnatyiscdl" path="res://UI/BuffStatusUI.tscn" id="66_fykug"]
+[ext_resource type="PackedScene" path="res://UI/Targeting/TargetInfoUI.tscn" id="69_mplfx"]
 [ext_resource type="Script" uid="uid://cdoromro6h4sh" path="res://Main.gd" id="99_main_script"]
 
 [node name="Main" type="Node2D" unique_id=2061062064]
@@ -182,7 +183,6 @@ position = Vector2(0, 137.5)
 position = Vector2(-730, 81)
 scale = Vector2(0.14, 0.14)
 npc_name = "アルバート"
-talk_lines = ["こんにちは～！", "今日はいい日だねっ！"]
 loop_talk = true
 portrait_texture = ExtResource("37_ek63v")
 voice_lines = Array[AudioStream]([ExtResource("37_ac6pf"), ExtResource("38_ek63v")])
@@ -253,6 +253,9 @@ visible = false
 
 [node name="BuffStatusUI" parent="UI" unique_id=1221905213 instance=ExtResource("66_fykug")]
 target_path = NodePath("../../Sortables/Player")
+
+[node name="TargetInfoUI" parent="UI" unique_id=915790272 instance=ExtResource("69_mplfx")]
+anchors_preset = 5
 
 [editable path="Sortables/Player"]
 [editable path="Sortables/EnemyNPC"]

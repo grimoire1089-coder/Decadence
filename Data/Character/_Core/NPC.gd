@@ -37,6 +37,9 @@ var _talk_index: int = 0
 
 
 func _ready() -> void:
+	add_to_group("targetable")
+	add_to_group("friendly_target")
+
 	if sprite != null:
 		sprite.position = sprite_offset
 
@@ -158,6 +161,54 @@ func get_interact_action_text() -> String:
 
 func get_interact_prompt_offset() -> Vector2:
 	return interact_prompt_offset
+
+
+func get_target_display_name() -> String:
+	return get_dialog_display_name()
+
+
+func is_target_selectable() -> bool:
+	return true
+
+
+func get_target_marker_world_position() -> Vector2:
+	var local_offset: Vector2 = _get_target_marker_local_offset()
+	return global_position + Vector2(local_offset.x * absf(global_scale.x), local_offset.y * absf(global_scale.y))
+
+
+func get_target_ring_radius() -> float:
+	var body_collision: CollisionShape2D = get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if body_collision == null or body_collision.shape == null:
+		return 16.0
+
+	var shape: Shape2D = body_collision.shape
+	if shape is RectangleShape2D:
+		var rect: RectangleShape2D = shape as RectangleShape2D
+		var scaled_width: float = rect.size.x * absf(global_scale.x)
+		var scaled_height: float = rect.size.y * absf(global_scale.y)
+		return max(min(scaled_width, scaled_height) * 0.24, 10.0)
+	if shape is CircleShape2D:
+		var circle: CircleShape2D = shape as CircleShape2D
+		return max(circle.radius * absf(global_scale.x) * 0.90, 10.0)
+
+	return 16.0
+
+
+func _get_target_marker_local_offset() -> Vector2:
+	var body_collision: CollisionShape2D = get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if body_collision == null or body_collision.shape == null:
+		return Vector2.ZERO
+
+	var local_offset: Vector2 = body_collision.position
+	var shape: Shape2D = body_collision.shape
+	if shape is RectangleShape2D:
+		var rect: RectangleShape2D = shape as RectangleShape2D
+		local_offset.y += rect.size.y * 0.5
+	elif shape is CircleShape2D:
+		var circle: CircleShape2D = shape as CircleShape2D
+		local_offset.y += circle.radius
+
+	return local_offset
 
 
 func _get_message_log() -> Node:
