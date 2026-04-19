@@ -1,0 +1,295 @@
+[gd_scene format=3 uid="uid://be5plswwof8cn"]
+
+[ext_resource type="Script" uid="uid://c2561t45ylye1" path="res://Scenes/Title/TitleScreenController.gd" id="1_script"]
+[ext_resource type="FontFile" uid="uid://cl5544af0kflx" path="res://Fonts/Neogrey Medium.ttf" id="2_7kha8"]
+
+[sub_resource type="Environment" id="Environment_title_glow"]
+background_mode = 3
+glow_enabled = true
+glow_intensity = 1.0
+glow_strength = 1.2
+glow_bloom = 0.15
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button"]
+content_margin_left = 14.0
+content_margin_top = 10.0
+content_margin_right = 14.0
+content_margin_bottom = 10.0
+bg_color = Color(0.16, 0.2, 0.28, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.4, 0.6, 0.82, 0.75)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_audio_panel"]
+content_margin_left = 14.0
+content_margin_top = 12.0
+content_margin_right = 14.0
+content_margin_bottom = 12.0
+bg_color = Color(0.1, 0.14, 0.2, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.3, 0.48, 0.66, 0.7)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[node name="TitleScreen" type="Control" unique_id=2044294171]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+script = ExtResource("1_script")
+title_bgm_path = "uid://dmi8na5x3upts"
+
+[node name="Backdrop" type="ColorRect" parent="." unique_id=584389237]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.02, 0.03, 0.05, 1)
+
+[node name="TitleWorldEnvironment" type="WorldEnvironment" parent="." unique_id=1634072638]
+environment = SubResource("Environment_title_glow")
+
+[node name="AccentGlowTop" type="ColorRect" parent="." unique_id=756083056]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 180.0
+grow_horizontal = 2
+color = Color(0.14, 0.42, 0.62, 0.24)
+
+[node name="AccentGlowBottom" type="ColorRect" parent="." unique_id=2033669195]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -220.0
+grow_horizontal = 2
+grow_vertical = 0
+color = Color(0.18, 0.1, 0.3, 0.18)
+
+[node name="CenterContainer" type="CenterContainer" parent="." unique_id=1449686908]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel" type="Control" parent="CenterContainer" unique_id=930281947]
+custom_minimum_size = Vector2(760, 640)
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer/Panel" unique_id=79050139]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 26.0
+offset_top = 24.0
+offset_right = -26.0
+offset_bottom = -24.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 18
+
+[node name="TitleArea" type="Control" parent="CenterContainer/Panel/VBoxContainer" unique_id=1526009776]
+custom_minimum_size = Vector2(0, 156)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="TitleLabel" type="Label" parent="CenterContainer/Panel/VBoxContainer/TitleArea" unique_id=754189444]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -360.0
+offset_top = -70.0
+offset_right = 360.0
+offset_bottom = 70.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.85, 2.15, 2.35, 1)
+theme_override_colors/font_outline_color = Color(0.18, 1.05, 1.22, 1)
+theme_override_constants/outline_size = 6
+theme_override_fonts/font = ExtResource("2_7kha8")
+theme_override_font_sizes/font_size = 96
+text = "DECADENCE"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="SaveInfoLabel" type="Label" parent="CenterContainer/Panel/VBoxContainer" unique_id=1891857346]
+custom_minimum_size = Vector2(0, 28)
+layout_mode = 2
+text = "セーブデータを確認中..."
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="MenuButtons" type="VBoxContainer" parent="CenterContainer/Panel/VBoxContainer" unique_id=1141852234]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="ContinueButton" type="Button" parent="CenterContainer/Panel/VBoxContainer/MenuButtons" unique_id=444678931]
+custom_minimum_size = Vector2(0, 58)
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("StyleBoxFlat_button")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button")
+theme_override_styles/focus = SubResource("StyleBoxFlat_button")
+text = "続きから"
+
+[node name="NewGameButton" type="Button" parent="CenterContainer/Panel/VBoxContainer/MenuButtons" unique_id=1604159719]
+custom_minimum_size = Vector2(0, 58)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_button")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button")
+theme_override_styles/focus = SubResource("StyleBoxFlat_button")
+text = "はじめから"
+
+[node name="SettingsButton" type="Button" parent="CenterContainer/Panel/VBoxContainer/MenuButtons" unique_id=1668226702]
+custom_minimum_size = Vector2(0, 58)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_button")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button")
+theme_override_styles/focus = SubResource("StyleBoxFlat_button")
+text = "設定"
+
+[node name="QuitButton" type="Button" parent="CenterContainer/Panel/VBoxContainer/MenuButtons" unique_id=408397912]
+custom_minimum_size = Vector2(0, 58)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_button")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button")
+theme_override_styles/focus = SubResource("StyleBoxFlat_button")
+text = "終了"
+
+[node name="SettingsPanel" type="PanelContainer" parent="CenterContainer/Panel/VBoxContainer" unique_id=1557742060]
+visible = false
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_audio_panel")
+
+[node name="AudioVBox" type="VBoxContainer" parent="CenterContainer/Panel/VBoxContainer/SettingsPanel" unique_id=1971409435]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="AudioTitleLabel" type="Label" parent="CenterContainer/Panel/VBoxContainer/SettingsPanel/AudioVBox" unique_id=799030173]
+layout_mode = 2
+text = "音量設定"
+
+[node name="BgmRow" type="HBoxContainer" parent="CenterContainer/Panel/VBoxContainer/SettingsPanel/AudioVBox" unique_id=826523541]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="BgmLabel" type="Label" parent="CenterContainer/Panel/VBoxContainer/SettingsPanel/AudioVBox/BgmRow" unique_id=1017474668]
+custom_minimum_size = Vector2(90, 0)
+layout_mode = 2
+text = "BGM音量"
+vertical_alignment = 1
+
+[node name="BgmSlider" type="HSlider" parent="CenterContainer/Panel/VBoxContainer/SettingsPanel/AudioVBox/BgmRow" unique_id=728786111]
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+value = 70.0
+
+[node name="BgmPercentLabel" type="Label" parent="CenterContainer/Panel/VBoxContainer/SettingsPanel/AudioVBox/BgmRow" unique_id=1576076819]
+custom_minimum_size = Vector2(54, 0)
+layout_mode = 2
+text = "70%"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="VoiceRow" type="HBoxContainer" parent="CenterContainer/Panel/VBoxContainer/SettingsPanel/AudioVBox" unique_id=972281333]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="VoiceLabel" type="Label" parent="CenterContainer/Panel/VBoxContainer/SettingsPanel/AudioVBox/VoiceRow" unique_id=1045071084]
+custom_minimum_size = Vector2(90, 0)
+layout_mode = 2
+text = "ボイス音量"
+vertical_alignment = 1
+
+[node name="VoiceSlider" type="HSlider" parent="CenterContainer/Panel/VBoxContainer/SettingsPanel/AudioVBox/VoiceRow" unique_id=1773610492]
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+value = 100.0
+
+[node name="VoicePercentLabel" type="Label" parent="CenterContainer/Panel/VBoxContainer/SettingsPanel/AudioVBox/VoiceRow" unique_id=160905748]
+custom_minimum_size = Vector2(54, 0)
+layout_mode = 2
+text = "100%"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="AudioButtonsRow" type="HBoxContainer" parent="CenterContainer/Panel/VBoxContainer/SettingsPanel/AudioVBox" unique_id=1919196881]
+layout_mode = 2
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="BgmResetButton" type="Button" parent="CenterContainer/Panel/VBoxContainer/SettingsPanel/AudioVBox/AudioButtonsRow" unique_id=1403824812]
+custom_minimum_size = Vector2(160, 40)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_button")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button")
+theme_override_styles/focus = SubResource("StyleBoxFlat_button")
+text = "BGMを初期値に戻す"
+
+[node name="VoiceResetButton" type="Button" parent="CenterContainer/Panel/VBoxContainer/SettingsPanel/AudioVBox/AudioButtonsRow" unique_id=1640211689]
+custom_minimum_size = Vector2(170, 40)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_button")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button")
+theme_override_styles/focus = SubResource("StyleBoxFlat_button")
+text = "ボイスを初期値に戻す"
+
+[node name="AudioStatusLabel" type="Label" parent="CenterContainer/Panel/VBoxContainer/SettingsPanel/AudioVBox" unique_id=1825097925]
+custom_minimum_size = Vector2(0, 22)
+layout_mode = 2
+text = "現在のBGM音量: 70% / ボイス音量: 100%"
+autowrap_mode = 3
+
+[node name="HintLabel" type="Label" parent="CenterContainer/Panel/VBoxContainer" unique_id=1534921277]
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+text = "設定を閉じる: ESC / 新規開始時は既存セーブを上書きする"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="TitleBgmPlayer" type="AudioStreamPlayer" parent="." unique_id=725903328]
+bus = &"BGM"
+
+[node name="NewGameConfirmDialog" type="ConfirmationDialog" parent="." unique_id=1234633816]
+title = "新しいゲームを開始"
+initial_position = 1
+size = Vector2i(460, 220)
+min_size = Vector2i(460, 220)
+ok_button_text = "上書きして開始"
+dialog_text = "既存のセーブデータを上書きして、はじめから開始する。よろしいか？"
