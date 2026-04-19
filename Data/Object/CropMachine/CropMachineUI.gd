@@ -6,6 +6,7 @@ const UI_MODAL_MANAGER_SCRIPT_NAME: String = "UIModalManager.gd"
 const TIME_MANAGER_SCRIPT_NAME: String = "TimeManager.gd"
 const FARMING_SKILL_NAME: String = "farming"
 const DEFAULT_FARMING_EXP_PER_HARVEST_CYCLE: int = 1
+const QUANTITY_HELPER_SCRIPT: Script = preload("res://Data/Object/_Common/ObjectUIQuantityHelper.gd")
 
 const ROOT_DIMMER_COLOR: Color = Color(0.0, 0.0, 0.0, 0.45)
 const MAIN_PANEL_SIZE: Vector2 = Vector2(1000, 760)
@@ -120,6 +121,14 @@ func _ready() -> void:
 
 func _exit_tree() -> void:
 	_release_ui_lock()
+
+
+func _input(event: InputEvent) -> void:
+	if not visible:
+		return
+
+	if QUANTITY_HELPER_SCRIPT.is_modifier_refresh_event(event):
+		call_deferred("refresh")
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -928,7 +937,7 @@ func _update_selected_slot_info() -> void:
 		return
 
 	var recipe: CropRecipe = _get_selected_recipe()
-	var plant_count: int = int(plant_count_spinbox.value)
+	var plant_count: int = _get_effective_plant_count()
 
 	if current_machine.is_slot_empty(selected_slot_index):
 		if recipe == null:
@@ -958,10 +967,11 @@ func _update_selected_slot_info() -> void:
 
 
 func _update_action_buttons() -> void:
+	var effective_plant_count: int = _get_effective_plant_count()
 	var can_plant: bool = false
 	var can_harvest: bool = false
 	var can_cancel: bool = false
-	plant_button.text = "植え付け"
+	plant_button.text = "植え付け x%d" % effective_plant_count
 
 	if current_machine != null and selected_slot_index >= 0:
 		var recipe: CropRecipe = _get_selected_recipe()
@@ -971,7 +981,7 @@ func _update_action_buttons() -> void:
 		if recipe != null and current_machine.can_plant_recipe_in_slot(selected_slot_index, recipe):
 			can_plant = true
 			if not current_machine.is_slot_empty(selected_slot_index):
-				plant_button.text = "追加投入"
+				plant_button.text = "追加投入 x%d" % effective_plant_count
 
 	plant_button.disabled = not can_plant
 	harvest_button.disabled = not can_harvest
@@ -1020,6 +1030,9 @@ func _on_plant_count_changed(_value: float) -> void:
 		_update_action_buttons()
 
 
+func _get_effective_plant_count() -> int:
+	return QUANTITY_HELPER_SCRIPT.resolve_spinbox_amount(plant_count_spinbox, 1, 10, 100)
+
 
 func _on_plant_pressed() -> void:
 	if current_machine == null or current_player == null or selected_slot_index < 0:
@@ -1036,7 +1049,7 @@ func _on_plant_pressed() -> void:
 		info_label.text = "使用中スロットには同じ作物だけ追加投入できる"
 		return
 
-	var plant_count: int = max(int(plant_count_spinbox.value), 1)
+	var plant_count: int = _get_effective_plant_count()
 	var removed_seed_result: Dictionary = _remove_seed_items_for_planting(recipe.seed_item, plant_count)
 	if not bool(removed_seed_result.get("success", false)):
 		info_label.text = "必要な種が %d 個 足りない" % plant_count

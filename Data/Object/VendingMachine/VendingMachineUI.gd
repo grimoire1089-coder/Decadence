@@ -50,6 +50,7 @@ func _ready() -> void:
 	_setup_dimmer()
 	_setup_main_panel()
 	_setup_content_layout()
+	_update_action_button_labels()
 
 	stock_one_button.pressed.connect(_on_stock_one_pressed)
 	take_back_one_button.pressed.connect(_on_take_back_one_pressed)
@@ -61,6 +62,14 @@ func _ready() -> void:
 	if CurrencyManager != null:
 		if not CurrencyManager.credits_changed.is_connected(_on_credits_changed):
 			CurrencyManager.credits_changed.connect(_on_credits_changed)
+
+
+func _input(event: InputEvent) -> void:
+	if not visible:
+		return
+
+	if ObjectUIQuantityHelper.is_modifier_refresh_event(event):
+		call_deferred("refresh")
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -122,6 +131,7 @@ func refresh() -> void:
 	if current_machine == null or current_player == null:
 		return
 
+	_update_action_button_labels()
 	title_label.text = current_machine.machine_name
 	money_label.text = "所持金: %d Cr" % _get_player_credits(current_player)
 	earnings_label.text = "売上: %d Cr" % current_machine.earnings
@@ -366,6 +376,17 @@ func _on_slot_pressed(index: int) -> void:
 	refresh()
 
 
+func _get_effective_action_amount() -> int:
+	return ObjectUIQuantityHelper.resolve_fixed_amount(1, 10, 100)
+
+
+func _update_action_button_labels() -> void:
+	var action_amount: int = _get_effective_action_amount()
+	stock_one_button.text = "%d個補充" % action_amount
+	take_back_one_button.text = "%d個戻す" % action_amount
+	collect_button.text = "売上回収"
+
+
 func _on_stock_one_pressed() -> void:
 	if current_machine == null or current_player == null:
 		return
@@ -379,21 +400,22 @@ func _on_stock_one_pressed() -> void:
 		_log_error("アイテムデータが見つからない")
 		return
 
-	var removed_variant: Variant = current_player.call("remove_item_from_inventory", selected_item_data, 1)
+	var action_amount: int = _get_effective_action_amount()
+	var removed_variant: Variant = current_player.call("remove_item_from_inventory", selected_item_data, action_amount)
 	var removed: bool = bool(removed_variant)
 	if not removed:
 		info_label.text = "在庫が足りない"
 		return
 
-	var stocked: bool = current_machine.stock_item(selected_slot_index, selected_item_data, 1, 0)
+	var stocked: bool = current_machine.stock_item(selected_slot_index, selected_item_data, action_amount, 0)
 	if not stocked:
-		current_player.call("add_item_to_inventory", selected_item_data, 1)
+		current_player.call("add_item_to_inventory", selected_item_data, action_amount)
 		info_label.text = "そのスロットには別の商品が入ってる"
 		return
 
 	var sell_price: int = current_machine.peek_slot_price(selected_slot_index)
-	info_label.text = "1個補充した（売値: %d Cr）" % sell_price
-	_log_shop("%sを %d Cr で陳列した" % [_get_item_display_name(selected_item_data), sell_price])
+	info_label.text = "%d個補充した（売値: %d Cr）" % [action_amount, sell_price]
+	_log_shop("%sを %d個、%d Cr で陳列した" % [_get_item_display_name(selected_item_data), action_amount, sell_price])
 	refresh()
 
 
@@ -405,7 +427,8 @@ func _on_take_back_one_pressed() -> void:
 		return
 
 	var old_price: int = current_machine.peek_slot_price(selected_slot_index)
-	var result: Dictionary = current_machine.take_back_item(selected_slot_index, 1)
+	var action_amount: int = _get_effective_action_amount()
+	var result: Dictionary = current_machine.take_back_item(selected_slot_index, action_amount)
 
 	var success: bool = bool(result.get("success", false))
 	if not success:
@@ -426,7 +449,7 @@ func _on_take_back_one_pressed() -> void:
 		info_label.text = "インベントリに戻せない"
 		return
 
-	info_label.text = "1個取り戻した"
+	info_label.text = "%d個取り戻した" % returned_amount
 	refresh()
 
 

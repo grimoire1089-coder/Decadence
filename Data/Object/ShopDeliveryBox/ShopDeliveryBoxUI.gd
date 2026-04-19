@@ -4,6 +4,7 @@ class_name ShopDeliveryBoxUI
 const UI_LOCK_SOURCE: String = "ShopDeliveryBoxUI"
 const UI_MODAL_MANAGER_SCRIPT_NAME: String = "UIModalManager.gd"
 const TIME_MANAGER_SCRIPT_NAME: String = "TimeManager.gd"
+const QUANTITY_HELPER_SCRIPT: Script = preload("res://Data/Object/_Common/ObjectUIQuantityHelper.gd")
 
 const ROOT_DIMMER_COLOR: Color = Color(0.0, 0.0, 0.0, 0.45)
 const MAIN_PANEL_BG: Color = Color(0.05, 0.08, 0.12, 0.97)
@@ -63,6 +64,14 @@ func _ready() -> void:
 	if CurrencyManager != null:
 		if not CurrencyManager.credits_changed.is_connected(_on_credits_changed):
 			CurrencyManager.credits_changed.connect(_on_credits_changed)
+
+
+func _input(event: InputEvent) -> void:
+	if not visible:
+		return
+
+	if QUANTITY_HELPER_SCRIPT.is_modifier_refresh_event(event):
+		call_deferred("refresh")
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -369,9 +378,14 @@ func _make_card_stylebox(selected: bool, hovered: bool) -> StyleBoxFlat:
 
 
 func _update_button_state() -> void:
+	var action_amount: int = _get_action_amount()
 	var can_order: bool = current_box != null and selected_shop_index >= 0 and selected_product_index >= 0
 	var can_receive_one: bool = current_box != null and selected_delivery_index >= 0 and current_box.get_delivery_entries().size() > 0
 	var can_receive_all: bool = current_box != null and not current_box.get_delivery_entries().is_empty()
+
+	order_one_button.text = "%d回注文" % action_amount
+	receive_one_button.text = "%d個受取" % action_amount
+	receive_all_button.text = "全受取"
 
 	order_one_button.disabled = not can_order
 	receive_one_button.disabled = not can_receive_one
@@ -394,11 +408,16 @@ func _on_delivery_pressed(index: int) -> void:
 	refresh()
 
 
+func _get_action_amount() -> int:
+	return QUANTITY_HELPER_SCRIPT.resolve_fixed_amount(1, 10, 100)
+
+
 func _on_order_one_pressed() -> void:
 	if current_box == null or current_player == null or selected_product_index < 0:
 		return
 
-	var result: Dictionary = current_box.place_order(current_player, selected_product_index, 1, selected_shop_index)
+	var order_count: int = _get_action_amount()
+	var result: Dictionary = current_box.place_order(current_player, selected_product_index, order_count, selected_shop_index)
 	info_label.text = str(result.get("message", ""))
 	refresh()
 
@@ -407,7 +426,8 @@ func _on_receive_one_pressed() -> void:
 	if current_box == null or current_player == null or selected_delivery_index < 0:
 		return
 
-	var result: Dictionary = current_box.claim_delivery_entry(current_player, selected_delivery_index, 1)
+	var receive_count: int = _get_action_amount()
+	var result: Dictionary = current_box.claim_delivery_entry(current_player, selected_delivery_index, receive_count)
 	info_label.text = str(result.get("message", ""))
 	refresh()
 

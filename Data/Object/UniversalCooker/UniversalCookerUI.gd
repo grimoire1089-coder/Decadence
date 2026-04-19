@@ -26,6 +26,7 @@ const GRID_RESERVED_ROWS: int = 2
 const INGREDIENT_SLOT_WIDTH: int = 180
 const INGREDIENT_SLOT_HEIGHT: int = 92
 const INGREDIENT_GRID_RESERVED_ROWS: int = 2
+const QUANTITY_HELPER_SCRIPT: Script = preload("res://Data/Object/_Common/ObjectUIQuantityHelper.gd")
 
 
 var current_machine: UniversalCooker = null
@@ -91,6 +92,12 @@ func _ready() -> void:
 		discard_confirm_dialog.confirmed.connect(_on_discard_confirmed)
 
 
+func _input(event: InputEvent) -> void:
+	if not visible:
+		return
+
+	if QUANTITY_HELPER_SCRIPT.is_modifier_refresh_event(event):
+		call_deferred("refresh")
 
 
 func _notification(what: int) -> void:
@@ -387,7 +394,7 @@ func _refresh_ingredient_slots() -> void:
 		ingredient_section.visible = true
 	_sync_prepared_assignments()
 
-	var craft_count: int = max(int(craft_count_spinbox.value), 1)
+	var craft_count: int = _get_effective_craft_count()
 	if ingredient_label != null:
 		ingredient_label.text = "材料投入（必要種類 %d / 調理回数 %d）" % [prepared_assignments.size(), craft_count]
 
@@ -456,7 +463,7 @@ func _sync_prepared_assignments() -> void:
 		return
 
 	var new_recipe_key: String = _get_recipe_key(recipe)
-	var new_craft_count: int = max(int(craft_count_spinbox.value), 1)
+	var new_craft_count: int = _get_effective_craft_count()
 	var preserved: Dictionary = {}
 	if prepared_context_slot_index == selected_slot_index and prepared_context_recipe_key == new_recipe_key:
 		for entry in prepared_assignments:
@@ -591,7 +598,7 @@ func _build_prepared_plan_for_selected_recipe() -> Dictionary:
 		return result
 
 	_sync_prepared_assignments()
-	var craft_count: int = max(int(craft_count_spinbox.value), 1)
+	var craft_count: int = _get_effective_craft_count()
 	var requested_by_signature: Dictionary = {}
 	var prepared_entries: Array[Dictionary] = []
 
@@ -647,7 +654,7 @@ func _update_selected_slot_info() -> void:
 		return
 
 	var recipe: CookingRecipe = _get_selected_recipe()
-	var craft_count: int = int(craft_count_spinbox.value)
+	var craft_count: int = _get_effective_craft_count()
 
 	if current_machine.is_slot_empty(selected_slot_index):
 		if recipe == null:
@@ -684,11 +691,12 @@ func _update_selected_slot_info() -> void:
 
 
 func _update_action_buttons() -> void:
+	var effective_craft_count: int = _get_effective_craft_count()
 	var can_start: bool = false
 	var can_collect: bool = false
 	var can_discard: bool = false
 	if start_button != null:
-		start_button.text = "調理開始"
+		start_button.text = "調理開始 x%d" % effective_craft_count
 
 	if current_machine != null and selected_slot_index >= 0:
 		var recipe: CookingRecipe = _get_selected_recipe()
@@ -700,7 +708,7 @@ func _update_action_buttons() -> void:
 			can_start = bool(prepared_plan.get("success", false))
 			if not current_machine.is_slot_empty(selected_slot_index):
 				if start_button != null:
-					start_button.text = "追加投入"
+					start_button.text = "追加投入 x%d" % effective_craft_count
 
 	if start_button != null:
 		start_button.disabled = not can_start
@@ -746,6 +754,10 @@ func _on_craft_count_changed(_value: float) -> void:
 		_update_action_buttons()
 
 
+func _get_effective_craft_count() -> int:
+	return QUANTITY_HELPER_SCRIPT.resolve_spinbox_amount(craft_count_spinbox, 1, 10, 100)
+
+
 func _on_recipe_selected(index: int) -> void:
 	if index < 0 or index >= recipe_option.item_count:
 		selected_recipe_key = ""
@@ -766,7 +778,7 @@ func _on_start_pressed() -> void:
 		info_label.text = "料理レシピがない"
 		return
 
-	var craft_count: int = max(int(craft_count_spinbox.value), 1)
+	var craft_count: int = _get_effective_craft_count()
 	var prepared_plan: Dictionary = _build_prepared_plan_for_selected_recipe()
 	if not bool(prepared_plan.get("success", false)):
 		info_label.text = str(prepared_plan.get("message", "材料投入スロットを埋めてくれ"))
