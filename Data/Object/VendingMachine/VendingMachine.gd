@@ -63,24 +63,25 @@ func interact(player: Node) -> void:
 		ui.call("open_machine", self, player)
 
 
-func stock_item(slot_index: int, item_data: Resource, amount: int, price: int) -> bool:
+func stock_item(slot_index: int, item_data: Resource, amount: int, _price: int) -> bool:
 	if slot_index < 0 or slot_index >= slots.size():
 		return false
-	if item_data == null or amount <= 0 or price < 0:
+	if item_data == null or amount <= 0:
 		return false
 
 	var slot = slots[slot_index]
+	var sell_price: int = _get_item_sell_price(item_data)
 
 	if slot.is_empty():
 		slot.item_data = item_data
 		slot.amount = amount
-		slot.price = price
+		slot.price = sell_price
 		save_data()
 		return true
 
 	if _can_stack_item(slot.item_data, item_data):
 		slot.amount += amount
-		slot.price = price
+		slot.price = sell_price
 		save_data()
 		return true
 
@@ -114,17 +115,15 @@ func take_back_item(slot_index: int, amount: int) -> Dictionary:
 	return result
 
 
-func set_slot_price(slot_index: int, new_price: int) -> void:
+func set_slot_price(slot_index: int, _new_price: int) -> void:
 	if slot_index < 0 or slot_index >= slots.size():
-		return
-	if new_price < 0:
 		return
 
 	var slot = slots[slot_index]
 	if slot.is_empty():
 		return
 
-	slot.price = new_price
+	slot.price = _get_item_sell_price(slot.item_data)
 	save_data()
 
 
@@ -319,6 +318,17 @@ func _get_item_name(item_data: Resource) -> String:
 	return item_data.resource_name
 
 
+func _get_item_sell_price(item_data: Resource) -> int:
+	var item: ItemData = item_data as ItemData
+	if item == null:
+		return 0
+
+	if item.has_method("get_sell_price"):
+		return maxi(int(item.get_sell_price()), 0)
+
+	return maxi(int(item.price), 0)
+
+
 func _get_save_path() -> String:
 	var unique_name: String = str(name)
 	if unique_name.is_empty():
@@ -407,7 +417,6 @@ func load_data() -> void:
 		var quality: int = maxi(int(slot_data.get("quality", 0)), 0)
 		var rank: int = clamp(int(slot_data.get("rank", 0)), 0, 5)
 		var amount: int = maxi(int(slot_data.get("amount", 0)), 0)
-		var price: int = maxi(int(slot_data.get("price", 0)), 0)
 
 		if amount <= 0:
 			continue
@@ -418,7 +427,7 @@ func load_data() -> void:
 
 		slot.item_data = item_data
 		slot.amount = amount
-		slot.price = price
+		slot.price = _get_item_sell_price(item_data)
 
 
 func _get_player_credits(player: Node) -> int:

@@ -1,6 +1,6 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene format=3]
 
-[ext_resource type="Script" path="res://VendingMachineUI.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://djgnf8fo4ecg1" path="res://Data/Object/VendingMachine/VendingMachineUI.gd" id="1_script"]
 
 [node name="VendingMachineUI" type="Control"]
 layout_mode = 3
@@ -55,14 +55,6 @@ columns = 5
 theme_override_constants/h_separation = 12
 theme_override_constants/v_separation = 12
 
-[node name="PriceSpinBox" type="SpinBox" parent="Panel/VBoxContainer"]
-custom_minimum_size = Vector2(0, 40)
-layout_mode = 2
-size_flags_horizontal = 3
-min_value = 0.0
-max_value = 999999.0
-value = 10.0
-
 [node name="HBoxContainer" type="HBoxContainer" parent="Panel/VBoxContainer"]
 layout_mode = 2
 theme_override_constants/separation = 8
@@ -78,12 +70,6 @@ custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "1個戻す"
-
-[node name="SetPriceButton" type="Button" parent="Panel/VBoxContainer/HBoxContainer"]
-custom_minimum_size = Vector2(0, 40)
-layout_mode = 2
-size_flags_horizontal = 3
-text = "価格更新"
 
 [node name="CollectButton" type="Button" parent="Panel/VBoxContainer/HBoxContainer"]
 custom_minimum_size = Vector2(0, 40)

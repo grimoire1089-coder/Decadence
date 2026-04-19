@@ -33,10 +33,8 @@ var dimmer: ColorRect = null
 @onready var money_label: Label = $Panel/VBoxContainer/MoneyLabel
 @onready var earnings_label: Label = $Panel/VBoxContainer/EarningsLabel
 @onready var grid: GridContainer = $Panel/VBoxContainer/GridContainer
-@onready var price_spinbox: SpinBox = $Panel/VBoxContainer/PriceSpinBox
 @onready var stock_one_button: Button = $Panel/VBoxContainer/HBoxContainer/StockOneButton
 @onready var take_back_one_button: Button = $Panel/VBoxContainer/HBoxContainer/TakeBackOneButton
-@onready var set_price_button: Button = $Panel/VBoxContainer/HBoxContainer/SetPriceButton
 @onready var collect_button: Button = $Panel/VBoxContainer/HBoxContainer/CollectButton
 @onready var info_label: Label = $Panel/VBoxContainer/InfoLabel
 @onready var close_button: Button = $Panel/VBoxContainer/CloseButton
@@ -53,14 +51,8 @@ func _ready() -> void:
 	_setup_main_panel()
 	_setup_content_layout()
 
-	price_spinbox.min_value = 0
-	price_spinbox.max_value = 999999
-	price_spinbox.step = 1
-	price_spinbox.value = 10
-
 	stock_one_button.pressed.connect(_on_stock_one_pressed)
 	take_back_one_button.pressed.connect(_on_take_back_one_pressed)
-	set_price_button.pressed.connect(_on_set_price_pressed)
 	collect_button.pressed.connect(_on_collect_pressed)
 	close_button.pressed.connect(_on_close_pressed)
 	if not resized.is_connected(_on_ui_resized):
@@ -102,11 +94,11 @@ func open_machine(machine: VendingMachine, player: Node) -> void:
 	move_to_front()
 	_acquire_ui_lock()
 	refresh()
-	
+
 	var inventory_ui: Control = get_tree().get_first_node_in_group("inventory_ui") as Control
 	if inventory_ui != null:
 		inventory_ui.move_to_front()
-	
+
 	_acquire_ui_lock()
 	refresh()
 
@@ -168,16 +160,6 @@ func refresh() -> void:
 
 		button.pressed.connect(_on_slot_pressed.bind(i))
 		grid.add_child(button)
-
-	if selected_slot_index >= 0 and selected_slot_index < total_slots:
-		var selected_slot: VendingSlot = current_machine.slots[selected_slot_index]
-		if not selected_slot.is_empty():
-			price_spinbox.value = selected_slot.price
-		else:
-			var selected_item_data: Resource = _get_player_selected_item_data(current_player)
-			var recommended_price: int = _get_adjusted_sell_price(selected_item_data)
-			if recommended_price > 0:
-				price_spinbox.value = recommended_price
 
 
 func _populate_slot_button(button: Button, slot: VendingSlot, slot_index: int, is_selected: bool) -> void:
@@ -341,11 +323,8 @@ func _setup_content_layout() -> void:
 	grid.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	grid.custom_minimum_size = Vector2(898, 230) # 170 * 5 + 12 * 4
 
-	price_spinbox.custom_minimum_size = Vector2(0, 40)
-	price_spinbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	stock_one_button.custom_minimum_size = Vector2(0, 40)
 	take_back_one_button.custom_minimum_size = Vector2(0, 40)
-	set_price_button.custom_minimum_size = Vector2(0, 40)
 	collect_button.custom_minimum_size = Vector2(0, 40)
 
 
@@ -400,27 +379,21 @@ func _on_stock_one_pressed() -> void:
 		_log_error("アイテムデータが見つからない")
 		return
 
-	var sell_price: int = int(price_spinbox.value)
-	if current_machine.slots[selected_slot_index].is_empty():
-		var recommended_price: int = _get_adjusted_sell_price(selected_item_data)
-		if recommended_price > 0 and sell_price <= 0:
-			sell_price = recommended_price
-			price_spinbox.value = sell_price
-
 	var removed_variant: Variant = current_player.call("remove_item_from_inventory", selected_item_data, 1)
 	var removed: bool = bool(removed_variant)
 	if not removed:
 		info_label.text = "在庫が足りない"
 		return
 
-	var stocked: bool = current_machine.stock_item(selected_slot_index, selected_item_data, 1, sell_price)
+	var stocked: bool = current_machine.stock_item(selected_slot_index, selected_item_data, 1, 0)
 	if not stocked:
 		current_player.call("add_item_to_inventory", selected_item_data, 1)
 		info_label.text = "そのスロットには別の商品が入ってる"
 		return
 
-	info_label.text = "1個補充した"
-	_log_shop("%sを %d Cr で販売した" % [_get_item_display_name(selected_item_data), sell_price])
+	var sell_price: int = current_machine.peek_slot_price(selected_slot_index)
+	info_label.text = "1個補充した（売値: %d Cr）" % sell_price
+	_log_shop("%sを %d Cr で陳列した" % [_get_item_display_name(selected_item_data), sell_price])
 	refresh()
 
 
@@ -454,18 +427,6 @@ func _on_take_back_one_pressed() -> void:
 		return
 
 	info_label.text = "1個取り戻した"
-	refresh()
-
-
-func _on_set_price_pressed() -> void:
-	if current_machine == null:
-		return
-
-	if selected_slot_index < 0:
-		return
-
-	current_machine.set_slot_price(selected_slot_index, int(price_spinbox.value))
-	info_label.text = "価格を更新した"
 	refresh()
 
 
@@ -550,33 +511,6 @@ func _get_item_display_name(item_data: Resource) -> String:
 		return base_name
 
 	return "%s（%s）" % [base_name, quality_text]
-
-
-func _get_rank_sell_multiplier(rank: int) -> float:
-	match clamp(rank, 0, 5):
-		1:
-			return 1.1
-		2:
-			return 1.5
-		3:
-			return 2.0
-		4:
-			return 3.0
-		5:
-			return 5.0
-		_:
-			return 1.0
-
-
-func _get_adjusted_sell_price(item_data: Resource) -> int:
-	var item: ItemData = item_data as ItemData
-	if item == null:
-		return 0
-
-	var base_price: int = max(int(item.price), 0)
-	var quality_bonus: int = int(item.get_quality() / 5)
-	var multiplied_price: float = float(base_price + quality_bonus) * _get_rank_sell_multiplier(item.get_rank())
-	return max(int(round(multiplied_price)), 0)
 
 
 func _find_ui_modal_manager() -> Node:

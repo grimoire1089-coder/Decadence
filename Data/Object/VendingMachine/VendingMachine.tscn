@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://3r8u7etfs67j"]
 
-[ext_resource type="Script" uid="uid://dgf8bv27bv878" path="res://VendingMachine.gd" id="1_3aj2u"]
+[ext_resource type="Script" uid="uid://dgf8bv27bv878" path="res://Data/Object/VendingMachine/VendingMachine.gd" id="1_3aj2u"]
 [ext_resource type="Texture2D" uid="uid://pnptrwpd2g61" path="res://Image/Vending_Machine.png" id="1_y6tu7"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_3aj2u"]
