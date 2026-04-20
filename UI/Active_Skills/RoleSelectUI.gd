@@ -12,7 +12,6 @@ const ROLE_LABELS: Dictionary = {
 	"debuffer": "デバッファー"
 }
 
-@onready var _panel: PanelContainer = $RootMargin/Panel
 @onready var _main_role_option: OptionButton = $RootMargin/Panel/MainVBox/MainRoleRow/MainRoleOption
 @onready var _sub_role_option: OptionButton = $RootMargin/Panel/MainVBox/SubRoleRow/SubRoleOption
 @onready var _current_label: Label = $RootMargin/Panel/MainVBox/CurrentRoleLabel
