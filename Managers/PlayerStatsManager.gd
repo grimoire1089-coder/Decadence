@@ -156,8 +156,8 @@ func _on_time_manager_time_changed(day: int, hour: int, minute: int) -> void:
 		_last_fullness_decay_total_minutes = total_minutes
 		return
 
-	var previous_bucket: int = int(_last_fullness_decay_total_minutes / FULLNESS_DECAY_INTERVAL_MINUTES)
-	var current_bucket: int = int(total_minutes / FULLNESS_DECAY_INTERVAL_MINUTES)
+	var previous_bucket: int = floori(float(_last_fullness_decay_total_minutes) / float(FULLNESS_DECAY_INTERVAL_MINUTES))
+	var current_bucket: int = floori(float(total_minutes) / float(FULLNESS_DECAY_INTERVAL_MINUTES))
 	var passed_intervals: int = current_bucket - previous_bucket
 	_last_fullness_decay_total_minutes = total_minutes
 
