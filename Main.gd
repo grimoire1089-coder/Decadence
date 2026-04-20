@@ -1,5 +1,8 @@
 extends Node2D
 
+const META_PENDING_SCENE_PATH: StringName = &"scene_transition_target_scene_path"
+const META_PENDING_SPAWN_ID: StringName = &"scene_transition_target_spawn_id"
+
 @onready var player: Node = get_node_or_null("Sortables/Player")
 @onready var loading_overlay: Node = get_node_or_null("UI/LoadingOverlay")
 @onready var inventory_ui: Node = get_node_or_null("UI/InventoryUI")
@@ -25,6 +28,7 @@ func _boot_game() -> void:
 	await get_tree().process_frame
 	_reapply_saved_player_state()
 	_reapply_saved_persistent_nodes()
+	_apply_pending_scene_transition_spawn()
 	_resume_time_manager()
 	_set_player_input_locked(false)
 
@@ -39,6 +43,74 @@ func _reapply_saved_persistent_nodes() -> void:
 	var save_manager: Node = get_node_or_null("/root/SaveManager")
 	if save_manager != null and save_manager.has_method("reapply_persistent_nodes_deferred"):
 		save_manager.call("reapply_persistent_nodes_deferred", self, 2)
+
+
+func _apply_pending_scene_transition_spawn() -> void:
+	var root_node: Window = get_tree().root
+	if root_node == null:
+		return
+	if not root_node.has_meta(META_PENDING_SCENE_PATH):
+		return
+
+	var expected_scene_path: String = String(root_node.get_meta(META_PENDING_SCENE_PATH, "")).strip_edges()
+	var pending_spawn_id: String = String(root_node.get_meta(META_PENDING_SPAWN_ID, "")).strip_edges()
+	_clear_pending_scene_transition_meta()
+
+	if pending_spawn_id.is_empty():
+		return
+
+	var current_scene_path: String = String(scene_file_path).strip_edges()
+	if not expected_scene_path.is_empty() and current_scene_path != expected_scene_path:
+		return
+
+	var spawn_point: Node2D = _find_scene_spawn_point(pending_spawn_id)
+	var player_node: Node2D = player as Node2D
+	if spawn_point == null or player_node == null:
+		return
+
+	player_node.global_position = spawn_point.global_position
+
+
+func _clear_pending_scene_transition_meta() -> void:
+	var root_node: Window = get_tree().root
+	if root_node == null:
+		return
+	if root_node.has_meta(META_PENDING_SCENE_PATH):
+		root_node.remove_meta(META_PENDING_SCENE_PATH)
+	if root_node.has_meta(META_PENDING_SPAWN_ID):
+		root_node.remove_meta(META_PENDING_SPAWN_ID)
+
+
+func _find_scene_spawn_point(spawn_id: String) -> Node2D:
+	for node_obj in get_tree().get_nodes_in_group("scene_spawn_point"):
+		var node: Node = node_obj as Node
+		if node == null:
+			continue
+		if not _is_descendant_of(self, node):
+			continue
+
+		var node_spawn_id: String = ""
+		if node.has_method("get_spawn_id"):
+			node_spawn_id = String(node.call("get_spawn_id")).strip_edges()
+		else:
+			node_spawn_id = String(node.get("spawn_id")).strip_edges()
+
+		if node_spawn_id == spawn_id and node is Node2D:
+			return node as Node2D
+
+	return null
+
+
+func _is_descendant_of(root: Node, candidate: Node) -> bool:
+	if root == null or candidate == null:
+		return false
+
+	var current: Node = candidate
+	while current != null:
+		if current == root:
+			return true
+		current = current.get_parent()
+	return false
 
 
 func _resume_time_manager() -> void:
@@ -87,32 +159,20 @@ func _close_loading_overlay() -> void:
 
 
 func _load_item_defs() -> void:
-	# 例:
-	# ItemDatabase.load_all()
 	pass
 
 
 func _load_recipe_defs() -> void:
-	# 例:
-	# RecipeDatabase.load_all()
 	pass
 
 
 func _init_shop_data() -> void:
-	# 例:
-	# ShopManager.setup()
 	pass
 
 
 func _init_crop_data() -> void:
-	# 例:
-	# CropManager.setup()
 	pass
 
 
 func _build_ui() -> void:
-	# 例:
-	# var main_ui: Node = get_node_or_null("UI/MainUI")
-	# if main_ui != null and main_ui.has_method("refresh_all"):
-	# 	main_ui.call("refresh_all")
 	pass

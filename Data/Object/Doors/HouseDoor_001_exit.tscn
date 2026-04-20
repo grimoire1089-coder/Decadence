@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://cs3fxoq26b54n"]
+[gd_scene format=3]
 
 [ext_resource type="Script" path="res://Data/Object/Doors/SceneDoor.gd" id="1_door_script"]
 [ext_resource type="Texture2D" path="res://Image/House_Door_001.png" id="2_door_tex"]
@@ -9,11 +9,11 @@ size = Vector2(556, 710)
 [sub_resource type="CircleShape2D" id="CircleShape2D_interact"]
 radius = 440.0
 
-[node name="HouseDoor001" type="StaticBody2D" unique_id=14363033]
+[node name="HouseDoorExit001" type="StaticBody2D"]
 script = ExtResource("1_door_script")
-door_name = "ロビンの家"
-transition_id = "robin_house_enter"
-interact_action_text = "入る"
+door_name = "外"
+transition_id = "robin_house_exit"
+interact_action_text = "出る"
 interact_prompt_offset = Vector2(0, -120)
 
 [node name="Sprite2D" type="Sprite2D" parent="."]

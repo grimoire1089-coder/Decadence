@@ -1,0 +1,87 @@
+[gd_scene format=3 uid="uid://vdm7020oruj6"]
+
+[ext_resource type="Script" uid="uid://cdoromro6h4sh" path="res://Main.gd" id="1_main_script"]
+[ext_resource type="Script" uid="uid://dxl3iu7jkce32" path="res://InventoryToggle.gd" id="2_inventory_toggle"]
+[ext_resource type="PackedScene" uid="uid://ufqrur381hty" path="res://Robin.tscn" id="3_player_scene"]
+[ext_resource type="PackedScene" uid="uid://cs3fxoq26b54n" path="res://HouseDoor_001.tscn" id="4_door_scene"]
+[ext_resource type="PackedScene" path="res://Data/Object/Doors/SceneSpawnPoint.tscn" id="5_spawn_point_scene"]
+[ext_resource type="PackedScene" uid="uid://charqd8qx3ros" path="res://InventoryUI.tscn" id="6_inventory_ui"]
+[ext_resource type="PackedScene" path="res://UI/LoadingOverlay.tscn" id="7_loading_overlay"]
+[ext_resource type="PackedScene" uid="uid://cqcvg6cf3r4co" path="res://UI/InteractPromptUI.tscn" id="8_interact_prompt"]
+[ext_resource type="PackedScene" path="res://UI/PauseMenuUI.tscn" id="9_pause_menu"]
+[ext_resource type="PackedScene" uid="uid://duji2d2efbu8d" path="res://GameMessageLog.tscn" id="10_message_log"]
+[ext_resource type="PackedScene" uid="uid://bon7n357ps8jk" path="res://UI/PlayerVitalBarsUI.tscn" id="11_vital_bars"]
+[ext_resource type="PackedScene" uid="uid://c7xvolyalc24f" path="res://UI/LevelExpBar.tscn" id="12_level_exp"]
+[ext_resource type="PackedScene" uid="uid://df4ck13f2ftp2" path="res://UI/Active_Skills/CastBarUI.tscn" id="13_cast_bar"]
+[ext_resource type="PackedScene" uid="uid://dpe3jd8jm8li8" path="res://TimeLabel.tscn" id="14_time_panel"]
+[ext_resource type="PackedScene" uid="uid://7c8mowq3joyf" path="res://Credit_Panel.tscn" id="15_credit_panel"]
+[ext_resource type="PackedScene" uid="uid://bi2bnyy1angne" path="res://FullnessUI.tscn" id="16_fullness_ui"]
+[ext_resource type="PackedScene" uid="uid://cfs04dhugpasv" path="res://FatigueUI.tscn" id="17_fatigue_ui"]
+[ext_resource type="PackedScene" path="res://UI/SkillHotbarUI.tscn" id="18_skill_hotbar"]
+[ext_resource type="PackedScene" uid="uid://dnovnatyiscdl" path="res://UI/BuffStatusUI.tscn" id="19_buff_status"]
+[ext_resource type="PackedScene" path="res://UI/Targeting/TargetInfoUI.tscn" id="20_target_info"]
+[ext_resource type="PackedScene" uid="uid://dlpieco7q4pd" path="res://UI/NPC/NPCDialogUI.tscn" id="21_npc_dialog"]
+
+[node name="RobinHouseInterior" type="Node2D" unique_id=2015613470]
+script = ExtResource("1_main_script")
+
+[node name="Sortables" type="Node2D" parent="." unique_id=421406907]
+y_sort_enabled = true
+
+[node name="Player" parent="Sortables" unique_id=1461661970 instance=ExtResource("3_player_scene")]
+position = Vector2(0, 80)
+
+[node name="EntryFromOutside" parent="Sortables" unique_id=261592744 instance=ExtResource("5_spawn_point_scene")]
+position = Vector2(0, 80)
+spawn_id = "entry_from_outside"
+
+[node name="HouseExit" parent="Sortables" unique_id=1938053508 instance=ExtResource("4_door_scene")]
+position = Vector2(0, -80)
+scale = Vector2(0.25, 0.25)
+door_name = "外"
+target_scene_path = "res://Main.tscn"
+target_spawn_id = "robin_house_outside"
+interact_action_text = "出る"
+
+[node name="GameMessageLog" parent="." unique_id=571947724 instance=ExtResource("10_message_log")]
+
+[node name="UI" type="CanvasLayer" parent="." unique_id=490971983]
+script = ExtResource("2_inventory_toggle")
+
+[node name="PlayerVitalBarsUI" parent="UI" unique_id=1353090588 instance=ExtResource("11_vital_bars")]
+
+[node name="LevelExpBar" parent="UI" unique_id=1687271562 instance=ExtResource("12_level_exp")]
+
+[node name="CastBarUI" parent="UI" unique_id=1384132965 instance=ExtResource("13_cast_bar")]
+skill_caster_path = NodePath("../../Sortables/Player/SkillCaster")
+
+[node name="TimePanel" parent="UI" unique_id=8926828 instance=ExtResource("14_time_panel")]
+
+[node name="CreditPanel" parent="UI" unique_id=1126992216 instance=ExtResource("15_credit_panel")]
+
+[node name="FullnessUI" parent="UI" unique_id=1171895614 instance=ExtResource("16_fullness_ui")]
+
+[node name="FatigueUI" parent="UI" unique_id=1267929880 instance=ExtResource("17_fatigue_ui")]
+
+[node name="InventoryUI" parent="UI" unique_id=530258720 instance=ExtResource("6_inventory_ui")]
+item_db = []
+
+[node name="PauseMenuUI" parent="UI" unique_id=2004309297 instance=ExtResource("9_pause_menu")]
+
+[node name="InteractPromptUI" parent="UI" unique_id=1249962037 instance=ExtResource("8_interact_prompt")]
+
+[node name="NPCDialogUI" parent="UI" unique_id=1774165878 instance=ExtResource("21_npc_dialog")]
+
+[node name="SkillHotbarUI" parent="UI" unique_id=706964194 instance=ExtResource("18_skill_hotbar")]
+
+[node name="LoadingOverlay" parent="UI" unique_id=739876204 instance=ExtResource("7_loading_overlay")]
+
+[node name="BuffStatusUI" parent="UI" unique_id=1667937335 instance=ExtResource("19_buff_status")]
+target_path = NodePath("../../Sortables/Player")
+
+[node name="TargetInfoUI" parent="UI" unique_id=127190042 instance=ExtResource("20_target_info")]
+anchors_preset = 5
+offset_top = 0.0
+offset_bottom = 110.0
+
+[editable path="Sortables/Player"]

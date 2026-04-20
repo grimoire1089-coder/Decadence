@@ -186,10 +186,16 @@ func _reset_walk_bob_immediate() -> void:
 	_player_sprite.rotation_degrees = 0.0
 
 
+func _safe_set_input_as_handled() -> void:
+	var viewport: Viewport = get_viewport()
+	if viewport != null:
+		viewport.set_input_as_handled()
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if _is_player_control_locked():
 		if event.is_action_pressed("interact") or event.is_action_pressed("eat_selected_item"):
-			get_viewport().set_input_as_handled()
+			_safe_set_input_as_handled()
 			return
 
 	if _handle_debug_save_input(event):
@@ -202,7 +208,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		var pause_menu: Control = _ensure_pause_menu_exists()
 		if pause_menu != null and pause_menu.has_method("toggle_menu"):
 			pause_menu.call("toggle_menu")
-			get_viewport().set_input_as_handled()
+			_safe_set_input_as_handled()
 		return
 
 	if event.is_action_pressed("interact"):
@@ -211,7 +217,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 		if current_interactable != null and current_interactable.has_method("interact"):
 			current_interactable.interact(self)
-			get_viewport().set_input_as_handled()
+			_safe_set_input_as_handled()
 
 	if event.is_action_pressed("eat_selected_item"):
 		try_consume_selected_item()
@@ -231,7 +237,7 @@ func _handle_debug_save_input(event: InputEvent) -> bool:
 		return false
 
 	_debug_save_game()
-	get_viewport().set_input_as_handled()
+	_safe_set_input_as_handled()
 	return true
 
 
@@ -571,7 +577,7 @@ func spendCredit(amount: int) -> bool:
 
 
 func _get_inventory_ui() -> Node:
-	return get_tree().get_first_node_in_group("inventory_ui")
+	return get_tree().get_first_node_in_group("inventory_ui") as Node
 
 
 func _get_message_log() -> Node:

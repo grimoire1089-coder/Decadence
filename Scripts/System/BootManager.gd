@@ -4,8 +4,8 @@ class_name BootManager
 const BOOT_MODE_CONTINUE: String = "continue"
 const BOOT_MODE_NEW_GAME: String = "new_game"
 
-@export_file("*.tscn") var default_game_scene_path: String = "res://Main.tscn"
-@export_file("*.tscn") var new_game_scene_path: String = "res://Main.tscn"
+@export_file("*.tscn") var default_game_scene_path: String = "res://BaseWorld.tscn"
+@export_file("*.tscn") var new_game_scene_path: String = "res://BaseWorld.tscn"
 @export var slot_name: String = "slot_01"
 @export var threaded_load_poll_interval_sec: float = 0.03
 @export var auto_start_boot: bool = true
@@ -98,6 +98,9 @@ func _run_boot_sequence() -> void:
 	if new_scene == null:
 		_set_progress(1.0, "起動に失敗しました", "シーンの生成に失敗しました")
 		return
+
+	if new_scene.has_method("prepare_world_before_restore"):
+		new_scene.call("prepare_world_before_restore", save_data)
 
 	await get_tree().process_frame
 	await get_tree().process_frame

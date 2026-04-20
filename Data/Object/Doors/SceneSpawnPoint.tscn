@@ -1,0 +1,7 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Data/Object/Doors/SceneSpawnPoint.gd" id="1_spawn_script"]
+
+[node name="SceneSpawnPoint" type="Marker2D"]
+script = ExtResource("1_spawn_script")
+spawn_id = ""

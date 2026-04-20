@@ -3,7 +3,7 @@ class_name TitleScreenController
 
 const BOOT_SCENE_PATH: String = "res://Scenes/System/Boot.tscn"
 const DEFAULT_SLOT_NAME: String = "slot_01"
-const DEFAULT_NEW_GAME_SCENE_PATH: String = "res://Main.tscn"
+const DEFAULT_NEW_GAME_SCENE_PATH: String = "res://BaseWorld.tscn"
 const BGM_SETTINGS_MANAGER_SCRIPT_NAME: String = "BgmSettingsManager.gd"
 
 @export var slot_name: String = DEFAULT_SLOT_NAME
@@ -52,13 +52,17 @@ func _ready() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
 		if new_game_confirm_dialog != null and new_game_confirm_dialog.visible:
+			var viewport_confirm: Viewport = get_viewport()
 			new_game_confirm_dialog.hide()
-			get_viewport().set_input_as_handled()
+			if viewport_confirm != null:
+				viewport_confirm.set_input_as_handled()
 			return
 
 		if settings_panel != null and settings_panel.visible:
+			var viewport_settings: Viewport = get_viewport()
 			_set_settings_open(false)
-			get_viewport().set_input_as_handled()
+			if viewport_settings != null:
+				viewport_settings.set_input_as_handled()
 
 
 func _setup_buttons() -> void:

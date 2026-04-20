@@ -1,0 +1,22 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://HouseDoor_001.tscn" id="1_door_scene"]
+[ext_resource type="PackedScene" path="res://Data/Object/Doors/SceneSpawnPoint.tscn" id="2_spawn_point_scene"]
+
+[node name="RobinHouseInteriorMap" type="Node2D"]
+
+[node name="Sortables" type="Node2D" parent="."]
+y_sort_enabled = true
+
+[node name="EntryFromOutside" parent="Sortables" instance=ExtResource("2_spawn_point_scene")]
+position = Vector2(0, 80)
+spawn_id = "entry_from_outside"
+
+[node name="HouseExit" parent="Sortables" instance=ExtResource("1_door_scene")]
+position = Vector2(0, -80)
+scale = Vector2(0.25, 0.25)
+door_name = "外"
+target_scene_path = "res://Maps/TownMap_MainExtract.tscn"
+target_spawn_id = "robin_house_outside"
+interact_action_text = "出る"
+interact_prompt_offset = Vector2(0, -120)

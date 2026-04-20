@@ -1,0 +1,113 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://BaseWorld.gd" id="1_baseworld"]
+[ext_resource type="Script" path="res://InventoryToggle.gd" id="2_inventory_toggle"]
+[ext_resource type="PackedScene" path="res://Robin.tscn" id="3_player_scene"]
+[ext_resource type="PackedScene" path="res://GameMessageLog.tscn" id="4_message_log"]
+[ext_resource type="PackedScene" path="res://UI/PlayerVitalBarsUI.tscn" id="5_vital_bars"]
+[ext_resource type="PackedScene" path="res://UI/LevelExpBar.tscn" id="6_level_exp"]
+[ext_resource type="PackedScene" path="res://UI/Active_Skills/CastBarUI.tscn" id="7_cast_bar"]
+[ext_resource type="PackedScene" path="res://TimeLabel.tscn" id="8_time_panel"]
+[ext_resource type="PackedScene" path="res://Credit_Panel.tscn" id="9_credit_panel"]
+[ext_resource type="PackedScene" path="res://FullnessUI.tscn" id="10_fullness_ui"]
+[ext_resource type="PackedScene" path="res://FatigueUI.tscn" id="11_fatigue_ui"]
+[ext_resource type="PackedScene" path="res://Data/Object/CropMachine/CropMachineUI.tscn" id="12_crop_machine_ui"]
+[ext_resource type="PackedScene" path="res://Data/Object/VendingMachine/VendingMachineUI.tscn" id="13_vending_machine_ui"]
+[ext_resource type="PackedScene" path="res://Data/Object/ShopDeliveryBox/ShopDeliveryBoxUI.tscn" id="14_shop_delivery_box_ui"]
+[ext_resource type="PackedScene" path="res://Data/Object/UniversalCooker/UniversalCookerUI.tscn" id="15_universal_cooker_ui"]
+[ext_resource type="PackedScene" path="res://InventoryUI.tscn" id="16_inventory_ui"]
+[ext_resource type="PackedScene" path="res://UI/Skills/SkillUI.tscn" id="17_skill_ui"]
+[ext_resource type="PackedScene" path="res://UI/PauseMenuUI.tscn" id="18_pause_menu"]
+[ext_resource type="PackedScene" path="res://UI/BgmNowPlayingPanel.tscn" id="19_bgm_now_playing"]
+[ext_resource type="PackedScene" path="res://UI/InteractPromptUI.tscn" id="20_interact_prompt"]
+[ext_resource type="PackedScene" path="res://UI/NPC/NPCDialogUI.tscn" id="21_npc_dialog"]
+[ext_resource type="PackedScene" path="res://UI/SkillHotbarUI.tscn" id="22_skill_hotbar"]
+[ext_resource type="PackedScene" path="res://UI/LoadingOverlay.tscn" id="23_loading_overlay"]
+[ext_resource type="PackedScene" path="res://UI/Active_Skills/RoleSelectUI.tscn" id="24_role_select"]
+[ext_resource type="PackedScene" path="res://UI/BuffStatusUI.tscn" id="25_buff_status"]
+[ext_resource type="PackedScene" path="res://UI/Targeting/TargetInfoUI.tscn" id="26_target_info"]
+[ext_resource type="PackedScene" path="res://Data/Object/UniversalCooker/RecipeJsonEditor.tscn" id="27_recipe_json_editor"]
+[ext_resource type="Script" path="res://Scripts/System/MapTransitionManager.gd" id="28_map_transition_manager"]
+
+[node name="BaseWorld" type="Node2D"]
+script = ExtResource("1_baseworld")
+
+[node name="MapRoot" type="Node2D" parent="."]
+
+[node name="MapTransitionManager" type="Node" parent="."]
+script = ExtResource("28_map_transition_manager")
+
+[node name="Sortables" type="Node2D" parent="."]
+y_sort_enabled = true
+
+[node name="Player" parent="Sortables" instance=ExtResource("3_player_scene")]
+
+[node name="GameMessageLog" parent="." instance=ExtResource("4_message_log")]
+
+[node name="UI" type="CanvasLayer" parent="."]
+script = ExtResource("2_inventory_toggle")
+
+[node name="PlayerVitalBarsUI" parent="UI" instance=ExtResource("5_vital_bars")]
+
+[node name="LevelExpBar" parent="UI" instance=ExtResource("6_level_exp")]
+
+[node name="CastBarUI" parent="UI" instance=ExtResource("7_cast_bar")]
+skill_caster_path = NodePath("../../Sortables/Player/SkillCaster")
+
+[node name="TimePanel" parent="UI" instance=ExtResource("8_time_panel")]
+
+[node name="CreditPanel" parent="UI" instance=ExtResource("9_credit_panel")]
+
+[node name="FullnessUI" parent="UI" instance=ExtResource("10_fullness_ui")]
+
+[node name="FatigueUI" parent="UI" instance=ExtResource("11_fatigue_ui")]
+
+[node name="CropMachineUI" parent="UI" instance=ExtResource("12_crop_machine_ui")]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+
+[node name="VendingMachineUI" parent="UI" instance=ExtResource("13_vending_machine_ui")]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+
+[node name="ShopDeliveryBoxUI" parent="UI" instance=ExtResource("14_shop_delivery_box_ui")]
+
+[node name="UniversalCookerUI" parent="UI" instance=ExtResource("15_universal_cooker_ui")]
+
+[node name="InventoryUI" parent="UI" instance=ExtResource("16_inventory_ui")]
+item_db = []
+
+[node name="SkillUI" parent="UI" instance=ExtResource("17_skill_ui")]
+
+[node name="PauseMenuUI" parent="UI" instance=ExtResource("18_pause_menu")]
+
+[node name="BgmNowPlayingPanel" parent="UI" instance=ExtResource("19_bgm_now_playing")]
+
+[node name="InteractPromptUI" parent="UI" instance=ExtResource("20_interact_prompt")]
+
+[node name="NPCDialogUI" parent="UI" instance=ExtResource("21_npc_dialog")]
+
+[node name="SkillHotbarUI" parent="UI" instance=ExtResource("22_skill_hotbar")]
+
+[node name="LoadingOverlay" parent="UI" instance=ExtResource("23_loading_overlay")]
+
+[node name="RoleSelectUI" parent="UI" instance=ExtResource("24_role_select")]
+
+[node name="BuffStatusUI" parent="UI" instance=ExtResource("25_buff_status")]
+target_path = NodePath("../../Sortables/Player")
+
+[node name="TargetInfoUI" parent="UI" instance=ExtResource("26_target_info")]
+anchors_preset = 5
+offset_top = 0.0
+offset_bottom = 110.0
+
+[node name="RecipeJsonEditor" parent="UI" instance=ExtResource("27_recipe_json_editor")]
+visible = false
+
+[editable path="Sortables/Player"]
