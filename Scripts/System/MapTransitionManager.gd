@@ -14,7 +14,6 @@ const META_PENDING_SPAWN_ID: StringName = &"scene_transition_target_spawn_id"
 @export_node_path("Node2D") var sortables_path: NodePath = NodePath("../Sortables")
 @export_node_path("Node") var player_path: NodePath = NodePath("../Sortables/Player")
 @export_node_path("Node") var loading_overlay_path: NodePath = NodePath("../UI/LoadingOverlay")
-@export var transition_routes: Dictionary = {}
 
 @onready var map_root: Node2D = get_node_or_null(map_root_path) as Node2D
 @onready var sortables: Node2D = get_node_or_null(sortables_path) as Node2D
@@ -78,61 +77,6 @@ func apply_pending_boot_spawn_if_needed() -> void:
 	_pending_boot_spawn_id = ""
 
 
-func register_transition_route(route_id: String, target_map_scene_path: String, target_spawn_id: String = "", transition_name: String = "", log_text: String = "") -> void:
-	var normalized_route_id: String = route_id.strip_edges()
-	if normalized_route_id.is_empty():
-		return
-
-	transition_routes[normalized_route_id] = {
-		"target_map_scene_path": target_map_scene_path.strip_edges(),
-		"target_spawn_id": target_spawn_id.strip_edges(),
-		"transition_name": transition_name,
-		"log_text": log_text,
-	}
-
-
-func unregister_transition_route(route_id: String) -> void:
-	var normalized_route_id: String = route_id.strip_edges()
-	if normalized_route_id.is_empty():
-		return
-	transition_routes.erase(normalized_route_id)
-
-
-func has_transition_route(route_id: String) -> bool:
-	return transition_routes.has(route_id.strip_edges())
-
-
-func get_transition_route(route_id: String) -> Dictionary:
-	var normalized_route_id: String = route_id.strip_edges()
-	if normalized_route_id.is_empty():
-		return {}
-	var route_value: Variant = transition_routes.get(normalized_route_id, {})
-	if typeof(route_value) != TYPE_DICTIONARY:
-		return {}
-	var route_dict: Dictionary = route_value as Dictionary
-	return _normalize_transition_request(route_dict, normalized_route_id)
-
-
-func request_registered_transition(route_id: String, fallback_scene_path: String = "", fallback_spawn_id: String = "", fallback_transition_name: String = "", fallback_log_text: String = "") -> void:
-	var normalized_route_id: String = route_id.strip_edges()
-	var request: Dictionary = {}
-
-	if not normalized_route_id.is_empty() and transition_routes.has(normalized_route_id):
-		var route_value: Variant = transition_routes.get(normalized_route_id, {})
-		if typeof(route_value) == TYPE_DICTIONARY:
-			request = route_value as Dictionary
-
-	if request.is_empty():
-		request = {
-			"target_map_scene_path": fallback_scene_path,
-			"target_spawn_id": fallback_spawn_id,
-			"transition_name": fallback_transition_name,
-			"log_text": fallback_log_text,
-		}
-
-	request_transition_request(_normalize_transition_request(request, normalized_route_id))
-
-
 func request_transition(target_map_scene_path: String, target_spawn_id: String = "", transition_name: String = "", log_text: String = "") -> void:
 	request_transition_request({
 		"target_map_scene_path": target_map_scene_path,
@@ -146,23 +90,28 @@ func request_transition_request(request: Dictionary) -> void:
 	if _transition_in_progress:
 		return
 
-	var normalized_request: Dictionary = _normalize_transition_request(request)
-	var target_map_scene_path: String = String(normalized_request.get("target_map_scene_path", "")).strip_edges()
-	if target_map_scene_path.is_empty():
+	var normalized_scene_path: String = String(request.get("target_map_scene_path", request.get("scene_path", request.get("target_scene_path", "")))).strip_edges()
+	if normalized_scene_path.is_empty():
 		push_warning("MapTransitionManager: target_map_scene_path が未設定です")
 		return
+
+	var normalized_request: Dictionary = {
+		"target_map_scene_path": normalized_scene_path,
+		"target_spawn_id": String(request.get("target_spawn_id", request.get("spawn_id", ""))).strip_edges(),
+		"transition_name": String(request.get("transition_name", request.get("name", ""))),
+		"log_text": String(request.get("log_text", request.get("message_text", request.get("log", "")))),
+	}
 
 	call_deferred("_perform_map_transition", normalized_request)
 
 
 func _perform_map_transition(request: Dictionary) -> void:
-	var normalized_request: Dictionary = _normalize_transition_request(request)
-	var target_map_scene_path: String = String(normalized_request.get("target_map_scene_path", "")).strip_edges()
+	var target_map_scene_path: String = String(request.get("target_map_scene_path", "")).strip_edges()
 	if target_map_scene_path.is_empty():
 		return
 
 	_transition_in_progress = true
-	emit_signal("transition_started", normalized_request)
+	emit_signal("transition_started", request)
 
 	_set_player_input_locked(true)
 	_open_loading_overlay("移動中…", 0)
@@ -173,12 +122,12 @@ func _perform_map_transition(request: Dictionary) -> void:
 	await get_tree().process_frame
 
 	if loaded:
-		var target_spawn_id: String = String(normalized_request.get("target_spawn_id", "")).strip_edges()
+		var target_spawn_id: String = String(request.get("target_spawn_id", "")).strip_edges()
 		if not target_spawn_id.is_empty():
 			_apply_spawn_by_id(target_spawn_id)
 
-		var log_text: String = String(normalized_request.get("log_text", ""))
-		var transition_name: String = String(normalized_request.get("transition_name", ""))
+		var log_text: String = String(request.get("log_text", ""))
+		var transition_name: String = String(request.get("transition_name", ""))
 		if not log_text.is_empty():
 			_write_log(log_text)
 		elif not transition_name.is_empty():
@@ -196,26 +145,7 @@ func _perform_map_transition(request: Dictionary) -> void:
 
 	_transition_in_progress = false
 	if loaded:
-		emit_signal("transition_finished", normalized_request)
-
-
-func _normalize_transition_request(request: Dictionary, forced_route_id: String = "") -> Dictionary:
-	var normalized_route_id: String = forced_route_id.strip_edges()
-	var normalized_scene_path: String = String(request.get("target_map_scene_path", request.get("scene_path", request.get("target_scene_path", "")))).strip_edges()
-	var normalized_spawn_id: String = String(request.get("target_spawn_id", request.get("spawn_id", ""))).strip_edges()
-	var normalized_transition_name: String = String(request.get("transition_name", request.get("name", "")))
-	var normalized_log_text: String = String(request.get("log_text", request.get("message_text", request.get("log", ""))))
-
-	if normalized_route_id.is_empty():
-		normalized_route_id = String(request.get("route_id", request.get("transition_id", ""))).strip_edges()
-
-	return {
-		"route_id": normalized_route_id,
-		"target_map_scene_path": normalized_scene_path,
-		"target_spawn_id": normalized_spawn_id,
-		"transition_name": normalized_transition_name,
-		"log_text": normalized_log_text,
-	}
+		emit_signal("transition_finished", request)
 
 
 func _instantiate_map_fragment(target_map_scene_path: String) -> Node:

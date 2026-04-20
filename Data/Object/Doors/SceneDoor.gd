@@ -6,7 +6,6 @@ const META_PENDING_SPAWN_ID: StringName = &"scene_transition_target_spawn_id"
 
 @export_group("Door")
 @export var door_name: String = "扉"
-@export var transition_id: String = ""
 @export_file("*.tscn") var target_scene_path: String = ""
 @export var target_spawn_id: String = ""
 
@@ -41,33 +40,19 @@ func _on_body_exited(body: Node) -> void:
 
 func interact(_player: Node) -> void:
 	var normalized_scene_path: String = target_scene_path.strip_edges()
-	var normalized_transition_id: String = transition_id.strip_edges()
 	var resolved_message: String = message_text if not message_text.is_empty() else "%sに入った" % door_name
 	var current_scene: Node = get_tree().current_scene
 	var fallback_log_text: String = resolved_message if write_message_log else ""
 
-	if current_scene != null:
-		if normalized_transition_id != "":
-			if current_scene.has_method("request_registered_map_transition"):
-				current_scene.call(
-					"request_registered_map_transition",
-					normalized_transition_id,
-					normalized_scene_path,
-					target_spawn_id.strip_edges(),
-					door_name,
-					fallback_log_text
-				)
-				return
-
-		if current_scene.has_method("request_map_transition"):
-			current_scene.call(
-				"request_map_transition",
-				normalized_scene_path,
-				target_spawn_id.strip_edges(),
-				door_name,
-				fallback_log_text
-			)
-			return
+	if current_scene != null and current_scene.has_method("request_map_transition"):
+		current_scene.call(
+			"request_map_transition",
+			normalized_scene_path,
+			target_spawn_id.strip_edges(),
+			door_name,
+			fallback_log_text
+		)
+		return
 
 	if normalized_scene_path.is_empty():
 		push_warning("SceneDoor: target_scene_path が未設定です: %s" % name)

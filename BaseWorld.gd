@@ -1,8 +1,6 @@
 extends Node2D
 class_name BaseWorld
 
-const MAP_ROUTE_REGISTRY_SCRIPT_PATH: String = "res://Scripts/System/MapRouteRegistry.gd"
-
 @export_file("*.tscn") var default_map_scene_path: String = "res://Maps/TownMap_MainExtract.tscn"
 
 @onready var player: Node = $Sortables/Player
@@ -17,7 +15,6 @@ func _ready() -> void:
 	_ensure_map_transition_manager()
 	if map_transition_manager != null and map_transition_manager.has_method("set_default_map_scene_path"):
 		map_transition_manager.call("set_default_map_scene_path", default_map_scene_path)
-	_register_default_transition_routes()
 	call_deferred("_boot_game")
 
 
@@ -58,28 +55,6 @@ func request_map_transition(target_map_scene_path: String, target_spawn_id: Stri
 	_ensure_map_transition_manager()
 	if map_transition_manager != null and map_transition_manager.has_method("request_transition"):
 		map_transition_manager.call("request_transition", target_map_scene_path, target_spawn_id, transition_name, log_text)
-
-
-func request_registered_map_transition(route_id: String, fallback_scene_path: String = "", fallback_spawn_id: String = "", fallback_transition_name: String = "", fallback_log_text: String = "") -> void:
-	_ensure_map_transition_manager()
-	if map_transition_manager != null and map_transition_manager.has_method("request_registered_transition"):
-		map_transition_manager.call("request_registered_transition", route_id, fallback_scene_path, fallback_spawn_id, fallback_transition_name, fallback_log_text)
-
-
-func register_map_transition_route(route_id: String, target_map_scene_path: String, target_spawn_id: String = "", transition_name: String = "", log_text: String = "") -> void:
-	_ensure_map_transition_manager()
-	if map_transition_manager != null and map_transition_manager.has_method("register_transition_route"):
-		map_transition_manager.call("register_transition_route", route_id, target_map_scene_path, target_spawn_id, transition_name, log_text)
-
-
-func _register_default_transition_routes() -> void:
-	var registry_script: Script = load(MAP_ROUTE_REGISTRY_SCRIPT_PATH) as Script
-	if registry_script == null:
-		push_warning("BaseWorld: MapRouteRegistry.gd を読み込めません")
-		return
-
-	if registry_script.has_method("register_default_routes"):
-		registry_script.call("register_default_routes", self)
 
 
 func _boot_game() -> void:

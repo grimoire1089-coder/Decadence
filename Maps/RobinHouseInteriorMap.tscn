@@ -16,7 +16,6 @@ spawn_id = "entry_from_outside"
 position = Vector2(0, -80)
 scale = Vector2(0.25, 0.25)
 door_name = "外"
-transition_id = "robin_house_exit"
 target_scene_path = "res://Maps/TownMap_MainExtract.tscn"
 target_spawn_id = "robin_house_outside"
 interact_action_text = "出る"

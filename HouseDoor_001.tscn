@@ -12,7 +12,8 @@ radius = 440.0
 [node name="HouseDoor001" type="StaticBody2D" unique_id=14363033]
 script = ExtResource("1_door_script")
 door_name = "ロビンの家"
-transition_id = "robin_house_enter"
+target_scene_path = "res://Maps/RobinHouseInteriorMap.tscn"
+target_spawn_id = "entry_from_outside"
 interact_action_text = "入る"
 interact_prompt_offset = Vector2(0, -120)
 
