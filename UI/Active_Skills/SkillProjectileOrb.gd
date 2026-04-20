@@ -248,20 +248,20 @@ func _emit_hit_and_free() -> void:
 
 
 func _build_trail_process_material() -> ParticleProcessMaterial:
-	var material := ParticleProcessMaterial.new()
-	material.direction = Vector3(-1.0, 0.0, 0.0)
-	material.spread = trail_spread
-	material.gravity = Vector3.ZERO
-	material.initial_velocity_min = trail_velocity_min
-	material.initial_velocity_max = trail_velocity_max
-	material.scale_min = trail_scale_min
-	material.scale_max = trail_scale_max
-	material.angular_velocity_min = -18.0
-	material.angular_velocity_max = 18.0
-	material.damping_min = 4.0
-	material.damping_max = 8.0
-	material.color_ramp = _build_trail_gradient()
-	return material
+	var particle_material := ParticleProcessMaterial.new()
+	particle_material.direction = Vector3(-1.0, 0.0, 0.0)
+	particle_material.spread = trail_spread
+	particle_material.gravity = Vector3.ZERO
+	particle_material.initial_velocity_min = trail_velocity_min
+	particle_material.initial_velocity_max = trail_velocity_max
+	particle_material.scale_min = trail_scale_min
+	particle_material.scale_max = trail_scale_max
+	particle_material.angular_velocity_min = -18.0
+	particle_material.angular_velocity_max = 18.0
+	particle_material.damping_min = 4.0
+	particle_material.damping_max = 8.0
+	particle_material.color_ramp = _build_trail_gradient()
+	return particle_material
 
 
 func _build_trail_gradient() -> GradientTexture1D:
@@ -298,9 +298,9 @@ func _get_or_create_trail_texture() -> Texture2D:
 
 
 func _make_additive_canvas_material() -> CanvasItemMaterial:
-	var material := CanvasItemMaterial.new()
-	material.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
-	return material
+	var canvas_material := CanvasItemMaterial.new()
+	canvas_material.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	return canvas_material
 
 
 func _resolve_node_position(node: Node) -> Vector2:
