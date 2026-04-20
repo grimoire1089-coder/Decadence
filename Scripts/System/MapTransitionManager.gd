@@ -6,9 +6,6 @@ signal transition_finished(request: Dictionary)
 signal map_loaded(map_scene_path: String)
 signal map_load_failed(map_scene_path: String)
 
-const META_PENDING_SCENE_PATH: StringName = &"scene_transition_target_scene_path"
-const META_PENDING_SPAWN_ID: StringName = &"scene_transition_target_spawn_id"
-
 @export_file("*.tscn") var default_map_scene_path: String = "res://Maps/TownMap_MainExtract.tscn"
 @export_node_path("Node2D") var map_root_path: NodePath = NodePath("../MapRoot")
 @export_node_path("Node2D") var sortables_path: NodePath = NodePath("../Sortables")
@@ -25,7 +22,6 @@ var _active_map_root_nodes: Array[Node] = []
 var _active_map_sortable_nodes: Array[Node] = []
 var _map_session_state_by_path: Dictionary = {}
 var _transition_in_progress: bool = false
-var _pending_boot_spawn_id: String = ""
 
 
 func _ready() -> void:
@@ -62,19 +58,8 @@ func import_save_data(save_data: Dictionary) -> void:
 func prepare_world_before_restore(save_data: Dictionary) -> void:
 	var target_map_scene_path: String = _extract_target_map_scene_path_from_save(save_data)
 	if target_map_scene_path.is_empty():
-		target_map_scene_path = _consume_pending_scene_path()
-	if target_map_scene_path.is_empty():
 		target_map_scene_path = default_map_scene_path.strip_edges()
-
-	_pending_boot_spawn_id = _consume_pending_spawn_id()
 	_load_map_scene(target_map_scene_path)
-
-
-func apply_pending_boot_spawn_if_needed() -> void:
-	if _pending_boot_spawn_id.is_empty():
-		return
-	_apply_spawn_by_id(_pending_boot_spawn_id)
-	_pending_boot_spawn_id = ""
 
 
 func request_transition(target_map_scene_path: String, target_spawn_id: String = "", transition_name: String = "", log_text: String = "") -> void:
@@ -336,26 +321,6 @@ func _extract_target_map_scene_path_from_save(save_data: Dictionary) -> String:
 	var world_data: Dictionary = save_data.get("world", {}) as Dictionary
 	var root_data: Dictionary = world_data.get("scene_root", {}) as Dictionary
 	return String(root_data.get("current_map_scene", "")).strip_edges()
-
-
-func _consume_pending_scene_path() -> String:
-	var root_node: Window = get_tree().root
-	if root_node == null or not root_node.has_meta(META_PENDING_SCENE_PATH):
-		return ""
-
-	var value: String = String(root_node.get_meta(META_PENDING_SCENE_PATH, "")).strip_edges()
-	root_node.remove_meta(META_PENDING_SCENE_PATH)
-	return value
-
-
-func _consume_pending_spawn_id() -> String:
-	var root_node: Window = get_tree().root
-	if root_node == null or not root_node.has_meta(META_PENDING_SPAWN_ID):
-		return ""
-
-	var value: String = String(root_node.get_meta(META_PENDING_SPAWN_ID, "")).strip_edges()
-	root_node.remove_meta(META_PENDING_SPAWN_ID)
-	return value
 
 
 func _is_node_belonging_to_active_map(node: Node) -> bool:
