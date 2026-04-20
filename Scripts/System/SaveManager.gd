@@ -105,7 +105,7 @@ func load_or_create_boot_save(slot_name: String = DEFAULT_SLOT_NAME) -> Dictiona
 	return save_data
 
 
-func create_new_game_save(slot_name: String = DEFAULT_SLOT_NAME, start_scene_path: String = "res://Main.tscn") -> Dictionary:
+func create_new_game_save(slot_name: String = DEFAULT_SLOT_NAME, start_scene_path: String = "res://BaseWorld.tscn") -> Dictionary:
 	ensure_save_directory()
 	var save_data: Dictionary = new_empty_save()
 	var normalized_slot: String = slot_name.strip_edges()
@@ -113,7 +113,7 @@ func create_new_game_save(slot_name: String = DEFAULT_SLOT_NAME, start_scene_pat
 		normalized_slot = DEFAULT_SLOT_NAME
 	var normalized_scene_path: String = start_scene_path.strip_edges()
 	if normalized_scene_path.is_empty():
-		normalized_scene_path = "res://Main.tscn"
+		normalized_scene_path = "res://BaseWorld.tscn"
 
 	save_data["meta"]["slot_name"] = normalized_slot
 	save_data["meta"]["saved_at_unix"] = Time.get_unix_time_from_system()
