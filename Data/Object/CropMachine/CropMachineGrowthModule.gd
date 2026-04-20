@@ -34,13 +34,13 @@ func sync_last_total_minutes(machine: CropMachine) -> void:
 
 	var time_manager: Node = machine._get_time_manager()
 	if time_manager == null:
-		machine._last_total_minutes = -1
+		machine.set_last_total_minutes(-1)
 		return
 
 	var current_day: int = int(time_manager.get("day"))
 	var current_hour: int = int(time_manager.get("hour"))
 	var current_minute: int = int(time_manager.get("minute"))
-	machine._last_total_minutes = to_total_minutes(current_day, current_hour, current_minute)
+	machine.set_last_total_minutes(to_total_minutes(current_day, current_hour, current_minute))
 
 
 func to_total_minutes(day: int, hour: int, minute: int) -> int:
@@ -52,12 +52,12 @@ func handle_time_changed(machine: CropMachine, day: int, hour: int, minute: int)
 		return
 
 	var new_total: int = to_total_minutes(day, hour, minute)
-	if machine._last_total_minutes < 0:
-		machine._last_total_minutes = new_total
+	if machine.get_last_total_minutes() < 0:
+		machine.set_last_total_minutes(new_total)
 		return
 
-	var delta_minutes: int = new_total - machine._last_total_minutes
-	machine._last_total_minutes = new_total
+	var delta_minutes: int = new_total - machine.get_last_total_minutes()
+	machine.set_last_total_minutes(new_total)
 	if delta_minutes <= 0:
 		return
 

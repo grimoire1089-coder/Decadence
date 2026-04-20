@@ -125,6 +125,14 @@ func _advance_growth(delta_minutes: int) -> void:
 	_get_growth_module().advance_growth(self, delta_minutes)
 
 
+func get_last_total_minutes() -> int:
+	return _last_total_minutes
+
+
+func set_last_total_minutes(value: int) -> void:
+	_last_total_minutes = value
+
+
 func get_interact_action_text() -> String:
 	return interact_action_text
 
