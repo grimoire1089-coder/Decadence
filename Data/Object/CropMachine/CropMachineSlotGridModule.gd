@@ -62,7 +62,8 @@ func refresh_slot_grid() -> void:
 		if has_icon:
 			button.text = slot_text
 		else:
-			button.text = "[%d]\n%s" % [i + 1, slot_text]
+			button.text = "[%d]
+%s" % [i + 1, slot_text]
 
 		button.alignment = HORIZONTAL_ALIGNMENT_CENTER
 		button.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
@@ -109,14 +110,16 @@ func format_slot_text_for_ui(slot_text: String) -> String:
 	if slot_text.is_empty():
 		return slot_text
 
-	var lines: PackedStringArray = slot_text.split("\n")
+	var lines: PackedStringArray = slot_text.split("
+")
 	for i in range(lines.size()):
 		var line: String = lines[i]
 		if line.contains("現在:") and line.contains("%"):
 			var parts: PackedStringArray = line.split(" / ")
 			if parts.size() > 0:
 				lines[i] = parts[0]
-	return "\n".join(lines)
+	return "
+".join(lines)
 
 
 func make_slot_stylebox(is_selected: bool, is_hover: bool, has_icon: bool = false) -> StyleBoxFlat:
@@ -194,7 +197,7 @@ func sync_page_to_selected_slot(total_slots: int = -1) -> void:
 	if ui.selected_slot_index < 0 or ui.selected_slot_index >= total_slots:
 		return
 
-	var selected_page: int = int(ui.selected_slot_index / ui.SLOTS_PER_PAGE)
+	var selected_page: int = floori(float(ui.selected_slot_index) / float(ui.SLOTS_PER_PAGE))
 	ui.current_page_index = clamp(selected_page, 0, max(total_pages - 1, 0))
 
 
