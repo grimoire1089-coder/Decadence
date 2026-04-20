@@ -616,11 +616,11 @@ func _ensure_skill_select_overlay() -> void:
 	root_vbox.add_theme_constant_override("separation", 12)
 	margin.add_child(root_vbox)
 
-	var title_label: Label = Label.new()
-	title_label.text = "ロールスキル選択"
-	title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title_label.add_theme_font_size_override("font_size", 24)
-	root_vbox.add_child(title_label)
+	var overlay_title_label: Label = Label.new()
+	overlay_title_label.text = "ロールスキル選択"
+	overlay_title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	overlay_title_label.add_theme_font_size_override("font_size", 24)
+	root_vbox.add_child(overlay_title_label)
 
 	var body_split: HSplitContainer = HSplitContainer.new()
 	body_split.size_flags_horizontal = Control.SIZE_EXPAND_FILL
