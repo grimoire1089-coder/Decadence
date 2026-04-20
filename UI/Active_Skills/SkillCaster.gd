@@ -317,9 +317,9 @@ func _apply_heal_over_time(skill: RoleSkillData, target: Node2D) -> void:
 
 	for child in target.get_children():
 		if child is HealOverTimeEffect:
-			var effect := child as HealOverTimeEffect
-			if effect.matches_effect(skill.skill_id, caster):
-				effect.refresh(skill, target, caster)
+			var existing_effect := child as HealOverTimeEffect
+			if existing_effect.matches_effect(skill.skill_id, caster):
+				existing_effect.refresh(skill, target, caster)
 				return
 
 	var effect: HealOverTimeEffect = HealOverTimeEffect.new()
