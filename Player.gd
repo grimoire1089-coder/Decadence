@@ -6,6 +6,7 @@ signal interactable_changed(target)
 const UI_MODAL_MANAGER_SCRIPT_NAME: String = "UIModalManager.gd"
 const PAUSE_MENU_SCENE_PATH: String = "res://UI/PauseMenuUI.tscn"
 const DEBUG_SAVE_SLOT_NAME: String = "slot_01"
+const PLAYER_BOOTSTRAP_CONTROLLER_SCRIPT_PATH: String = "res://Gameplay/Player/PlayerBootstrapController.gd"
 const PLAYER_NETWORK_CONTROLLER_SCRIPT_PATH: String = "res://Gameplay/Player/PlayerNetworkController.gd"
 const PLAYER_INPUT_CONTROLLER_SCRIPT_PATH: String = "res://Gameplay/Player/PlayerInputController.gd"
 const PLAYER_SUPPORT_CONTROLLER_SCRIPT_PATH: String = "res://Gameplay/Player/PlayerSupportController.gd"
@@ -52,6 +53,7 @@ var nearby_interactables: Array = []
 var selected_item_data: Resource = null
 var selected_item_amount: int = 0
 
+var player_bootstrap_controller: PlayerBootstrapController = null
 var player_network_controller: PlayerNetworkController = null
 var player_input_controller: PlayerInputController = null
 var player_support_controller: PlayerSupportController = null
@@ -59,23 +61,15 @@ var player_interaction_controller: PlayerInteractionController = null
 
 
 func _ready() -> void:
-	add_to_group("player")
-	refresh_from_stats()
-	_resolve_player_sprite()
-	_ensure_player_network_controller()
-	_ensure_player_input_controller()
-	_ensure_player_support_controller()
-	_ensure_player_interaction_controller()
-
-	if PlayerStatsManager != null and not PlayerStatsManager.stats_changed.is_connected(_on_player_stats_changed):
-		PlayerStatsManager.stats_changed.connect(_on_player_stats_changed)
-
-	call_deferred("_ensure_pause_menu_exists")
+	_ensure_player_bootstrap_controller()
+	if player_bootstrap_controller != null:
+		player_bootstrap_controller.boot_ready()
 
 
 func _exit_tree() -> void:
-	if PlayerStatsManager != null and PlayerStatsManager.stats_changed.is_connected(_on_player_stats_changed):
-		PlayerStatsManager.stats_changed.disconnect(_on_player_stats_changed)
+	_ensure_player_bootstrap_controller()
+	if player_bootstrap_controller != null:
+		player_bootstrap_controller.cleanup_exit_tree()
 
 
 func _physics_process(delta: float) -> void:
@@ -489,77 +483,46 @@ func set_input_locked(value: bool) -> void:
 	_input_locked = value
 
 
-func _ensure_player_network_controller() -> void:
-	if player_network_controller != null:
+func _ensure_player_bootstrap_controller() -> void:
+	if player_bootstrap_controller != null:
 		return
 
-	if not ResourceLoader.exists(PLAYER_NETWORK_CONTROLLER_SCRIPT_PATH):
+	if not ResourceLoader.exists(PLAYER_BOOTSTRAP_CONTROLLER_SCRIPT_PATH):
 		return
 
-	var controller_script: Script = load(PLAYER_NETWORK_CONTROLLER_SCRIPT_PATH) as Script
+	var controller_script: Script = load(PLAYER_BOOTSTRAP_CONTROLLER_SCRIPT_PATH) as Script
 	if controller_script == null:
-		push_warning("Player: PlayerNetworkController.gd を読み込めません")
+		push_warning("Player: PlayerBootstrapController.gd を読み込めません")
 		return
 
 	var instance: Variant = controller_script.new()
-	if instance is PlayerNetworkController:
-		player_network_controller = instance as PlayerNetworkController
-		player_network_controller.setup(self)
-		player_network_controller.ensure_state()
+	if instance is PlayerBootstrapController:
+		player_bootstrap_controller = instance as PlayerBootstrapController
+		player_bootstrap_controller.setup(self)
+
+
+func _ensure_player_network_controller() -> void:
+	_ensure_player_bootstrap_controller()
+	if player_bootstrap_controller != null:
+		player_bootstrap_controller.ensure_network_controller()
 
 
 func _ensure_player_input_controller() -> void:
-	if player_input_controller != null:
-		return
-
-	if not ResourceLoader.exists(PLAYER_INPUT_CONTROLLER_SCRIPT_PATH):
-		return
-
-	var controller_script: Script = load(PLAYER_INPUT_CONTROLLER_SCRIPT_PATH) as Script
-	if controller_script == null:
-		push_warning("Player: PlayerInputController.gd を読み込めません")
-		return
-
-	var instance: Variant = controller_script.new()
-	if instance is PlayerInputController:
-		player_input_controller = instance as PlayerInputController
-		player_input_controller.setup(self)
+	_ensure_player_bootstrap_controller()
+	if player_bootstrap_controller != null:
+		player_bootstrap_controller.ensure_input_controller()
 
 
 func _ensure_player_support_controller() -> void:
-	if player_support_controller != null:
-		return
-
-	if not ResourceLoader.exists(PLAYER_SUPPORT_CONTROLLER_SCRIPT_PATH):
-		return
-
-	var controller_script: Script = load(PLAYER_SUPPORT_CONTROLLER_SCRIPT_PATH) as Script
-	if controller_script == null:
-		push_warning("Player: PlayerSupportController.gd を読み込めません")
-		return
-
-	var instance: Variant = controller_script.new()
-	if instance is PlayerSupportController:
-		player_support_controller = instance as PlayerSupportController
-		player_support_controller.setup(self)
+	_ensure_player_bootstrap_controller()
+	if player_bootstrap_controller != null:
+		player_bootstrap_controller.ensure_support_controller()
 
 
 func _ensure_player_interaction_controller() -> void:
-	if player_interaction_controller != null:
-		return
-
-	if not ResourceLoader.exists(PLAYER_INTERACTION_CONTROLLER_SCRIPT_PATH):
-		return
-
-	var controller_script: Script = load(PLAYER_INTERACTION_CONTROLLER_SCRIPT_PATH) as Script
-	if controller_script == null:
-		push_warning("Player: PlayerInteractionController.gd を読み込めません")
-		return
-
-	var instance: Variant = controller_script.new()
-	if instance is PlayerInteractionController:
-		player_interaction_controller = instance as PlayerInteractionController
-		player_interaction_controller.setup(self, UI_MODAL_MANAGER_SCRIPT_NAME, PAUSE_MENU_SCENE_PATH, MODAL_UI_GROUPS)
+	_ensure_player_bootstrap_controller()
+	if player_bootstrap_controller != null:
+		player_bootstrap_controller.ensure_interaction_controller()
 
 
 func _is_remote_network_player() -> bool:
