@@ -8,6 +8,7 @@ const DEBUG_SAVE_SLOT_NAME: String = "slot_01"
 const PLAYER_NETWORK_CONTROLLER_SCRIPT_PATH: String = "res://Gameplay/Player/PlayerNetworkController.gd"
 const PLAYER_INPUT_CONTROLLER_SCRIPT_PATH: String = "res://Gameplay/Player/PlayerInputController.gd"
 const PLAYER_SUPPORT_CONTROLLER_SCRIPT_PATH: String = "res://Gameplay/Player/PlayerSupportController.gd"
+const PLAYER_INTERACTION_CONTROLLER_SCRIPT_PATH: String = "res://Gameplay/Player/PlayerInteractionController.gd"
 const MODAL_UI_GROUPS: Array[StringName] = [
 	&"vending_ui",
 	&"crop_machine_ui",
@@ -53,6 +54,7 @@ var selected_item_amount: int = 0
 var player_network_controller: PlayerNetworkController = null
 var player_input_controller: PlayerInputController = null
 var player_support_controller: PlayerSupportController = null
+var player_interaction_controller: PlayerInteractionController = null
 
 
 func _ready() -> void:
@@ -62,6 +64,7 @@ func _ready() -> void:
 	_ensure_player_network_controller()
 	_ensure_player_input_controller()
 	_ensure_player_support_controller()
+	_ensure_player_interaction_controller()
 
 	if PlayerStatsManager != null and not PlayerStatsManager.stats_changed.is_connected(_on_player_stats_changed):
 		PlayerStatsManager.stats_changed.connect(_on_player_stats_changed)
@@ -212,90 +215,52 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _is_interaction_ui_open() -> bool:
-	return _is_any_modal_ui_visible()
+	_ensure_player_interaction_controller()
+	if player_interaction_controller == null:
+		return false
+	return player_interaction_controller.is_interaction_ui_open()
 
 
 func _is_player_control_locked() -> bool:
-	if _input_locked:
-		return true
-
-	var any_modal_visible: bool = _is_any_modal_ui_visible()
-
-	var ui_modal_manager: Node = _find_ui_modal_manager()
-	if ui_modal_manager != null and ui_modal_manager.has_method("is_player_input_blocked"):
-		var blocked_by_manager: bool = bool(ui_modal_manager.call("is_player_input_blocked"))
-
-		if blocked_by_manager and any_modal_visible:
-			return true
-
-	return any_modal_visible
+	_ensure_player_interaction_controller()
+	if player_interaction_controller == null:
+		return _input_locked
+	return player_interaction_controller.is_player_control_locked()
 
 
 func _is_any_modal_ui_visible() -> bool:
-	for group_name in MODAL_UI_GROUPS:
-		var ui: Control = get_tree().get_first_node_in_group(String(group_name)) as Control
-		if ui != null and ui.visible:
-			return true
-	return false
+	_ensure_player_interaction_controller()
+	if player_interaction_controller == null:
+		return false
+	return player_interaction_controller.is_any_modal_ui_visible()
 
 
 func _has_non_pause_modal_visible() -> bool:
-	for group_name in MODAL_UI_GROUPS:
-		if group_name == &"pause_menu_ui":
-			continue
-
-		var ui: Control = get_tree().get_first_node_in_group(String(group_name)) as Control
-		if ui != null and ui.visible:
-			return true
-
-	return false
+	_ensure_player_interaction_controller()
+	if player_interaction_controller == null:
+		return false
+	return player_interaction_controller.has_non_pause_modal_visible()
 
 
 func _get_pause_menu_ui() -> Control:
-	return get_tree().get_first_node_in_group("pause_menu_ui") as Control
+	_ensure_player_interaction_controller()
+	if player_interaction_controller == null:
+		return null
+	return player_interaction_controller.get_pause_menu_ui()
 
 
 func _ensure_pause_menu_exists() -> Control:
-	var existing: Control = _get_pause_menu_ui()
-	if existing != null:
-		return existing
-
-	if not ResourceLoader.exists(PAUSE_MENU_SCENE_PATH):
+	_ensure_player_interaction_controller()
+	if player_interaction_controller == null:
 		return null
-
-	var packed_scene: PackedScene = load(PAUSE_MENU_SCENE_PATH) as PackedScene
-	if packed_scene == null:
-		return null
-
-	var instance: Control = packed_scene.instantiate() as Control
-	if instance == null:
-		return null
-
-	var parent_node: Node = get_tree().current_scene
-	if parent_node == null:
-		parent_node = get_tree().root
-
-	parent_node.add_child(instance)
-	return instance
+	return player_interaction_controller.ensure_pause_menu_exists()
 
 
 func _find_ui_modal_manager() -> Node:
-	var by_path: Node = get_node_or_null("/root/UIModalManager")
-	if by_path != null:
-		return by_path
-
-	var by_group: Node = get_tree().get_first_node_in_group("ui_modal_manager")
-	if by_group != null:
-		return by_group
-
-	for child in get_tree().root.get_children():
-		var script_value: Variant = child.get_script()
-		if script_value is Script:
-			var script_ref: Script = script_value as Script
-			if script_ref != null and script_ref.resource_path.get_file() == UI_MODAL_MANAGER_SCRIPT_NAME:
-				return child
-
-	return null
+	_ensure_player_interaction_controller()
+	if player_interaction_controller == null:
+		return null
+	return player_interaction_controller.find_ui_modal_manager()
 
 
 func _on_player_stats_changed() -> void:
@@ -355,40 +320,21 @@ func add_fatigue_for_action(action_name: String, multiplier: float = 1.0, write_
 
 
 func register_interactable(target: Node2D) -> void:
-	if target == null:
-		return
-
-	if not nearby_interactables.has(target):
-		nearby_interactables.append(target)
-
-	_update_current_interactable()
+	_ensure_player_interaction_controller()
+	if player_interaction_controller != null:
+		player_interaction_controller.register_interactable(target)
 
 
 func unregister_interactable(target: Node2D) -> void:
-	if target == null:
-		return
-
-	nearby_interactables.erase(target)
-	_update_current_interactable()
+	_ensure_player_interaction_controller()
+	if player_interaction_controller != null:
+		player_interaction_controller.unregister_interactable(target)
 
 
 func _update_current_interactable() -> void:
-	for i in range(nearby_interactables.size() - 1, -1, -1):
-		if not is_instance_valid(nearby_interactables[i]):
-			nearby_interactables.remove_at(i)
-
-	var nearest: Node2D = null
-	var nearest_distance: float = INF
-
-	for target in nearby_interactables:
-		var dist: float = global_position.distance_squared_to(target.global_position)
-		if dist < nearest_distance:
-			nearest_distance = dist
-			nearest = target
-
-	if current_interactable != nearest:
-		current_interactable = nearest
-		interactable_changed.emit(current_interactable)
+	_ensure_player_interaction_controller()
+	if player_interaction_controller != null:
+		player_interaction_controller.update_current_interactable()
 
 
 func set_selected_item(item_data: Resource, amount: int) -> void:
@@ -595,6 +541,24 @@ func _ensure_player_support_controller() -> void:
 	if instance is PlayerSupportController:
 		player_support_controller = instance as PlayerSupportController
 		player_support_controller.setup(self)
+
+
+func _ensure_player_interaction_controller() -> void:
+	if player_interaction_controller != null:
+		return
+
+	if not ResourceLoader.exists(PLAYER_INTERACTION_CONTROLLER_SCRIPT_PATH):
+		return
+
+	var controller_script: Script = load(PLAYER_INTERACTION_CONTROLLER_SCRIPT_PATH) as Script
+	if controller_script == null:
+		push_warning("Player: PlayerInteractionController.gd を読み込めません")
+		return
+
+	var instance: Variant = controller_script.new()
+	if instance is PlayerInteractionController:
+		player_interaction_controller = instance as PlayerInteractionController
+		player_interaction_controller.setup(self, UI_MODAL_MANAGER_SCRIPT_NAME, PAUSE_MENU_SCENE_PATH, MODAL_UI_GROUPS)
 
 
 func _is_remote_network_player() -> bool:
