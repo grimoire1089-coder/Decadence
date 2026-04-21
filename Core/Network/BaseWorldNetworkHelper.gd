@@ -133,14 +133,10 @@ func spawn_remote_network_player_for_peer(peer_id: int) -> Node:
 	if remote_player.has_method("set_network_authority_peer_id"):
 		remote_player.call("set_network_authority_peer_id", peer_id)
 
+	var spawn_position: Vector2 = get_remote_network_spawn_position(peer_id)
+
 	network_players_root.add_child(remote_player)
-
-	if remote_player is Node2D:
-		var remote_player_2d: Node2D = remote_player as Node2D
-		remote_player_2d.global_position = get_remote_network_spawn_position(peer_id)
-
-	remote_player.remove_from_group("player")
-	remote_player.add_to_group("remote_player")
+	_prepare_remote_network_player_instance(remote_player, spawn_position)
 
 	remote_players_by_peer_id[peer_id] = remote_player
 	return remote_player
@@ -219,3 +215,34 @@ func get_remote_network_spawn_position(peer_id: int) -> Vector2:
 		slot_index = 1
 
 	return local_player_2d.global_position + (world.remote_player_spawn_offset * float(slot_index))
+
+
+func _prepare_remote_network_player_instance(remote_player: Node, spawn_position: Vector2) -> void:
+	if remote_player == null or not is_instance_valid(remote_player):
+		return
+
+	if remote_player is Node2D:
+		var remote_player_2d: Node2D = remote_player as Node2D
+		remote_player_2d.global_position = spawn_position
+
+	if remote_player is CharacterBody2D:
+		var remote_body: CharacterBody2D = remote_player as CharacterBody2D
+		remote_body.velocity = Vector2.ZERO
+
+	remote_player.remove_from_group("player")
+	remote_player.add_to_group("remote_player")
+
+	if remote_player.has_method("set_input_locked"):
+		remote_player.call("set_input_locked", false)
+
+	# Player.gd をクローンした直後の実行時状態を軽く掃除しておく。
+	# remote 側では local 専用の interactable / selected item を引き継がせない。
+	remote_player.set("current_interactable", null)
+	remote_player.set("nearby_interactables", [])
+	remote_player.set("selected_item_data", null)
+	remote_player.set("selected_item_amount", 0)
+
+	if remote_player.has_method("_reset_walk_bob_immediate"):
+		remote_player.call("_reset_walk_bob_immediate")
+	if remote_player.has_method("_apply_facing_visual"):
+		remote_player.call("_apply_facing_visual")
