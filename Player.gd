@@ -7,6 +7,7 @@ const PAUSE_MENU_SCENE_PATH: String = "res://UI/PauseMenuUI.tscn"
 const DEBUG_SAVE_SLOT_NAME: String = "slot_01"
 const PLAYER_NETWORK_CONTROLLER_SCRIPT_PATH: String = "res://Gameplay/Player/PlayerNetworkController.gd"
 const PLAYER_INPUT_CONTROLLER_SCRIPT_PATH: String = "res://Gameplay/Player/PlayerInputController.gd"
+const PLAYER_SUPPORT_CONTROLLER_SCRIPT_PATH: String = "res://Gameplay/Player/PlayerSupportController.gd"
 const MODAL_UI_GROUPS: Array[StringName] = [
 	&"vending_ui",
 	&"crop_machine_ui",
@@ -51,6 +52,7 @@ var selected_item_amount: int = 0
 
 var player_network_controller: PlayerNetworkController = null
 var player_input_controller: PlayerInputController = null
+var player_support_controller: PlayerSupportController = null
 
 
 func _ready() -> void:
@@ -59,6 +61,7 @@ func _ready() -> void:
 	_resolve_player_sprite()
 	_ensure_player_network_controller()
 	_ensure_player_input_controller()
+	_ensure_player_support_controller()
 
 	if PlayerStatsManager != null and not PlayerStatsManager.stats_changed.is_connected(_on_player_stats_changed):
 		PlayerStatsManager.stats_changed.connect(_on_player_stats_changed)
@@ -331,27 +334,24 @@ func refresh_from_stats() -> void:
 
 
 func get_stat_value(stat_name: String) -> int:
-	if PlayerStatsManager == null:
+	_ensure_player_support_controller()
+	if player_support_controller == null:
 		return 0
-	return PlayerStatsManager.get_stat(stat_name)
+	return player_support_controller.get_stat_value(stat_name)
 
 
 func get_skill_value(skill_name: String) -> int:
-	if PlayerStatsManager == null:
+	_ensure_player_support_controller()
+	if player_support_controller == null:
 		return 0
-	return PlayerStatsManager.get_skill(skill_name)
+	return player_support_controller.get_skill_value(skill_name)
 
 
 func add_fatigue_for_action(action_name: String, multiplier: float = 1.0, write_log: bool = false) -> int:
-	if PlayerStatsManager == null:
+	_ensure_player_support_controller()
+	if player_support_controller == null:
 		return 0
-
-	var added_amount: int = PlayerStatsManager.apply_fatigue_for_action(action_name, multiplier)
-
-	if write_log and added_amount > 0:
-		_log_system("行動疲労: %s（疲労度 +%d）" % [action_name, added_amount])
-
-	return added_amount
+	return player_support_controller.add_fatigue_for_action(action_name, multiplier, write_log)
 
 
 func register_interactable(target: Node2D) -> void:
@@ -392,126 +392,70 @@ func _update_current_interactable() -> void:
 
 
 func set_selected_item(item_data: Resource, amount: int) -> void:
-	selected_item_data = item_data
-	selected_item_amount = amount
+	_ensure_player_support_controller()
+	if player_support_controller != null:
+		player_support_controller.set_selected_item(item_data, amount)
 
 
 func clear_selected_item() -> void:
-	selected_item_data = null
-	selected_item_amount = 0
+	_ensure_player_support_controller()
+	if player_support_controller != null:
+		player_support_controller.clear_selected_item()
 
 
 func try_consume_selected_item() -> bool:
-	var item_data: ItemData = selected_item_data as ItemData
-	if item_data == null:
+	_ensure_player_support_controller()
+	if player_support_controller == null:
 		return false
-
-	if not item_data.can_eat():
-		_log_warning("このアイテムは食べられない")
-		return false
-
-	if not remove_item_from_inventory(item_data, 1):
-		return false
-
-	var fullness_amount: int = item_data.get_fullness_restore()
-	var fatigue_amount: int = item_data.get_fatigue_restore()
-
-	if PlayerStatsManager != null:
-		if fullness_amount > 0:
-			PlayerStatsManager.restore_fullness(fullness_amount)
-		if fatigue_amount > 0:
-			PlayerStatsManager.recover_fatigue(fatigue_amount)
-
-	var item_name_text: String = item_data.item_name
-	if item_name_text.is_empty():
-		item_name_text = str(item_data.id)
-
-	var parts: Array[String] = []
-	if fullness_amount > 0:
-		parts.append("満腹度 +%d" % fullness_amount)
-	if fatigue_amount > 0:
-		parts.append("疲労度 -%d" % fatigue_amount)
-
-	if parts.is_empty():
-		_log_system("%sを食べた" % item_name_text)
-	else:
-		_log_system("%sを食べた（%s）" % [item_name_text, " / ".join(parts)])
-
-	return true
+	return player_support_controller.try_consume_selected_item()
 
 
 func add_item_to_inventory(item_data: Resource, amount: int) -> bool:
-	var inventory_ui: Node = _get_inventory_ui()
-	if inventory_ui == null:
-		_log_error("InventoryUI が見つからない")
+	_ensure_player_support_controller()
+	if player_support_controller == null:
 		return false
-
-	if inventory_ui.has_method("add_item"):
-		return bool(inventory_ui.call("add_item", item_data, amount))
-
-	_log_error("InventoryUI に add_item() がない")
-	return false
+	return player_support_controller.add_item_to_inventory(item_data, amount)
 
 
 func remove_item_from_inventory(item_data: Resource, amount: int) -> bool:
-	var inventory_ui: Node = _get_inventory_ui()
-	if inventory_ui == null:
-		_log_error("InventoryUI が見つからない")
+	_ensure_player_support_controller()
+	if player_support_controller == null:
 		return false
-
-	if inventory_ui.has_method("remove_item"):
-		return bool(inventory_ui.call("remove_item", item_data, amount))
-
-	_log_error("InventoryUI に remove_item() がない")
-	return false
+	return player_support_controller.remove_item_from_inventory(item_data, amount)
 
 
 func get_inventory_count(item_data: Resource) -> int:
-	var inventory_ui: Node = _get_inventory_ui()
-	if inventory_ui == null:
+	_ensure_player_support_controller()
+	if player_support_controller == null:
 		return 0
-
-	if inventory_ui.has_method("get_item_count"):
-		return int(inventory_ui.call("get_item_count", item_data))
-
-	return 0
+	return player_support_controller.get_inventory_count(item_data)
 
 
 func add_credits(amount: int) -> void:
-	if amount <= 0:
-		return
-
-	if CurrencyManager != null and CurrencyManager.has_method("add_credits"):
-		CurrencyManager.add_credits(amount)
-		_log_system("%d Cr を獲得した" % amount)
-		return
-
-	_log_error("CurrencyManager に add_credits() がない")
+	_ensure_player_support_controller()
+	if player_support_controller != null:
+		player_support_controller.add_credits(amount)
 
 
 func get_credits() -> int:
-	if CurrencyManager != null and CurrencyManager.has_method("get_credits"):
-		return int(CurrencyManager.get_credits())
-	return 0
+	_ensure_player_support_controller()
+	if player_support_controller == null:
+		return 0
+	return player_support_controller.get_credits()
 
 
 func can_spend_credits(amount: int) -> bool:
-	if amount < 0:
+	_ensure_player_support_controller()
+	if player_support_controller == null:
 		return false
-	if CurrencyManager != null and CurrencyManager.has_method("can_spend"):
-		return bool(CurrencyManager.can_spend(amount))
-	return false
+	return player_support_controller.can_spend_credits(amount)
 
 
 func spend_credits(amount: int) -> bool:
-	if amount <= 0:
+	_ensure_player_support_controller()
+	if player_support_controller == null:
 		return false
-
-	if CurrencyManager != null and CurrencyManager.has_method("spend_credits"):
-		return bool(CurrencyManager.spend_credits(amount))
-
-	_log_error("CurrencyManager に spend_credits() がない")
-	return false
+	return player_support_controller.spend_credits(amount)
 
 
 func addCredit(amount: int) -> void:
@@ -635,6 +579,24 @@ func _ensure_player_input_controller() -> void:
 		player_input_controller.setup(self)
 
 
+func _ensure_player_support_controller() -> void:
+	if player_support_controller != null:
+		return
+
+	if not ResourceLoader.exists(PLAYER_SUPPORT_CONTROLLER_SCRIPT_PATH):
+		return
+
+	var controller_script: Script = load(PLAYER_SUPPORT_CONTROLLER_SCRIPT_PATH) as Script
+	if controller_script == null:
+		push_warning("Player: PlayerSupportController.gd を読み込めません")
+		return
+
+	var instance: Variant = controller_script.new()
+	if instance is PlayerSupportController:
+		player_support_controller = instance as PlayerSupportController
+		player_support_controller.setup(self)
+
+
 func _is_remote_network_player() -> bool:
 	if player_network_controller == null:
 		return false
@@ -665,38 +627,32 @@ func _update_remote_network_player(delta: float) -> void:
 
 
 func _get_inventory_ui() -> Node:
-	return get_tree().get_first_node_in_group("inventory_ui") as Node
+	_ensure_player_support_controller()
+	if player_support_controller == null:
+		return null
+	return player_support_controller.get_inventory_ui()
 
 
 func _get_message_log() -> Node:
-	return get_node_or_null("/root/MessageLog")
+	_ensure_player_support_controller()
+	if player_support_controller == null:
+		return null
+	return player_support_controller.get_message_log()
 
 
 func _log_system(text: String) -> void:
-	var log_node: Node = _get_message_log()
-	if log_node == null:
-		return
-	if log_node.has_method("add_system"):
-		log_node.call("add_system", text)
-	elif log_node.has_method("add_message"):
-		log_node.call("add_message", text, "SYSTEM")
+	_ensure_player_support_controller()
+	if player_support_controller != null:
+		player_support_controller.log_system(text)
 
 
 func _log_warning(text: String) -> void:
-	var log_node: Node = _get_message_log()
-	if log_node == null:
-		return
-	if log_node.has_method("add_warning"):
-		log_node.call("add_warning", text)
-	elif log_node.has_method("add_message"):
-		log_node.call("add_message", text, "WARN")
+	_ensure_player_support_controller()
+	if player_support_controller != null:
+		player_support_controller.log_warning(text)
 
 
 func _log_error(text: String) -> void:
-	var log_node: Node = _get_message_log()
-	if log_node == null:
-		return
-	if log_node.has_method("add_error"):
-		log_node.call("add_error", text)
-	elif log_node.has_method("add_message"):
-		log_node.call("add_message", text, "ERROR")
+	_ensure_player_support_controller()
+	if player_support_controller != null:
+		player_support_controller.log_error(text)
