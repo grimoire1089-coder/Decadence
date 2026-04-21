@@ -14,30 +14,28 @@
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ux4uq"]
 size = Vector2(240, 486.66663)
 
-[node name="Node2D" type="Node2D" unique_id=1622569430]
+[node name="Player" type="CharacterBody2D" unique_id=783613640]
 y_sort_enabled = true
 scale = Vector2(0.15, 0.15)
-
-[node name="CharacterBody2D" type="CharacterBody2D" parent="." unique_id=783613640]
 motion_mode = 1
 script = ExtResource("1_ux4uq")
 front_texture = ExtResource("2_ux4uq")
 back_texture = ExtResource("3_tqq74")
 side_texture = ExtResource("4_rxaeq")
 
-[node name="Sprite2D" type="Sprite2D" parent="CharacterBody2D" unique_id=1417043241]
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1417043241]
 texture = ExtResource("2_ux4uq")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="CharacterBody2D" unique_id=1347376614]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1347376614]
 position = Vector2(0, 250)
 shape = SubResource("RectangleShape2D_ux4uq")
 
-[node name="Camera2D" type="Camera2D" parent="CharacterBody2D" unique_id=1856173972]
+[node name="Camera2D" type="Camera2D" parent="." unique_id=1856173972]
 zoom = Vector2(2, 2)
 
 [node name="SkillCaster" type="Node2D" parent="." unique_id=1051362412]
 script = ExtResource("5_kbytb")
-caster_path = NodePath("../CharacterBody2D")
+caster_path = NodePath("..")
 
 [node name="TargetMarker2D" type="Node2D" parent="." unique_id=1815546762]
 script = ExtResource("8_target_marker")
@@ -49,13 +47,13 @@ marker_path = NodePath("../TargetMarker2D")
 [node name="PlayerSkillController" type="Node2D" parent="." unique_id=1016286863]
 script = ExtResource("6_jiwum")
 skill_caster_path = NodePath("../SkillCaster")
-self_target_path = NodePath("../CharacterBody2D")
+self_target_path = NodePath("..")
 targeting_controller_path = NodePath("../TargetingController")
 
 [node name="AutoAttackController" type="Node" parent="." unique_id=543058529]
 script = ExtResource("9_auto_attack")
-attacker_path = NodePath("../CharacterBody2D")
-stats_subject_path = NodePath("../CharacterBody2D")
+attacker_path = NodePath("..")
+stats_subject_path = NodePath("..")
 targeting_controller_path = NodePath("../TargetingController")
 skill_caster_path = NodePath("../SkillCaster")
 current_modifier = ExtResource("10_auto_modifier")
