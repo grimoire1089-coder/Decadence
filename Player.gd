@@ -68,14 +68,15 @@ func _ready() -> void:
 	_ensure_player_motion_controller()
 	_resolve_player_sprite()
 	_ensure_player_network_controller()
-	_ensure_player_input_controller()
-	_ensure_player_support_controller()
-	_ensure_player_interaction_controller()
 
 	if _is_remote_network_player():
 		remove_from_group("player")
 		add_to_group("remote_player")
 		return
+
+	_ensure_player_input_controller()
+	_ensure_player_support_controller()
+	_ensure_player_interaction_controller()
 
 	add_to_group("player")
 
