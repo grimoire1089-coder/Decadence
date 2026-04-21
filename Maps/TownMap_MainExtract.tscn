@@ -33,13 +33,16 @@
 [ext_resource type="PackedScene" uid="uid://3r8u7etfs67j" path="res://Data/Object/VendingMachine/VendingMachine.tscn" id="22_3b0ty"]
 [ext_resource type="Resource" uid="uid://blok4iy6royse" path="res://Data/Object/ShopDeliveryBox/Debug_Shop.tres" id="24_v8qla"]
 [ext_resource type="PackedScene" uid="uid://bvvfwn3o2ydcw" path="res://Data/Character/_Core/NPC.tscn" id="29_f4ese"]
+[ext_resource type="Texture2D" uid="uid://dhlk1jffqutcd" path="res://Data/Character/Riku/Image/Riku_Game_001.png" id="30_rchyr"]
 [ext_resource type="Texture2D" uid="uid://bflbvxndxnyic" path="res://Data/Character/Riku/Image/Riku_Game_002.png" id="31_nx4yo"]
 [ext_resource type="PackedScene" uid="uid://bvsjq05oj2p6t" path="res://Data/EnemyNPC/EnemyNPC.tscn" id="33_uy3go"]
 [ext_resource type="AudioStream" uid="uid://6otpp626rsxb" path="res://Data/Character/Riku/Voice/V_Riku_001.ogg" id="34_a34eg"]
+[ext_resource type="Texture2D" uid="uid://c7i3oxs84i0gp" path="res://Image/E_Scarecrow.png" id="34_yf3a2"]
 [ext_resource type="AudioStream" uid="uid://d0b6wp4s78y4p" path="res://Data/Character/Riku/Voice/V_Riku_002.ogg" id="35_via5u"]
 [ext_resource type="AudioStream" uid="uid://br88jdpiw3dw2" path="res://Data/Character/Albert/Voice/V_Albert_001.ogg" id="37_ac6pf"]
 [ext_resource type="Texture2D" uid="uid://fg50p741leta" path="res://Data/Character/Albert/Image/Albert_Game_002.png" id="37_ek63v"]
 [ext_resource type="AudioStream" uid="uid://cdpj2d3jdoitu" path="res://Data/Character/Albert/Voice/V_Albert_002.ogg" id="38_ek63v"]
+[ext_resource type="Texture2D" uid="uid://bo2fxhb4djqj7" path="res://Data/Character/Albert/Image/Albert_Game_001.png" id="39_oaklg"]
 [ext_resource type="PackedScene" path="res://Data/Object/Doors/SceneSpawnPoint.tscn" id="40_spawn_point"]
 
 [node name="TownMap" type="Node2D" unique_id=808938128]
@@ -123,6 +126,9 @@ enemy_name = "カカシ"
 max_hp = 999999
 move_speed = 50.0
 
+[node name="Sprite2D" parent="Sortables/EnemyNPC" index="0" unique_id=91303980]
+texture = ExtResource("34_yf3a2")
+
 [node name="Riku" parent="Sortables" unique_id=268731798 instance=ExtResource("29_f4ese")]
 position = Vector2(-515, 70)
 scale = Vector2(0.16, 0.16)
@@ -134,6 +140,9 @@ voice_lines = Array[AudioStream]([ExtResource("34_a34eg"), ExtResource("35_via5u
 face_player_when_interact = false
 sprite_offset = Vector2(0, 0)
 
+[node name="Sprite2D" parent="Sortables/Riku" index="0" unique_id=1072066625]
+texture = ExtResource("30_rchyr")
+
 [node name="Albert" parent="Sortables" unique_id=2115653588 instance=ExtResource("29_f4ese")]
 position = Vector2(-730, 81)
 scale = Vector2(0.14, 0.14)
@@ -142,3 +151,10 @@ loop_talk = true
 portrait_texture = ExtResource("37_ek63v")
 voice_lines = Array[AudioStream]([ExtResource("37_ac6pf"), ExtResource("38_ek63v")])
 face_player_when_interact = false
+
+[node name="Sprite2D" parent="Sortables/Albert" index="0" unique_id=1072066625]
+texture = ExtResource("39_oaklg")
+
+[editable path="Sortables/EnemyNPC"]
+[editable path="Sortables/Riku"]
+[editable path="Sortables/Albert"]
