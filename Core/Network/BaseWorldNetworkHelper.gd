@@ -57,32 +57,11 @@ func sync_remote_network_players_from_session() -> void:
 
 
 func send_local_player_snapshot_if_needed() -> void:
-	if world == null:
-		return
-	if world.player == null or not is_instance_valid(world.player):
-		return
-	if not world._is_network_online():
-		return
-	if not world.player.has_method("get_network_snapshot_payload"):
-		return
+	_send_local_player_snapshot(false)
 
-	var session_manager: Node = world.get_network_session_manager()
-	var peers_variant: Variant = PackedInt32Array()
-	if session_manager != null and session_manager.has_method("get_remote_peer_ids"):
-		peers_variant = session_manager.call("get_remote_peer_ids")
 
-	if peers_variant is PackedInt32Array and (peers_variant as PackedInt32Array).is_empty():
-		return
-
-	var payload_variant: Variant = world.player.call("get_network_snapshot_payload")
-	if typeof(payload_variant) != TYPE_DICTIONARY:
-		return
-
-	var payload: Dictionary = payload_variant as Dictionary
-	if payload.is_empty():
-		return
-
-	world.rpc("_rpc_receive_player_snapshot", payload)
+func send_local_player_snapshot_now() -> void:
+	_send_local_player_snapshot(true)
 
 
 func receive_remote_player_snapshot(payload: Dictionary, sender_peer_id: int) -> void:
@@ -97,8 +76,17 @@ func receive_remote_player_snapshot(payload: Dictionary, sender_peer_id: int) ->
 	if remote_player == null:
 		return
 
+	var waiting_initial_snapshot: bool = bool(remote_player.get_meta("_waiting_initial_network_snapshot", false))
+	if waiting_initial_snapshot:
+		_apply_initial_snapshot_visual_state(remote_player, payload)
+
 	if remote_player.has_method("apply_remote_network_snapshot"):
 		remote_player.call("apply_remote_network_snapshot", payload)
+
+	if waiting_initial_snapshot:
+		remote_player.set_meta("_waiting_initial_network_snapshot", false)
+		if remote_player is CanvasItem:
+			(remote_player as CanvasItem).visible = true
 
 
 func spawn_remote_network_player_for_peer(peer_id: int) -> Node:
@@ -134,9 +122,11 @@ func spawn_remote_network_player_for_peer(peer_id: int) -> Node:
 		remote_player.call("set_network_authority_peer_id", peer_id)
 
 	var spawn_position: Vector2 = get_remote_network_spawn_position(peer_id)
+	if remote_player is Node2D:
+		(remote_player as Node2D).global_position = spawn_position
 
 	network_players_root.add_child(remote_player)
-	_prepare_remote_network_player_instance(remote_player, spawn_position)
+	_prepare_remote_network_player_instance(remote_player, peer_id, spawn_position)
 
 	remote_players_by_peer_id[peer_id] = remote_player
 	return remote_player
@@ -217,7 +207,40 @@ func get_remote_network_spawn_position(peer_id: int) -> Vector2:
 	return local_player_2d.global_position + (world.remote_player_spawn_offset * float(slot_index))
 
 
-func _prepare_remote_network_player_instance(remote_player: Node, spawn_position: Vector2) -> void:
+func _send_local_player_snapshot(force_send: bool) -> void:
+	if world == null:
+		return
+	if world.player == null or not is_instance_valid(world.player):
+		return
+	if not world._is_network_online():
+		return
+	if not world.player.has_method("get_network_snapshot_payload"):
+		return
+
+	var session_manager: Node = world.get_network_session_manager()
+	var peers_variant: Variant = PackedInt32Array()
+	if session_manager != null and session_manager.has_method("get_remote_peer_ids"):
+		peers_variant = session_manager.call("get_remote_peer_ids")
+
+	if peers_variant is PackedInt32Array and (peers_variant as PackedInt32Array).is_empty():
+		return
+
+	var payload_variant: Variant = world.player.call("get_network_snapshot_payload")
+	if typeof(payload_variant) != TYPE_DICTIONARY:
+		return
+
+	var payload: Dictionary = payload_variant as Dictionary
+	if payload.is_empty():
+		return
+
+	if force_send and world.has_method("rpc"):
+		world.rpc("_rpc_receive_player_snapshot", payload)
+		return
+
+	world.rpc("_rpc_receive_player_snapshot", payload)
+
+
+func _prepare_remote_network_player_instance(remote_player: Node, peer_id: int, spawn_position: Vector2) -> void:
 	if remote_player == null or not is_instance_valid(remote_player):
 		return
 
@@ -229,14 +252,6 @@ func _prepare_remote_network_player_instance(remote_player: Node, spawn_position
 		var remote_body: CharacterBody2D = remote_player as CharacterBody2D
 		remote_body.velocity = Vector2.ZERO
 
-	remote_player.remove_from_group("player")
-	remote_player.add_to_group("remote_player")
-
-	if remote_player.has_method("set_input_locked"):
-		remote_player.call("set_input_locked", false)
-
-	# Player.gd をクローンした直後の実行時状態を軽く掃除しておく。
-	# remote 側では local 専用の interactable / selected item を引き継がせない。
 	remote_player.set("current_interactable", null)
 	remote_player.set("nearby_interactables", [])
 	remote_player.set("selected_item_data", null)
@@ -244,5 +259,38 @@ func _prepare_remote_network_player_instance(remote_player: Node, spawn_position
 
 	if remote_player.has_method("_reset_walk_bob_immediate"):
 		remote_player.call("_reset_walk_bob_immediate")
+
+	remote_player.remove_from_group("player")
+	remote_player.add_to_group("remote_player")
+	remote_player.set_meta("_waiting_initial_network_snapshot", true)
+
+	if remote_player is CanvasItem:
+		(remote_player as CanvasItem).visible = false
+
+
+func _apply_initial_snapshot_visual_state(remote_player: Node, payload: Dictionary) -> void:
+	if remote_player == null or not is_instance_valid(remote_player):
+		return
+
+	var snapshot_position: Vector2 = _extract_snapshot_position(payload)
+	var snapshot_facing: int = int(payload.get("facing", 0))
+
+	if remote_player is Node2D:
+		(remote_player as Node2D).global_position = snapshot_position
+
+	if remote_player is CharacterBody2D:
+		var remote_body: CharacterBody2D = remote_player as CharacterBody2D
+		remote_body.velocity = Vector2.ZERO
+
+	remote_player.set("_facing", snapshot_facing)
 	if remote_player.has_method("_apply_facing_visual"):
 		remote_player.call("_apply_facing_visual")
+	if remote_player.has_method("_reset_walk_bob_immediate"):
+		remote_player.call("_reset_walk_bob_immediate")
+
+
+func _extract_snapshot_position(payload: Dictionary) -> Vector2:
+	return Vector2(
+		float(payload.get("position_x", 0.0)),
+		float(payload.get("position_y", 0.0))
+	)

@@ -175,6 +175,7 @@ func _boot_game() -> void:
 	if _network_helper != null:
 		_network_helper.configure_local_network_player()
 		_network_helper.sync_remote_network_players_from_session()
+		_network_helper.send_local_player_snapshot_now()
 	_resume_time_manager()
 	_set_player_input_locked(false)
 
@@ -329,6 +330,7 @@ func _rpc_receive_player_snapshot(payload: Dictionary) -> void:
 func _on_network_peer_joined(peer_id: int) -> void:
 	if _network_helper != null:
 		_network_helper.spawn_remote_network_player_for_peer(peer_id)
+		_network_helper.send_local_player_snapshot_now()
 
 
 func _on_network_peer_left(peer_id: int) -> void:
@@ -340,6 +342,7 @@ func _on_network_connected_to_session() -> void:
 	if _network_helper != null:
 		_network_helper.configure_local_network_player()
 		_network_helper.sync_remote_network_players_from_session()
+		_network_helper.send_local_player_snapshot_now()
 
 
 func _on_network_disconnected_from_session() -> void:
@@ -352,12 +355,14 @@ func _on_network_local_peer_id_changed(_peer_id: int) -> void:
 	if _network_helper != null:
 		_network_helper.configure_local_network_player()
 		_network_helper.sync_remote_network_players_from_session()
+		_network_helper.send_local_player_snapshot_now()
 
 
 func _on_network_hosting_started(_port: int, _max_clients: int) -> void:
 	if _network_helper != null:
 		_network_helper.configure_local_network_player()
 		_network_helper.sync_remote_network_players_from_session()
+		_network_helper.send_local_player_snapshot_now()
 
 
 func _apply_pending_boot_spawn_if_needed() -> void:

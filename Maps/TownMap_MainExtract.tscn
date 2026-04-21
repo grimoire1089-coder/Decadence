@@ -22,6 +22,7 @@
 [ext_resource type="AudioStream" uid="uid://csuvqr8l1rjg0" path="res://BGM/Ancient pillars.ogg" id="8_pljue"]
 [ext_resource type="AudioStream" uid="uid://clp5ekaewgxtf" path="res://BGM/夏風.ogg" id="9_im7ls"]
 [ext_resource type="AudioStream" uid="uid://citsh0miw631h" path="res://BGM/Gale x 春風.ogg" id="10_cfjnh"]
+[ext_resource type="AudioStream" uid="uid://dtdcu5qqlq2rn" path="res://BGM/Circuit Incense.ogg" id="12_4tq7w"]
 [ext_resource type="AudioStream" uid="uid://dpmo7sm01pyuu" path="res://BGM/キャンドルバード.ogg" id="12_x3yn0"]
 [ext_resource type="AudioStream" uid="uid://dqc5lyc8s8hds" path="res://BGM/Fairy tail.ogg" id="13_x3yn0"]
 [ext_resource type="AudioStream" uid="uid://diddsyr2byvwt" path="res://BGM/星の王子様.ogg" id="15_38apo"]
@@ -51,7 +52,7 @@
 
 [node name="BGMManager" type="Node" parent="." unique_id=1674260583]
 script = ExtResource("1_2gh4u")
-day_tracks = Array[AudioStream]([ExtResource("1_r0du0"), ExtResource("3_devvj"), ExtResource("4_hhcpw"), ExtResource("5_vi5kq"), ExtResource("6_5mkgo"), ExtResource("7_ny7u2"), ExtResource("8_pljue"), ExtResource("9_im7ls"), ExtResource("10_cfjnh")])
+day_tracks = Array[AudioStream]([ExtResource("1_r0du0"), ExtResource("3_devvj"), ExtResource("4_hhcpw"), ExtResource("5_vi5kq"), ExtResource("6_5mkgo"), ExtResource("7_ny7u2"), ExtResource("8_pljue"), ExtResource("9_im7ls"), ExtResource("10_cfjnh"), ExtResource("12_4tq7w")])
 night_tracks = Array[AudioStream]([ExtResource("2_sc1dx"), ExtResource("6_mxvw5"), ExtResource("7_xrxkg"), ExtResource("8_hri7i"), ExtResource("12_x3yn0"), ExtResource("13_x3yn0"), ExtResource("15_38apo")])
 
 [node name="BGMPlayer" type="AudioStreamPlayer" parent="BGMManager" unique_id=624318010]
