@@ -9,18 +9,24 @@ func setup(owner_node: CharacterBody2D) -> void:
 
 
 func get_stat_value(stat_name: String) -> int:
+	if not _is_local_gameplay_owner():
+		return 0
 	if PlayerStatsManager == null:
 		return 0
 	return PlayerStatsManager.get_stat(stat_name)
 
 
 func get_skill_value(skill_name: String) -> int:
+	if not _is_local_gameplay_owner():
+		return 0
 	if PlayerStatsManager == null:
 		return 0
 	return PlayerStatsManager.get_skill(skill_name)
 
 
 func add_fatigue_for_action(action_name: String, multiplier: float = 1.0, write_log: bool = false) -> int:
+	if not _is_local_gameplay_owner():
+		return 0
 	if PlayerStatsManager == null:
 		return 0
 
@@ -47,7 +53,7 @@ func clear_selected_item() -> void:
 
 
 func try_consume_selected_item() -> bool:
-	if owner == null:
+	if not _is_local_gameplay_owner():
 		return false
 
 	var item_data: ItemData = owner.selected_item_data as ItemData
@@ -89,6 +95,9 @@ func try_consume_selected_item() -> bool:
 
 
 func add_item_to_inventory(item_data: Resource, amount: int) -> bool:
+	if not _is_local_gameplay_owner():
+		return false
+
 	var inventory_ui: Node = _get_inventory_ui()
 	if inventory_ui == null:
 		_log_error("InventoryUI が見つからない")
@@ -102,6 +111,9 @@ func add_item_to_inventory(item_data: Resource, amount: int) -> bool:
 
 
 func remove_item_from_inventory(item_data: Resource, amount: int) -> bool:
+	if not _is_local_gameplay_owner():
+		return false
+
 	var inventory_ui: Node = _get_inventory_ui()
 	if inventory_ui == null:
 		_log_error("InventoryUI が見つからない")
@@ -115,6 +127,9 @@ func remove_item_from_inventory(item_data: Resource, amount: int) -> bool:
 
 
 func get_inventory_count(item_data: Resource) -> int:
+	if not _is_local_gameplay_owner():
+		return 0
+
 	var inventory_ui: Node = _get_inventory_ui()
 	if inventory_ui == null:
 		return 0
@@ -126,6 +141,8 @@ func get_inventory_count(item_data: Resource) -> int:
 
 
 func add_credits(amount: int) -> void:
+	if not _is_local_gameplay_owner():
+		return
 	if amount <= 0:
 		return
 
@@ -138,12 +155,16 @@ func add_credits(amount: int) -> void:
 
 
 func get_credits() -> int:
+	if not _is_local_gameplay_owner():
+		return 0
 	if CurrencyManager != null and CurrencyManager.has_method("get_credits"):
 		return int(CurrencyManager.get_credits())
 	return 0
 
 
 func can_spend_credits(amount: int) -> bool:
+	if not _is_local_gameplay_owner():
+		return false
 	if amount < 0:
 		return false
 	if CurrencyManager != null and CurrencyManager.has_method("can_spend"):
@@ -152,6 +173,8 @@ func can_spend_credits(amount: int) -> bool:
 
 
 func spend_credits(amount: int) -> bool:
+	if not _is_local_gameplay_owner():
+		return false
 	if amount <= 0:
 		return false
 
@@ -183,13 +206,13 @@ func log_error(text: String) -> void:
 
 
 func _get_inventory_ui() -> Node:
-	if owner == null:
+	if not _is_local_gameplay_owner():
 		return null
 	return owner.get_tree().get_first_node_in_group("inventory_ui") as Node
 
 
 func _get_message_log() -> Node:
-	if owner == null:
+	if not _is_local_gameplay_owner():
 		return null
 	return owner.get_node_or_null("/root/MessageLog")
 
@@ -222,3 +245,11 @@ func _log_error(text: String) -> void:
 		log_node.call("add_error", text)
 	elif log_node.has_method("add_message"):
 		log_node.call("add_message", text, "ERROR")
+
+
+func _is_local_gameplay_owner() -> bool:
+	if owner == null or not is_instance_valid(owner):
+		return false
+	if owner.has_method("is_network_remote_player"):
+		return not bool(owner.call("is_network_remote_player"))
+	return true
