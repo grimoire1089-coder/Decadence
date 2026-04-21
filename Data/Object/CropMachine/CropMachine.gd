@@ -142,6 +142,16 @@ func get_interact_prompt_offset() -> Vector2:
 
 
 func interact(player: Node) -> void:
+	var current_scene: Node = get_tree().current_scene
+
+	if current_scene != null and current_scene.has_method("request_networked_world_interaction"):
+		current_scene.call("request_networked_world_interaction", {
+			"interaction_kind": "crop_machine_open",
+			"machine_path": str(get_path()),
+			"request_peer_id": _extract_request_peer_id(player),
+		})
+		return
+
 	var ui: Node = get_tree().get_first_node_in_group("crop_machine_ui")
 	if ui != null and ui.has_method("open_machine"):
 		ui.call("open_machine", self, player)
@@ -383,3 +393,14 @@ func _log_error(text: String) -> void:
 	var log_node: Node = _get_message_log()
 	if log_node != null and log_node.has_method("add_error"):
 		log_node.call("add_error", text)
+
+
+func _extract_request_peer_id(player: Node) -> int:
+	if player != null and player.has_method("get_network_peer_id"):
+		return max(int(player.call("get_network_peer_id")), 1)
+
+	var multiplayer_api: MultiplayerAPI = get_tree().get_multiplayer()
+	if multiplayer_api != null:
+		return max(multiplayer_api.get_unique_id(), 1)
+
+	return 1
