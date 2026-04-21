@@ -104,6 +104,7 @@ func request_transition_request(request: Dictionary) -> void:
 		"post_spawn_fade_in_delay": max(float(request.get("post_spawn_fade_in_delay", post_spawn_fade_in_delay)), 0.0),
 		"transition_black_alpha": clamp(float(request.get("transition_black_alpha", transition_black_alpha)), 0.0, 1.0),
 		"transition_sfx": request.get("transition_sfx", default_transition_sfx),
+		"transition_sfx_path": String(request.get("transition_sfx_path", "")).strip_edges(),
 		"transition_sfx_bus": StringName(String(request.get("transition_sfx_bus", String(transition_sfx_bus)))),
 	}
 
@@ -185,7 +186,7 @@ func _ensure_transition_sfx_player() -> void:
 
 
 func _play_transition_sfx(request: Dictionary) -> void:
-	var stream: AudioStream = request.get("transition_sfx", default_transition_sfx) as AudioStream
+	var stream: AudioStream = _resolve_transition_sfx_from_request(request)
 	if stream == null:
 		return
 
@@ -197,6 +198,20 @@ func _play_transition_sfx(request: Dictionary) -> void:
 	_transition_sfx_player.bus = bus_name
 	_transition_sfx_player.stream = stream
 	_transition_sfx_player.play()
+
+
+func _resolve_transition_sfx_from_request(request: Dictionary) -> AudioStream:
+	var path_text: String = String(request.get("transition_sfx_path", "")).strip_edges()
+	if not path_text.is_empty() and ResourceLoader.exists(path_text):
+		var loaded_stream: AudioStream = load(path_text) as AudioStream
+		if loaded_stream != null:
+			return loaded_stream
+
+	var direct_stream: AudioStream = request.get("transition_sfx", default_transition_sfx) as AudioStream
+	if direct_stream != null:
+		return direct_stream
+
+	return default_transition_sfx
 
 
 func _instantiate_map_fragment(target_map_scene_path: String) -> Node:

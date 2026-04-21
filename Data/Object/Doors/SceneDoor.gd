@@ -61,7 +61,10 @@ func interact(_player: Node) -> void:
 		"use_fade_transition": use_transition_fade,
 	}
 
-	if transition_sfx != null:
+	var transition_sfx_path: String = _get_transition_sfx_resource_path()
+	if not transition_sfx_path.is_empty():
+		request["transition_sfx_path"] = transition_sfx_path
+	elif transition_sfx != null:
 		request["transition_sfx"] = transition_sfx
 
 	if current_scene.has_method("request_networked_map_transition"):
@@ -99,3 +102,11 @@ func get_interact_prompt_offset() -> Vector2:
 
 func get_target_display_name() -> String:
 	return door_name
+
+
+func _get_transition_sfx_resource_path() -> String:
+	if transition_sfx == null:
+		return ""
+
+	var resource_path: String = transition_sfx.resource_path.strip_edges()
+	return resource_path
