@@ -1,9 +1,9 @@
-
 extends RefCounted
 class_name BaseWorldTimeSyncModule
 
 const DEFAULT_TIME_SYNC_INTERVAL_SEC: float = 0.25
-const NETWORK_PAUSE_SOURCE: String = "__network_host_pause__"
+const NETWORK_HOST_PAUSE_SOURCE: String = "__network_host_pause__"
+const NETWORK_CLIENT_AUTHORITY_PAUSE_SOURCE: String = "__network_client_authority_pause__"
 
 var _world: BaseWorld = null
 var _sync_accumulator: float = 0.0
@@ -43,6 +43,11 @@ func on_network_connected_to_session() -> void:
 	_sync_accumulator = 0.0
 	if _world == null:
 		return
+
+	var time_manager: Node = _get_time_manager()
+	if time_manager != null and not _world._can_accept_network_gameplay_requests():
+		_request_client_authority_pause(time_manager)
+
 	if _world._can_accept_network_gameplay_requests():
 		push_current_time_state_to_peers()
 
@@ -52,16 +57,21 @@ func on_network_disconnected_from_session() -> void:
 	var time_manager: Node = _get_time_manager()
 	if time_manager == null:
 		return
-	if time_manager.has_method("clear_network_pause"):
-		time_manager.call("clear_network_pause")
-	else:
-		_release_network_pause_fallback(time_manager)
+	_clear_network_pause_sources(time_manager)
 
 
 func on_network_local_peer_id_changed() -> void:
 	_sync_accumulator = 0.0
 	if _world == null:
 		return
+
+	var time_manager: Node = _get_time_manager()
+	if time_manager != null:
+		if _world._can_accept_network_gameplay_requests():
+			_release_client_authority_pause(time_manager)
+		else:
+			_request_client_authority_pause(time_manager)
+
 	if _world._can_accept_network_gameplay_requests():
 		push_current_time_state_to_peers()
 
@@ -70,6 +80,11 @@ func on_network_hosting_started() -> void:
 	_sync_accumulator = 0.0
 	if _world == null:
 		return
+
+	var time_manager: Node = _get_time_manager()
+	if time_manager != null:
+		_release_client_authority_pause(time_manager)
+
 	if _world._can_accept_network_gameplay_requests():
 		push_current_time_state_to_peers()
 
@@ -159,6 +174,7 @@ func apply_remote_time_state(state: Dictionary) -> void:
 
 	if time_manager.has_method("import_network_state"):
 		time_manager.call("import_network_state", state)
+		_request_client_authority_pause(time_manager)
 		return
 
 	_apply_time_state_fallback(time_manager, state)
@@ -183,52 +199,88 @@ func _get_time_manager() -> Node:
 
 func _apply_time_state_fallback(time_manager: Node, state: Dictionary) -> void:
 	var next_wait_time: float = max(float(state.get("real_seconds_per_game_minute", time_manager.get("real_seconds_per_game_minute"))), 0.001)
-	if time_manager.get("real_seconds_per_game_minute") != null:
+	if float(time_manager.get("real_seconds_per_game_minute")) != next_wait_time:
 		time_manager.set("real_seconds_per_game_minute", next_wait_time)
 	var tick_timer: Timer = time_manager.get("tick_timer") as Timer
-	if tick_timer != null:
+	if tick_timer != null and tick_timer.wait_time != next_wait_time:
 		tick_timer.wait_time = next_wait_time
 
 	var next_day: int = int(state.get("day", time_manager.get("day")))
 	var next_hour: int = int(state.get("hour", time_manager.get("hour")))
 	var next_minute: int = int(state.get("minute", time_manager.get("minute")))
-	if time_manager.has_method("set_time"):
-		time_manager.call("set_time", next_day, next_hour, next_minute)
-	else:
-		time_manager.set("day", next_day)
-		time_manager.set("hour", clampi(next_hour, 0, 23))
-		time_manager.set("minute", clampi(next_minute, 0, 59))
-		if time_manager.has_method("_update_period"):
-			time_manager.call("_update_period")
-		if time_manager.has_method("_emit_time_changed"):
-			time_manager.call("_emit_time_changed")
+	var current_day: int = int(time_manager.get("day"))
+	var current_hour: int = int(time_manager.get("hour"))
+	var current_minute: int = int(time_manager.get("minute"))
+	var time_changed: bool = next_day != current_day or next_hour != current_hour or next_minute != current_minute
+	if time_changed:
+		if time_manager.has_method("set_time"):
+			time_manager.call("set_time", next_day, next_hour, next_minute)
+		else:
+			time_manager.set("day", next_day)
+			time_manager.set("hour", clampi(next_hour, 0, 23))
+			time_manager.set("minute", clampi(next_minute, 0, 59))
+			if time_manager.has_method("_update_period"):
+				time_manager.call("_update_period")
+			if time_manager.has_method("_emit_time_changed"):
+				time_manager.call("_emit_time_changed")
 
 	var next_running: bool = bool(state.get("is_running", time_manager.get("is_running")))
-	if time_manager.has_method("set_time_running"):
-		time_manager.call("set_time_running", next_running)
-	elif time_manager.has_method("start_time") and next_running:
-		time_manager.call("start_time")
-	elif time_manager.has_method("stop_time") and not next_running:
-		time_manager.call("stop_time")
-	else:
-		time_manager.set("is_running", next_running)
+	if bool(time_manager.get("is_running")) != next_running:
+		if time_manager.has_method("set_time_running"):
+			time_manager.call("set_time_running", next_running)
+		elif time_manager.has_method("start_time") and next_running:
+			time_manager.call("start_time")
+		elif time_manager.has_method("stop_time") and not next_running:
+			time_manager.call("stop_time")
+		else:
+			time_manager.set("is_running", next_running)
 
 	var host_paused: bool = bool(state.get("is_paused", false))
 	if host_paused:
-		_request_network_pause_fallback(time_manager)
+		_request_network_host_pause(time_manager)
 	else:
-		_release_network_pause_fallback(time_manager)
+		_release_network_host_pause(time_manager)
+
+	_request_client_authority_pause(time_manager)
 
 
-func _request_network_pause_fallback(time_manager: Node) -> void:
+func _request_network_host_pause(time_manager: Node) -> void:
+	_request_pause_source(time_manager, NETWORK_HOST_PAUSE_SOURCE)
+
+
+func _release_network_host_pause(time_manager: Node) -> void:
+	_release_pause_source(time_manager, NETWORK_HOST_PAUSE_SOURCE)
+
+
+func _request_client_authority_pause(time_manager: Node) -> void:
+	if _world == null:
+		return
+	if not _world._is_network_online():
+		return
+	if _world._can_accept_network_gameplay_requests():
+		_release_pause_source(time_manager, NETWORK_CLIENT_AUTHORITY_PAUSE_SOURCE)
+		return
+	_request_pause_source(time_manager, NETWORK_CLIENT_AUTHORITY_PAUSE_SOURCE)
+
+
+func _release_client_authority_pause(time_manager: Node) -> void:
+	_release_pause_source(time_manager, NETWORK_CLIENT_AUTHORITY_PAUSE_SOURCE)
+
+
+func _clear_network_pause_sources(time_manager: Node) -> void:
+	_release_network_host_pause(time_manager)
+	_release_client_authority_pause(time_manager)
+
+
+func _request_pause_source(time_manager: Node, source: String) -> void:
 	if time_manager.has_method("request_pause"):
-		time_manager.call("request_pause", NETWORK_PAUSE_SOURCE)
+		time_manager.call("request_pause", source)
 	elif time_manager.has_method("pause_time"):
-		time_manager.call("pause_time", NETWORK_PAUSE_SOURCE)
+		time_manager.call("pause_time", source)
 
 
-func _release_network_pause_fallback(time_manager: Node) -> void:
+func _release_pause_source(time_manager: Node, source: String) -> void:
 	if time_manager.has_method("release_pause"):
-		time_manager.call("release_pause", NETWORK_PAUSE_SOURCE)
+		time_manager.call("release_pause", source)
 	elif time_manager.has_method("resume_time"):
-		time_manager.call("resume_time", NETWORK_PAUSE_SOURCE)
+		time_manager.call("resume_time", source)
