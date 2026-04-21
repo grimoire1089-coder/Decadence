@@ -64,6 +64,10 @@ func interact(_player: Node) -> void:
 	if transition_sfx != null:
 		request["transition_sfx"] = transition_sfx
 
+	if current_scene.has_method("request_networked_map_transition"):
+		current_scene.call("request_networked_map_transition", request)
+		return
+
 	var map_transition_manager: Node = null
 	if current_scene.has_method("get_map_transition_manager"):
 		map_transition_manager = current_scene.call("get_map_transition_manager")

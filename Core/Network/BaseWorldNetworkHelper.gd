@@ -240,7 +240,7 @@ func _send_local_player_snapshot(force_send: bool) -> void:
 	world.rpc("_rpc_receive_player_snapshot", payload)
 
 
-func _prepare_remote_network_player_instance(remote_player: Node, peer_id: int, spawn_position: Vector2) -> void:
+func _prepare_remote_network_player_instance(remote_player: Node, _peer_id: int, spawn_position: Vector2) -> void:
 	if remote_player == null or not is_instance_valid(remote_player):
 		return
 

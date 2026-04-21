@@ -108,6 +108,24 @@ func request_map_transition(target_map_scene_path: String, target_spawn_id: Stri
 		map_transition_manager.call("request_transition", target_map_scene_path, target_spawn_id, transition_name, log_text)
 
 
+func request_networked_map_transition(request: Dictionary) -> void:
+	var normalized_request: Dictionary = _normalize_map_transition_request(request)
+	if normalized_request.is_empty():
+		return
+
+	if not _is_network_online():
+		_apply_map_transition_request_local(normalized_request)
+		return
+
+	_ensure_network_session_manager()
+	if _can_accept_network_gameplay_requests():
+		_apply_map_transition_request_local(normalized_request)
+		rpc("_rpc_apply_map_transition_request", normalized_request)
+		return
+
+	rpc_id(1, "_rpc_request_map_transition", normalized_request)
+
+
 func start_network_host(port: int = -1) -> bool:
 	_ensure_network_session_manager()
 	_connect_network_session_signals()
@@ -175,7 +193,6 @@ func _boot_game() -> void:
 	if _network_helper != null:
 		_network_helper.configure_local_network_player()
 		_network_helper.sync_remote_network_players_from_session()
-		_network_helper.send_local_player_snapshot_now()
 	_resume_time_manager()
 	_set_player_input_locked(false)
 
@@ -318,6 +335,18 @@ func _get_local_network_peer_id() -> int:
 	return max(int(_network_session_manager.call("get_local_peer_id")), 1)
 
 
+func _can_accept_network_gameplay_requests() -> bool:
+	if not _is_network_online():
+		return false
+	if _network_session_manager == null:
+		return false
+	if _network_session_manager.has_method("can_accept_gameplay_requests"):
+		return _variant_to_bool(_network_session_manager.call("can_accept_gameplay_requests"))
+	if _network_session_manager.has_method("is_host"):
+		return _variant_to_bool(_network_session_manager.call("is_host"))
+	return multiplayer != null and multiplayer.is_server()
+
+
 @rpc("any_peer", "call_remote", "unreliable")
 func _rpc_receive_player_snapshot(payload: Dictionary) -> void:
 	var sender_peer_id: int = multiplayer.get_remote_sender_id()
@@ -327,10 +356,58 @@ func _rpc_receive_player_snapshot(payload: Dictionary) -> void:
 		_network_helper.receive_remote_player_snapshot(payload, sender_peer_id)
 
 
+@rpc("any_peer", "call_remote", "reliable")
+func _rpc_request_map_transition(request: Dictionary) -> void:
+	if not _can_accept_network_gameplay_requests():
+		return
+
+	var normalized_request: Dictionary = _normalize_map_transition_request(request)
+	if normalized_request.is_empty():
+		return
+
+	_apply_map_transition_request_local(normalized_request)
+	if _is_network_online():
+		rpc("_rpc_apply_map_transition_request", normalized_request)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _rpc_apply_map_transition_request(request: Dictionary) -> void:
+	var normalized_request: Dictionary = _normalize_map_transition_request(request)
+	if normalized_request.is_empty():
+		return
+	_apply_map_transition_request_local(normalized_request)
+
+
+func _normalize_map_transition_request(request: Dictionary) -> Dictionary:
+	var normalized_scene_path: String = String(request.get("target_map_scene_path", request.get("scene_path", request.get("target_scene_path", "")))).strip_edges()
+	if normalized_scene_path.is_empty():
+		return {}
+
+	var normalized_request: Dictionary = request.duplicate(true)
+	normalized_request["target_map_scene_path"] = normalized_scene_path
+	normalized_request["target_spawn_id"] = String(request.get("target_spawn_id", request.get("spawn_id", ""))).strip_edges()
+	normalized_request["transition_name"] = String(request.get("transition_name", request.get("name", "")))
+	normalized_request["log_text"] = String(request.get("log_text", request.get("message_text", request.get("log", ""))))
+	return normalized_request
+
+
+func _apply_map_transition_request_local(request: Dictionary) -> void:
+	_ensure_map_transition_manager()
+	if map_transition_manager != null and map_transition_manager.has_method("request_transition_request"):
+		map_transition_manager.call("request_transition_request", request)
+		return
+
+	request_map_transition(
+		String(request.get("target_map_scene_path", "")),
+		String(request.get("target_spawn_id", "")),
+		String(request.get("transition_name", "")),
+		String(request.get("log_text", ""))
+	)
+
+
 func _on_network_peer_joined(peer_id: int) -> void:
 	if _network_helper != null:
 		_network_helper.spawn_remote_network_player_for_peer(peer_id)
-		_network_helper.send_local_player_snapshot_now()
 
 
 func _on_network_peer_left(peer_id: int) -> void:
@@ -342,7 +419,6 @@ func _on_network_connected_to_session() -> void:
 	if _network_helper != null:
 		_network_helper.configure_local_network_player()
 		_network_helper.sync_remote_network_players_from_session()
-		_network_helper.send_local_player_snapshot_now()
 
 
 func _on_network_disconnected_from_session() -> void:
@@ -355,14 +431,12 @@ func _on_network_local_peer_id_changed(_peer_id: int) -> void:
 	if _network_helper != null:
 		_network_helper.configure_local_network_player()
 		_network_helper.sync_remote_network_players_from_session()
-		_network_helper.send_local_player_snapshot_now()
 
 
 func _on_network_hosting_started(_port: int, _max_clients: int) -> void:
 	if _network_helper != null:
 		_network_helper.configure_local_network_player()
 		_network_helper.sync_remote_network_players_from_session()
-		_network_helper.send_local_player_snapshot_now()
 
 
 func _apply_pending_boot_spawn_if_needed() -> void:
