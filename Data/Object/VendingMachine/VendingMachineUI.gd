@@ -449,9 +449,9 @@ func _on_stock_one_pressed() -> void:
 	var action_amount: int = _get_effective_action_amount()
 
 	if _can_request_networked_vending_actions():
-		var removed_variant: Variant = current_player.call("remove_item_from_inventory", selected_item_data, action_amount)
-		var removed: bool = bool(removed_variant)
-		if not removed:
+		var request_removed_variant: Variant = current_player.call("remove_item_from_inventory", selected_item_data, action_amount)
+		var request_removed: bool = bool(request_removed_variant)
+		if not request_removed:
 			info_label.text = "在庫が足りない"
 			return
 
