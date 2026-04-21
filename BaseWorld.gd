@@ -15,6 +15,7 @@ const NETWORK_SESSION_MANAGER_SCRIPT_PATH: String = "res://Core/Network/NetworkS
 @export var network_client_port: int = 7000
 @export var network_session_manager_root_path: NodePath = NodePath("/root/NetworkSessionManager")
 @export var remote_player_spawn_offset: Vector2 = Vector2(40.0, 0.0)
+@export var network_peer_sync_interval_sec: float = 0.25
 
 @onready var player: Node = $Sortables/Player
 @onready var loading_overlay: Node = $UI/LoadingOverlay
@@ -27,6 +28,7 @@ var _network_session_manager: Node = null
 var _network_signals_connected: bool = false
 var _network_players_root: Node2D = null
 var _remote_players_by_peer_id: Dictionary = {}
+var _network_peer_sync_accumulator: float = 0.0
 
 
 func _ready() -> void:
@@ -37,6 +39,21 @@ func _ready() -> void:
 		_ensure_network_session_manager()
 		_connect_network_session_signals()
 	call_deferred("_boot_game")
+
+
+func _process(delta: float) -> void:
+	if network_boot_mode == NETWORK_BOOT_MODE_DISABLED:
+		return
+
+	if not _is_network_online():
+		return
+
+	_network_peer_sync_accumulator += maxf(delta, 0.0)
+	if _network_peer_sync_accumulator < maxf(network_peer_sync_interval_sec, 0.05):
+		return
+
+	_network_peer_sync_accumulator = 0.0
+	_sync_remote_network_players_from_session()
 
 
 func prepare_world_before_restore(save_data: Dictionary) -> void:
@@ -380,8 +397,20 @@ func _get_remote_network_spawn_position(peer_id: int) -> Vector2:
 		return Vector2.ZERO
 
 	var local_player_2d: Node2D = player as Node2D
-	var local_peer_id: int = max(_get_local_network_peer_id(), 1)
-	var slot_index: int = maxi(peer_id - local_peer_id, 1)
+
+	var peer_ids: Array[int] = []
+	for key in _remote_players_by_peer_id.keys():
+		peer_ids.append(int(key))
+
+	if not peer_ids.has(peer_id):
+		peer_ids.append(peer_id)
+
+	peer_ids.sort()
+
+	var slot_index: int = peer_ids.find(peer_id) + 1
+	if slot_index <= 0:
+		slot_index = 1
+
 	return local_player_2d.global_position + (remote_player_spawn_offset * float(slot_index))
 
 
