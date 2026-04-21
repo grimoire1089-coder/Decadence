@@ -48,6 +48,7 @@ var selected_recipe_key: String = ""
 var pending_cancel_slot_index: int = -1
 var pending_cancel_preview: Dictionary = {}
 var current_page_index: int = 0
+var _pending_network_plant_request: Dictionary = {}
 var dimmer: ColorRect = null
 
 @onready var panel: Panel = $Panel
@@ -540,6 +541,7 @@ func close() -> void:
 	current_page_index = 0
 	pending_cancel_slot_index = -1
 	pending_cancel_preview.clear()
+	_pending_network_plant_request.clear()
 	cancel_confirm_dialog.hide()
 	if recipe_selector_dialog != null:
 		recipe_selector_dialog.reset_selector_state()
@@ -1059,6 +1061,32 @@ func _on_plant_pressed() -> void:
 	if representative_seed_item == null:
 		representative_seed_item = recipe.seed_item
 
+	if _can_route_crop_actions_through_world():
+		var seed_item_payload: Dictionary = {}
+		if current_machine.has_method("build_network_item_payload"):
+			seed_item_payload = current_machine.call("build_network_item_payload", representative_seed_item) as Dictionary
+
+		_pending_network_plant_request = {
+			"removed_entries": removed_seed_result.get("removed_entries", []).duplicate(true),
+			"slot_index": selected_slot_index,
+			"plant_count": plant_count,
+			"recipe_key": _get_recipe_key(recipe),
+		}
+
+		info_label.text = "植え付け要求を送信した"
+		_request_networked_crop_action({
+			"interaction_kind": "crop_machine_plant",
+			"machine_path": str(current_machine.get_path()),
+			"request_peer_id": _get_request_peer_id(current_player),
+			"slot_index": selected_slot_index,
+			"plant_count": plant_count,
+			"recipe_key": _get_recipe_key(recipe),
+			"seed_item_payload": seed_item_payload,
+			"removed_entries_payload": _build_removed_entries_payload(removed_seed_result.get("removed_entries", [])),
+		})
+		refresh()
+		return
+
 	var was_empty: bool = current_machine.is_slot_empty(selected_slot_index)
 	var planted: bool = current_machine.plant_slot(selected_slot_index, recipe, plant_count, representative_seed_item)
 	if not planted:
@@ -1283,6 +1311,109 @@ func _on_unlock_slot_pressed() -> void:
 	info_label.text = "スロット%dを解放した（-%d Cr）" % [next_slot_number, unlock_cost]
 	_log_system("%sのスロット%dを %d Cr で解放した" % [current_machine.machine_name, next_slot_number, unlock_cost])
 	refresh()
+
+
+func handle_network_plant_result(result: Dictionary) -> void:
+	if result.is_empty():
+		return
+	if String(result.get("interaction_kind", "")).strip_edges() != "crop_machine_plant":
+		return
+
+	var success: bool = bool(result.get("success", false))
+	var message_text: String = String(result.get("message", ""))
+
+	if not success:
+		var rollback_payload: Array = result.get("rollback_removed_entries_payload", []) as Array
+		if not rollback_payload.is_empty():
+			_restore_removed_entries_from_payload(rollback_payload)
+		elif not _pending_network_plant_request.is_empty():
+			_restore_removed_seed_entries(_pending_network_plant_request.get("removed_entries", []))
+
+	_pending_network_plant_request.clear()
+
+	if visible and not message_text.is_empty():
+		info_label.text = message_text
+
+	if visible and current_machine != null:
+		refresh()
+
+
+func _build_removed_entries_payload(removed_entries: Array) -> Array:
+	var payload: Array = []
+	if current_machine == null:
+		return payload
+
+	for removed_entry in removed_entries:
+		if typeof(removed_entry) != TYPE_DICTIONARY:
+			continue
+
+		var item_data: ItemData = removed_entry.get("item_data", null) as ItemData
+		var count: int = max(int(removed_entry.get("count", 0)), 0)
+		if item_data == null or count <= 0:
+			continue
+
+		var item_payload: Dictionary = {}
+		if current_machine.has_method("build_network_item_payload"):
+			item_payload = current_machine.call("build_network_item_payload", item_data) as Dictionary
+
+		payload.append({
+			"item_payload": item_payload,
+			"count": count,
+		})
+
+	return payload
+
+
+func _restore_removed_entries_from_payload(payload: Array) -> void:
+	if payload.is_empty() or current_machine == null:
+		return
+
+	var removed_entries: Array = []
+	for entry_variant in payload:
+		if typeof(entry_variant) != TYPE_DICTIONARY:
+			continue
+
+		var entry: Dictionary = entry_variant as Dictionary
+		var item_payload: Dictionary = entry.get("item_payload", {}) as Dictionary
+		var count: int = max(int(entry.get("count", 0)), 0)
+		if count <= 0:
+			continue
+
+		if not current_machine.has_method("build_item_from_network_payload"):
+			continue
+
+		var item_data: ItemData = current_machine.call("build_item_from_network_payload", item_payload) as ItemData
+		if item_data == null:
+			continue
+
+		removed_entries.append({
+			"item_data": item_data,
+			"count": count,
+		})
+
+	_restore_removed_seed_entries(removed_entries)
+
+
+func _can_route_crop_actions_through_world() -> bool:
+	var current_scene: Node = get_tree().current_scene
+	return current_scene != null and current_scene.has_method("request_networked_world_interaction")
+
+
+func _request_networked_crop_action(request: Dictionary) -> void:
+	var current_scene: Node = get_tree().current_scene
+	if current_scene != null and current_scene.has_method("request_networked_world_interaction"):
+		current_scene.call("request_networked_world_interaction", request)
+
+
+func _get_request_peer_id(player: Node) -> int:
+	if player != null and player.has_method("get_network_peer_id"):
+		return max(int(player.call("get_network_peer_id")), 1)
+
+	var multiplayer_api: MultiplayerAPI = get_tree().get_multiplayer()
+	if multiplayer_api != null:
+		return max(multiplayer_api.get_unique_id(), 1)
+
+	return 1
 
 
 func _on_open_slot_upgrade_pressed(slot_index: int) -> void:

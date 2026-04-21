@@ -421,6 +421,16 @@ func _rpc_open_crop_machine(machine_path: String) -> void:
 	_open_crop_machine_local(machine_path)
 
 
+@rpc("authority", "call_remote", "reliable")
+func _rpc_sync_crop_machine_state(machine_path: String, state_payload: Dictionary) -> void:
+	_apply_crop_machine_state_local(machine_path, state_payload)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _rpc_handle_crop_machine_plant_result(result: Dictionary) -> void:
+	_handle_crop_machine_plant_result_local(result)
+
+
 func _normalize_map_transition_request(request: Dictionary) -> Dictionary:
 	var normalized_scene_path: String = String(request.get("target_map_scene_path", request.get("scene_path", request.get("target_scene_path", "")))).strip_edges()
 	if normalized_scene_path.is_empty():
@@ -457,6 +467,16 @@ func _normalize_world_interaction_request(request: Dictionary) -> Dictionary:
 	normalized_request["interaction_kind"] = interaction_kind
 	normalized_request["machine_path"] = String(request.get("machine_path", request.get("target_node_path", ""))).strip_edges()
 	normalized_request["request_peer_id"] = int(request.get("request_peer_id", _get_local_network_peer_id()))
+	normalized_request["slot_index"] = int(request.get("slot_index", -1))
+	normalized_request["plant_count"] = max(int(request.get("plant_count", 1)), 1)
+	normalized_request["recipe_key"] = String(request.get("recipe_key", "")).strip_edges()
+
+	var seed_item_payload_variant: Variant = request.get("seed_item_payload", {})
+	normalized_request["seed_item_payload"] = seed_item_payload_variant if typeof(seed_item_payload_variant) == TYPE_DICTIONARY else {}
+
+	var removed_entries_payload_variant: Variant = request.get("removed_entries_payload", [])
+	normalized_request["removed_entries_payload"] = removed_entries_payload_variant if typeof(removed_entries_payload_variant) == TYPE_ARRAY else []
+
 	return normalized_request
 
 
@@ -491,6 +511,26 @@ func _apply_world_interaction_request_local(request: Dictionary, requesting_peer
 				return
 
 			_open_crop_machine_local(crop_machine_path)
+		"crop_machine_plant":
+			var crop_plant_result: Dictionary = _perform_crop_machine_plant_request(request)
+			if crop_plant_result.is_empty():
+				return
+
+			var crop_machine_path_for_result: String = String(crop_plant_result.get("machine_path", request.get("machine_path", ""))).strip_edges()
+			if bool(crop_plant_result.get("success", false)):
+				var machine_state: Dictionary = crop_plant_result.get("machine_state", {}) as Dictionary
+				if _is_network_online() and _can_accept_network_gameplay_requests() and not crop_machine_path_for_result.is_empty():
+					rpc("_rpc_sync_crop_machine_state", crop_machine_path_for_result, machine_state)
+
+			if _is_network_online() and _can_accept_network_gameplay_requests():
+				var crop_requesting_peer_id: int = max(requesting_peer_id, 1)
+				if crop_requesting_peer_id == _get_local_network_peer_id():
+					_handle_crop_machine_plant_result_local(crop_plant_result)
+				else:
+					rpc_id(crop_requesting_peer_id, "_rpc_handle_crop_machine_plant_result", crop_plant_result)
+				return
+
+			_handle_crop_machine_plant_result_local(crop_plant_result)
 		_:
 			return
 
@@ -523,6 +563,121 @@ func _open_crop_machine_local(machine_path: String) -> void:
 	var crop_machine_ui: Node = get_tree().get_first_node_in_group("crop_machine_ui")
 	if crop_machine_ui != null and crop_machine_ui.has_method("open_machine"):
 		crop_machine_ui.call("open_machine", machine, player)
+
+
+func _perform_crop_machine_plant_request(request: Dictionary) -> Dictionary:
+	var result: Dictionary = {
+		"interaction_kind": "crop_machine_plant",
+		"success": false,
+		"message": "",
+		"machine_path": String(request.get("machine_path", "")).strip_edges(),
+		"rollback_removed_entries_payload": request.get("removed_entries_payload", [])
+	}
+
+	var machine_path: String = String(request.get("machine_path", "")).strip_edges()
+	if machine_path.is_empty():
+		result["message"] = "栽培機が見つからない"
+		return result
+
+	var machine_node: Node = get_node_or_null(NodePath(machine_path))
+	var machine: CropMachine = machine_node as CropMachine
+	if machine == null:
+		result["message"] = "栽培機が見つからない"
+		return result
+
+	var recipe_key: String = String(request.get("recipe_key", "")).strip_edges()
+	var recipe: CropRecipe = _find_crop_machine_recipe_by_key(machine, recipe_key)
+	if recipe == null:
+		result["message"] = "植え付けレシピがない"
+		return result
+
+	var slot_index: int = int(request.get("slot_index", -1))
+	var plant_count: int = max(int(request.get("plant_count", 1)), 1)
+	if slot_index < 0 or slot_index >= machine.slots.size():
+		result["message"] = "スロット未選択"
+		return result
+
+	if recipe.seed_item == null:
+		result["message"] = "種アイテムが未設定"
+		return result
+
+	if not machine.can_plant_recipe_in_slot(slot_index, recipe):
+		result["message"] = "使用中スロットには同じ作物だけ追加投入できる"
+		return result
+
+	var representative_seed_item: ItemData = recipe.seed_item
+	var seed_item_payload: Dictionary = request.get("seed_item_payload", {}) as Dictionary
+	if machine.has_method("build_item_from_network_payload"):
+		var built_seed_item: ItemData = machine.call("build_item_from_network_payload", seed_item_payload) as ItemData
+		if built_seed_item != null:
+			representative_seed_item = built_seed_item
+
+	var was_empty: bool = machine.is_slot_empty(slot_index)
+	var planted: bool = machine.plant_slot(slot_index, recipe, plant_count, representative_seed_item)
+	if not planted:
+		result["message"] = "植え付けできなかった"
+		return result
+
+	machine.save_data()
+	machine._refresh_open_ui()
+
+	result["success"] = true
+	result["message"] = "%sを %d 回分 セットした" % [recipe.get_display_name(), plant_count] if was_empty else "%sを %d 回分 追加投入した" % [recipe.get_display_name(), plant_count]
+	if machine.has_method("export_network_state_payload"):
+		result["machine_state"] = machine.call("export_network_state_payload")
+	else:
+		result["machine_state"] = machine.get_save_payload()
+
+	return result
+
+
+func _find_crop_machine_recipe_by_key(machine: CropMachine, recipe_key: String) -> CropRecipe:
+	if machine == null or recipe_key.is_empty():
+		return null
+
+	for recipe_variant in machine.available_recipes:
+		var recipe: CropRecipe = recipe_variant as CropRecipe
+		if recipe == null or not recipe.is_valid_recipe():
+			continue
+
+		var current_key: String = ""
+		if machine.has_method("_get_recipe_unique_key"):
+			current_key = String(machine.call("_get_recipe_unique_key", recipe))
+		elif not recipe.resource_path.is_empty():
+			current_key = recipe.resource_path
+		elif not str(recipe.id).is_empty():
+			current_key = str(recipe.id)
+		else:
+			current_key = recipe.get_display_name()
+
+		if current_key == recipe_key:
+			return recipe
+
+	return null
+
+
+func _apply_crop_machine_state_local(machine_path: String, state_payload: Dictionary) -> void:
+	var normalized_machine_path: String = machine_path.strip_edges()
+	if normalized_machine_path.is_empty():
+		return
+
+	var machine_node: Node = get_node_or_null(NodePath(normalized_machine_path))
+	var machine: CropMachine = machine_node as CropMachine
+	if machine == null:
+		return
+
+	if machine.has_method("apply_network_state_payload"):
+		machine.call("apply_network_state_payload", state_payload)
+		return
+
+	machine.apply_save_payload(state_payload)
+	machine._refresh_open_ui()
+
+
+func _handle_crop_machine_plant_result_local(result: Dictionary) -> void:
+	var crop_machine_ui: Node = get_tree().get_first_node_in_group("crop_machine_ui")
+	if crop_machine_ui != null and crop_machine_ui.has_method("handle_network_plant_result"):
+		crop_machine_ui.call("handle_network_plant_result", result)
 
 
 func _on_network_peer_joined(peer_id: int) -> void:

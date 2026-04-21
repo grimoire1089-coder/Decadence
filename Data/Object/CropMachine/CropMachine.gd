@@ -328,6 +328,100 @@ func _get_harvest_quality_module() -> CropMachineHarvestQualityModule:
 	return _harvest_quality_module
 
 
+func build_network_item_payload(item_data: ItemData) -> Dictionary:
+	if item_data == null:
+		return {}
+
+	var item_path: String = ""
+	if item_data.has_meta("source_item_path"):
+		item_path = str(item_data.get_meta("source_item_path"))
+	if item_path.is_empty():
+		item_path = String(item_data.resource_path)
+
+	return {
+		"item_path": item_path,
+		"item_id": str(item_data.id),
+		"quality": item_data.get_quality(),
+		"rank": item_data.get_rank(),
+	}
+
+
+func build_item_from_network_payload(payload: Dictionary) -> ItemData:
+	if payload.is_empty():
+		return null
+
+	var item_path: String = String(payload.get("item_path", "")).strip_edges()
+	var item_id: String = String(payload.get("item_id", "")).strip_edges()
+	var quality: int = max(int(payload.get("quality", 0)), 0)
+	var rank: int = clamp(int(payload.get("rank", 0)), 0, 5)
+
+	return _build_item_from_network_saved_data(item_path, item_id, quality, rank)
+
+
+func _build_item_from_network_saved_data(item_path: String, item_id: String, quality: int, rank: int) -> ItemData:
+	var base_item: ItemData = _resolve_item_from_network_path_or_id(item_path, item_id)
+	if base_item == null:
+		return null
+
+	if quality == 0 and rank == 0:
+		return base_item
+
+	var duplicated_item: ItemData = base_item.duplicate(true) as ItemData
+	if duplicated_item == null:
+		duplicated_item = base_item
+
+	duplicated_item.quality = clamp(quality, 0, 999999999)
+	duplicated_item.rank = clamp(rank, 0, 5)
+	duplicated_item.set_meta("source_item_path", _get_item_source_path_for_network(base_item))
+	duplicated_item.set_meta("source_item_id", str(base_item.id))
+	return duplicated_item
+
+
+func _resolve_item_from_network_path_or_id(item_path: String, item_id: String) -> ItemData:
+	if not item_path.is_empty() and ResourceLoader.exists(item_path):
+		var loaded_item: ItemData = load(item_path) as ItemData
+		if loaded_item != null:
+			return loaded_item
+
+
+	for recipe_variant in available_recipes:
+		var recipe: CropRecipe = recipe_variant as CropRecipe
+		if recipe == null:
+			continue
+
+		for candidate in [recipe.seed_item, recipe.harvest_item]:
+			var item_candidate: ItemData = candidate as ItemData
+			if item_candidate == null:
+				continue
+			if not item_id.is_empty() and str(item_candidate.id) == item_id:
+				return item_candidate
+			if not item_path.is_empty() and _get_item_source_path_for_network(item_candidate) == item_path:
+				return item_candidate
+
+	return null
+
+
+func _get_item_source_path_for_network(item_data: ItemData) -> String:
+	if item_data == null:
+		return ""
+
+	if item_data.has_meta("source_item_path"):
+		var meta_path: String = str(item_data.get_meta("source_item_path"))
+		if not meta_path.is_empty():
+			return meta_path
+
+	return String(item_data.resource_path)
+
+
+func export_network_state_payload() -> Dictionary:
+	return get_save_payload().duplicate(true)
+
+
+func apply_network_state_payload(payload: Dictionary) -> void:
+	apply_save_payload(payload)
+	_refresh_open_ui()
+
+
 func get_save_key() -> String:
 	return _get_save_module().get_machine_save_key(self)
 
