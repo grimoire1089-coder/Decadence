@@ -754,12 +754,29 @@ func _log_error(text: String) -> void:
 
 func _can_request_networked_vending_actions() -> bool:
 	var current_scene: Node = get_tree().current_scene
-	return current_scene != null and current_scene.has_method("request_networked_world_interaction")
+	if current_scene == null:
+		return false
+	if not current_scene.has_method("request_networked_world_interaction"):
+		return false
+
+	if current_scene.has_method("_is_network_online"):
+		return bool(current_scene.call("_is_network_online"))
+
+	if current_scene.has_method("get_network_session_manager"):
+		var session_manager: Node = current_scene.call("get_network_session_manager") as Node
+		if session_manager != null and session_manager.has_method("is_online"):
+			return bool(session_manager.call("is_online"))
+
+	return false
 
 
 func _request_networked_vending_action(request: Dictionary) -> void:
 	var current_scene: Node = get_tree().current_scene
-	if current_scene != null and current_scene.has_method("request_networked_world_interaction"):
+	if current_scene == null:
+		return
+	if not _can_request_networked_vending_actions():
+		return
+	if current_scene.has_method("request_networked_world_interaction"):
 		current_scene.call("request_networked_world_interaction", request)
 
 
