@@ -43,15 +43,11 @@ enum Facing {
 
 @warning_ignore("unused_private_class_variable")
 var _player_sprite: Sprite2D = null
-
 var _facing: int = Facing.DOWN
-
 @warning_ignore("unused_private_class_variable")
 var _sprite_base_position: Vector2 = Vector2.ZERO
-
 @warning_ignore("unused_private_class_variable")
 var _walk_anim_time: float = 0.0
-
 var _input_locked: bool = false
 
 var current_interactable: Node2D = null
@@ -68,7 +64,6 @@ var player_motion_controller: PlayerMotionController = null
 
 
 func _ready() -> void:
-	add_to_group("player")
 	refresh_from_stats()
 	_ensure_player_motion_controller()
 	_resolve_player_sprite()
@@ -76,6 +71,13 @@ func _ready() -> void:
 	_ensure_player_input_controller()
 	_ensure_player_support_controller()
 	_ensure_player_interaction_controller()
+
+	if _is_remote_network_player():
+		remove_from_group("player")
+		add_to_group("remote_player")
+		return
+
+	add_to_group("player")
 
 	if PlayerStatsManager != null and not PlayerStatsManager.stats_changed.is_connected(_on_player_stats_changed):
 		PlayerStatsManager.stats_changed.connect(_on_player_stats_changed)
