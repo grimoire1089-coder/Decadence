@@ -81,7 +81,7 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="Panel" type="Panel" parent="CenterContainer"]
-custom_minimum_size = Vector2(620, 520)
+custom_minimum_size = Vector2(700, 660)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
@@ -176,7 +176,7 @@ theme_override_styles/pressed = SubResource("StyleBoxFlat_button")
 theme_override_styles/focus = SubResource("StyleBoxFlat_button")
 
 [node name="SettingsTabs" type="TabContainer" parent="CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox"]
-custom_minimum_size = Vector2(0, 260)
+custom_minimum_size = Vector2(0, 400)
 layout_mode = 2
 size_flags_vertical = 3
 current_tab = 0
@@ -220,6 +220,58 @@ text = "70%"
 horizontal_alignment = 2
 vertical_alignment = 1
 
+[node name="SoundRow" type="HBoxContainer" parent="CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Audio/AudioVBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="SoundLabel" type="Label" parent="CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Audio/AudioVBox/SoundRow"]
+custom_minimum_size = Vector2(90, 0)
+layout_mode = 2
+text = "効果音音量"
+vertical_alignment = 1
+
+[node name="SoundSlider" type="HSlider" parent="CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Audio/AudioVBox/SoundRow"]
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 100.0
+step = 1.0
+value = 100.0
+
+[node name="SoundPercentLabel" type="Label" parent="CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Audio/AudioVBox/SoundRow"]
+custom_minimum_size = Vector2(54, 0)
+layout_mode = 2
+text = "100%"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="AmbientRow" type="HBoxContainer" parent="CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Audio/AudioVBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="AmbientLabel" type="Label" parent="CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Audio/AudioVBox/AmbientRow"]
+custom_minimum_size = Vector2(90, 0)
+layout_mode = 2
+text = "環境音音量"
+vertical_alignment = 1
+
+[node name="AmbientSlider" type="HSlider" parent="CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Audio/AudioVBox/AmbientRow"]
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 100.0
+step = 1.0
+value = 100.0
+
+[node name="AmbientPercentLabel" type="Label" parent="CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Audio/AudioVBox/AmbientRow"]
+custom_minimum_size = Vector2(54, 0)
+layout_mode = 2
+text = "100%"
+horizontal_alignment = 2
+vertical_alignment = 1
+
 [node name="VoiceRow" type="HBoxContainer" parent="CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Audio/AudioVBox"]
 layout_mode = 2
 theme_override_constants/separation = 12
@@ -252,7 +304,7 @@ theme_override_constants/separation = 10
 alignment = 1
 
 [node name="BgmResetButton" type="Button" parent="CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Audio/AudioVBox/AudioButtonsRow"]
-custom_minimum_size = Vector2(160, 40)
+custom_minimum_size = Vector2(150, 40)
 layout_mode = 2
 text = "BGMを初期値に戻す"
 theme_override_styles/normal = SubResource("StyleBoxFlat_button")
@@ -260,8 +312,31 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_button")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_button")
 theme_override_styles/focus = SubResource("StyleBoxFlat_button")
 
-[node name="VoiceResetButton" type="Button" parent="CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Audio/AudioVBox/AudioButtonsRow"]
-custom_minimum_size = Vector2(170, 40)
+[node name="SoundResetButton" type="Button" parent="CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Audio/AudioVBox/AudioButtonsRow"]
+custom_minimum_size = Vector2(150, 40)
+layout_mode = 2
+text = "効果音を初期値に戻す"
+theme_override_styles/normal = SubResource("StyleBoxFlat_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button")
+theme_override_styles/focus = SubResource("StyleBoxFlat_button")
+
+[node name="AudioButtonsRow2" type="HBoxContainer" parent="CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Audio/AudioVBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="AmbientResetButton" type="Button" parent="CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Audio/AudioVBox/AudioButtonsRow2"]
+custom_minimum_size = Vector2(150, 40)
+layout_mode = 2
+text = "環境音を初期値に戻す"
+theme_override_styles/normal = SubResource("StyleBoxFlat_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button")
+theme_override_styles/focus = SubResource("StyleBoxFlat_button")
+
+[node name="VoiceResetButton" type="Button" parent="CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Audio/AudioVBox/AudioButtonsRow2"]
+custom_minimum_size = Vector2(150, 40)
 layout_mode = 2
 text = "ボイスを初期値に戻す"
 theme_override_styles/normal = SubResource("StyleBoxFlat_button")
@@ -270,9 +345,9 @@ theme_override_styles/pressed = SubResource("StyleBoxFlat_button")
 theme_override_styles/focus = SubResource("StyleBoxFlat_button")
 
 [node name="AudioStatusLabel" type="Label" parent="CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Audio/AudioVBox"]
-custom_minimum_size = Vector2(0, 22)
+custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
-text = "現在のBGM音量: 70% / ボイス音量: 100%"
+text = "BGM: 70% / 効果音: 100% / 環境音: 100% / ボイス: 100%"
 autowrap_mode = 3
 
 [node name="Graphics" type="VBoxContainer" parent="CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs"]

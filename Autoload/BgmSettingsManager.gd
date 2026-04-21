@@ -1,6 +1,8 @@
 extends Node
 
 signal bgm_volume_changed(ratio: float, percent: int)
+signal sound_volume_changed(ratio: float, percent: int)
+signal ambient_volume_changed(ratio: float, percent: int)
 signal voice_volume_changed(ratio: float, percent: int)
 signal camera_zoom_changed(preset_id: String, zoom: Vector2, label: String)
 
@@ -8,9 +10,13 @@ const SETTINGS_PATH := "user://audio_settings.cfg"
 const SECTION_AUDIO := "audio"
 const SECTION_GRAPHICS := "graphics"
 const KEY_BGM_RATIO := "bgm_ratio"
+const KEY_SOUND_RATIO := "sound_ratio"
+const KEY_AMBIENT_RATIO := "ambient_ratio"
 const KEY_VOICE_RATIO := "voice_ratio"
 const KEY_CAMERA_PRESET := "camera_preset"
 const DEFAULT_BGM_RATIO := 0.70
+const DEFAULT_SOUND_RATIO := 1.00
+const DEFAULT_AMBIENT_RATIO := 1.00
 const DEFAULT_VOICE_RATIO := 1.00
 const DEFAULT_CAMERA_PRESET := "100"
 const MIN_LINEAR := 0.0001
@@ -24,9 +30,13 @@ const CAMERA_ZOOM_PULL_1 := Vector2(1.6, 1.6)
 const CAMERA_ZOOM_PULL_2 := Vector2(1.33, 1.33)
 
 @export var bgm_bus_name: StringName = &"BGM"
+@export var sound_bus_name: StringName = &"Sound"
+@export var ambient_bus_name: StringName = &"Ambient"
 @export var voice_bus_name: StringName = &"Voice"
 
 var _bgm_ratio: float = DEFAULT_BGM_RATIO
+var _sound_ratio: float = DEFAULT_SOUND_RATIO
+var _ambient_ratio: float = DEFAULT_AMBIENT_RATIO
 var _voice_ratio: float = DEFAULT_VOICE_RATIO
 var _camera_preset: String = DEFAULT_CAMERA_PRESET
 
@@ -34,6 +44,8 @@ var _camera_preset: String = DEFAULT_CAMERA_PRESET
 func _ready() -> void:
 	load_settings()
 	apply_bgm_volume()
+	apply_sound_volume()
+	apply_ambient_volume()
 	apply_voice_volume()
 	apply_camera_zoom()
 
@@ -68,6 +80,58 @@ func reset_to_default() -> void:
 	set_bgm_ratio(DEFAULT_BGM_RATIO)
 
 
+func set_sound_ratio(value: float) -> void:
+	var new_value: float = clampf(value, 0.0, 1.0)
+	if is_equal_approx(_sound_ratio, new_value):
+		return
+
+	_sound_ratio = new_value
+	apply_sound_volume()
+	save_settings()
+
+
+func get_sound_ratio() -> float:
+	return _sound_ratio
+
+
+func set_sound_percent(value: int) -> void:
+	set_sound_ratio(float(clampi(value, 0, 100)) / 100.0)
+
+
+func get_sound_percent() -> int:
+	return int(round(_sound_ratio * 100.0))
+
+
+func reset_sound_to_default() -> void:
+	set_sound_ratio(DEFAULT_SOUND_RATIO)
+
+
+func set_ambient_ratio(value: float) -> void:
+	var new_value: float = clampf(value, 0.0, 1.0)
+	if is_equal_approx(_ambient_ratio, new_value):
+		return
+
+	_ambient_ratio = new_value
+	apply_ambient_volume()
+	save_settings()
+
+
+func get_ambient_ratio() -> float:
+	return _ambient_ratio
+
+
+func set_ambient_percent(value: int) -> void:
+	set_ambient_ratio(float(clampi(value, 0, 100)) / 100.0)
+
+
+func get_ambient_percent() -> int:
+	return int(round(_ambient_ratio * 100.0))
+
+
+func reset_ambient_to_default() -> void:
+	set_ambient_ratio(DEFAULT_AMBIENT_RATIO)
+
+
 func set_voice_ratio(value: float) -> void:
 	var new_value: float = clampf(value, 0.0, 1.0)
 	if is_equal_approx(_voice_ratio, new_value):
@@ -96,25 +160,47 @@ func reset_voice_to_default() -> void:
 
 func reset_all_to_default() -> void:
 	_bgm_ratio = DEFAULT_BGM_RATIO
+	_sound_ratio = DEFAULT_SOUND_RATIO
+	_ambient_ratio = DEFAULT_AMBIENT_RATIO
 	_voice_ratio = DEFAULT_VOICE_RATIO
 	_camera_preset = DEFAULT_CAMERA_PRESET
 	apply_bgm_volume()
+	apply_sound_volume()
+	apply_ambient_volume()
 	apply_voice_volume()
 	apply_camera_zoom()
 	save_settings()
-
-
-func get_voice_bus_name() -> StringName:
-	return voice_bus_name
 
 
 func get_bgm_bus_name() -> StringName:
 	return bgm_bus_name
 
 
+func get_sound_bus_name() -> StringName:
+	return sound_bus_name
+
+
+func get_ambient_bus_name() -> StringName:
+	return ambient_bus_name
+
+
+func get_voice_bus_name() -> StringName:
+	return voice_bus_name
+
+
 func apply_bgm_volume() -> void:
 	_apply_bus_volume(bgm_bus_name, _bgm_ratio, "BGM")
 	bgm_volume_changed.emit(_bgm_ratio, get_bgm_percent())
+
+
+func apply_sound_volume() -> void:
+	_apply_bus_volume(sound_bus_name, _sound_ratio, "Sound")
+	sound_volume_changed.emit(_sound_ratio, get_sound_percent())
+
+
+func apply_ambient_volume() -> void:
+	_apply_bus_volume(ambient_bus_name, _ambient_ratio, "Ambient")
+	ambient_volume_changed.emit(_ambient_ratio, get_ambient_percent())
 
 
 func apply_voice_volume() -> void:
@@ -199,6 +285,8 @@ func save_settings() -> void:
 		push_warning("既存設定の読み込みに失敗: %s" % SETTINGS_PATH)
 
 	config.set_value(SECTION_AUDIO, KEY_BGM_RATIO, _bgm_ratio)
+	config.set_value(SECTION_AUDIO, KEY_SOUND_RATIO, _sound_ratio)
+	config.set_value(SECTION_AUDIO, KEY_AMBIENT_RATIO, _ambient_ratio)
 	config.set_value(SECTION_AUDIO, KEY_VOICE_RATIO, _voice_ratio)
 	config.set_value(SECTION_GRAPHICS, KEY_CAMERA_PRESET, _camera_preset)
 
@@ -212,14 +300,20 @@ func load_settings() -> void:
 	var load_result: int = config.load(SETTINGS_PATH)
 	if load_result != OK:
 		_bgm_ratio = DEFAULT_BGM_RATIO
+		_sound_ratio = DEFAULT_SOUND_RATIO
+		_ambient_ratio = DEFAULT_AMBIENT_RATIO
 		_voice_ratio = DEFAULT_VOICE_RATIO
 		_camera_preset = DEFAULT_CAMERA_PRESET
 		return
 
 	var raw_bgm: Variant = config.get_value(SECTION_AUDIO, KEY_BGM_RATIO, DEFAULT_BGM_RATIO)
+	var raw_sound: Variant = config.get_value(SECTION_AUDIO, KEY_SOUND_RATIO, DEFAULT_SOUND_RATIO)
+	var raw_ambient: Variant = config.get_value(SECTION_AUDIO, KEY_AMBIENT_RATIO, DEFAULT_AMBIENT_RATIO)
 	var raw_voice: Variant = config.get_value(SECTION_AUDIO, KEY_VOICE_RATIO, DEFAULT_VOICE_RATIO)
 	var raw_camera_preset: Variant = config.get_value(SECTION_GRAPHICS, KEY_CAMERA_PRESET, DEFAULT_CAMERA_PRESET)
 	_bgm_ratio = clampf(float(raw_bgm), 0.0, 1.0)
+	_sound_ratio = clampf(float(raw_sound), 0.0, 1.0)
+	_ambient_ratio = clampf(float(raw_ambient), 0.0, 1.0)
 	_voice_ratio = clampf(float(raw_voice), 0.0, 1.0)
 	_camera_preset = _normalize_camera_preset(str(raw_camera_preset))
 

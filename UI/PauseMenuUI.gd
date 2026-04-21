@@ -6,6 +6,8 @@ const TIME_MANAGER_SCRIPT_NAME: String = "TimeManager.gd"
 const BGM_SETTINGS_MANAGER_SCRIPT_NAME: String = "BgmSettingsManager.gd"
 
 var _suppress_bgm_slider_callback: bool = false
+var _suppress_sound_slider_callback: bool = false
+var _suppress_ambient_slider_callback: bool = false
 var _suppress_voice_slider_callback: bool = false
 var _suppress_camera_preset_callback: bool = false
 
@@ -21,11 +23,17 @@ var _suppress_camera_preset_callback: bool = false
 @onready var settings_tabs: TabContainer = $CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs
 @onready var bgm_slider: HSlider = $CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Audio/AudioVBox/BgmRow/BgmSlider
 @onready var bgm_percent_label: Label = $CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Audio/AudioVBox/BgmRow/BgmPercentLabel
+@onready var sound_slider: HSlider = $CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Audio/AudioVBox/SoundRow/SoundSlider
+@onready var sound_percent_label: Label = $CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Audio/AudioVBox/SoundRow/SoundPercentLabel
+@onready var ambient_slider: HSlider = $CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Audio/AudioVBox/AmbientRow/AmbientSlider
+@onready var ambient_percent_label: Label = $CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Audio/AudioVBox/AmbientRow/AmbientPercentLabel
 @onready var voice_slider: HSlider = $CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Audio/AudioVBox/VoiceRow/VoiceSlider
 @onready var voice_percent_label: Label = $CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Audio/AudioVBox/VoiceRow/VoicePercentLabel
 @onready var audio_status_label: Label = $CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Audio/AudioVBox/AudioStatusLabel
 @onready var bgm_reset_button: Button = $CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Audio/AudioVBox/AudioButtonsRow/BgmResetButton
-@onready var voice_reset_button: Button = $CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Audio/AudioVBox/AudioButtonsRow/VoiceResetButton
+@onready var sound_reset_button: Button = $CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Audio/AudioVBox/AudioButtonsRow/SoundResetButton
+@onready var ambient_reset_button: Button = $CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Audio/AudioVBox/AudioButtonsRow2/AmbientResetButton
+@onready var voice_reset_button: Button = $CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Audio/AudioVBox/AudioButtonsRow2/VoiceResetButton
 @onready var camera_preset_option: OptionButton = $CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Graphics/GraphicsVBox/CameraPresetRow/CameraPresetOption
 @onready var camera_hint_label: Label = $CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Graphics/GraphicsVBox/GraphicsHintLabel
 @onready var graphics_status_label: Label = $CenterContainer/Panel/VBoxContainer/SettingsSection/SettingsVBox/SettingsTabs/Graphics/GraphicsVBox/GraphicsStatusLabel
@@ -60,6 +68,8 @@ func _ready() -> void:
 			settings_tabs.set_tab_title(1, "グラフィック")
 
 	_setup_slider(bgm_slider, _on_bgm_slider_value_changed)
+	_setup_slider(sound_slider, _on_sound_slider_value_changed)
+	_setup_slider(ambient_slider, _on_ambient_slider_value_changed)
 	_setup_slider(voice_slider, _on_voice_slider_value_changed)
 	_setup_camera_preset_option()
 
@@ -69,6 +79,10 @@ func _ready() -> void:
 		settings_close_button.pressed.connect(_on_settings_close_pressed)
 	if bgm_reset_button != null and not bgm_reset_button.pressed.is_connected(_on_bgm_reset_pressed):
 		bgm_reset_button.pressed.connect(_on_bgm_reset_pressed)
+	if sound_reset_button != null and not sound_reset_button.pressed.is_connected(_on_sound_reset_pressed):
+		sound_reset_button.pressed.connect(_on_sound_reset_pressed)
+	if ambient_reset_button != null and not ambient_reset_button.pressed.is_connected(_on_ambient_reset_pressed):
+		ambient_reset_button.pressed.connect(_on_ambient_reset_pressed)
 	if voice_reset_button != null and not voice_reset_button.pressed.is_connected(_on_voice_reset_pressed):
 		voice_reset_button.pressed.connect(_on_voice_reset_pressed)
 	if camera_reset_button != null and not camera_reset_button.pressed.is_connected(_on_camera_reset_pressed):
@@ -199,8 +213,33 @@ func _show_settings_section(tab_index: int = 0) -> void:
 		settings_tabs.current_tab = clampi(tab_index, 0, max(settings_tabs.get_tab_count() - 1, 0))
 	_refresh_audio_controls()
 	_refresh_graphics_controls()
-	if settings_tabs != null:
-		settings_tabs.grab_focus()
+	call_deferred("_grab_settings_focus")
+
+
+func _grab_settings_focus() -> void:
+	if settings_tabs != null and settings_tabs.current_tab == 1:
+		if camera_preset_option != null and not camera_preset_option.disabled and camera_preset_option.is_visible_in_tree():
+			camera_preset_option.grab_focus()
+			return
+		if camera_reset_button != null and not camera_reset_button.disabled and camera_reset_button.is_visible_in_tree():
+			camera_reset_button.grab_focus()
+			return
+	else:
+		if bgm_slider != null and bgm_slider.is_visible_in_tree():
+			bgm_slider.grab_focus()
+			return
+		if sound_slider != null and sound_slider.is_visible_in_tree():
+			sound_slider.grab_focus()
+			return
+		if ambient_slider != null and ambient_slider.is_visible_in_tree():
+			ambient_slider.grab_focus()
+			return
+		if voice_slider != null and voice_slider.is_visible_in_tree():
+			voice_slider.grab_focus()
+			return
+
+	if settings_close_button != null and settings_close_button.is_visible_in_tree():
+		settings_close_button.grab_focus()
 
 
 func _hide_settings_section() -> void:
@@ -229,6 +268,28 @@ func _on_bgm_reset_pressed() -> void:
 
 	if manager.has_method("reset_to_default"):
 		manager.call("reset_to_default")
+	_refresh_audio_controls()
+
+
+func _on_sound_reset_pressed() -> void:
+	var manager: Node = _find_bgm_settings_manager()
+	if manager == null:
+		_refresh_audio_controls()
+		return
+
+	if manager.has_method("reset_sound_to_default"):
+		manager.call("reset_sound_to_default")
+	_refresh_audio_controls()
+
+
+func _on_ambient_reset_pressed() -> void:
+	var manager: Node = _find_bgm_settings_manager()
+	if manager == null:
+		_refresh_audio_controls()
+		return
+
+	if manager.has_method("reset_ambient_to_default"):
+		manager.call("reset_ambient_to_default")
 	_refresh_audio_controls()
 
 
@@ -271,7 +332,47 @@ func _on_bgm_slider_value_changed(value: float) -> void:
 	elif manager.has_method("set_bgm_ratio"):
 		manager.call("set_bgm_ratio", float(percent) / 100.0)
 
-	_update_audio_status_label("BGM音量を %d%% に設定 / ボイス音量 %s" % [percent, _get_percent_text(voice_slider, voice_percent_label)])
+	_update_audio_status_label(_build_audio_status_text(manager))
+
+
+func _on_sound_slider_value_changed(value: float) -> void:
+	if _suppress_sound_slider_callback:
+		return
+
+	var percent: int = clampi(int(round(value)), 0, 100)
+	_update_sound_percent_label(percent)
+
+	var manager: Node = _find_bgm_settings_manager()
+	if manager == null:
+		_update_audio_status_label("設定マネージャーが見つからない")
+		return
+
+	if manager.has_method("set_sound_percent"):
+		manager.call("set_sound_percent", percent)
+	elif manager.has_method("set_sound_ratio"):
+		manager.call("set_sound_ratio", float(percent) / 100.0)
+
+	_update_audio_status_label(_build_audio_status_text(manager))
+
+
+func _on_ambient_slider_value_changed(value: float) -> void:
+	if _suppress_ambient_slider_callback:
+		return
+
+	var percent: int = clampi(int(round(value)), 0, 100)
+	_update_ambient_percent_label(percent)
+
+	var manager: Node = _find_bgm_settings_manager()
+	if manager == null:
+		_update_audio_status_label("設定マネージャーが見つからない")
+		return
+
+	if manager.has_method("set_ambient_percent"):
+		manager.call("set_ambient_percent", percent)
+	elif manager.has_method("set_ambient_ratio"):
+		manager.call("set_ambient_ratio", float(percent) / 100.0)
+
+	_update_audio_status_label(_build_audio_status_text(manager))
 
 
 func _on_voice_slider_value_changed(value: float) -> void:
@@ -291,7 +392,7 @@ func _on_voice_slider_value_changed(value: float) -> void:
 	elif manager.has_method("set_voice_ratio"):
 		manager.call("set_voice_ratio", float(percent) / 100.0)
 
-	_update_audio_status_label("ボイス音量を %d%% に設定 / BGM音量 %s" % [percent, _get_percent_text(bgm_slider, bgm_percent_label)])
+	_update_audio_status_label(_build_audio_status_text(manager))
 
 
 func _on_camera_preset_selected(index: int) -> void:
@@ -318,45 +419,41 @@ func _refresh_audio_controls() -> void:
 	var has_manager: bool = manager != null
 
 	_apply_slider_enabled_state(bgm_slider, has_manager)
+	_apply_slider_enabled_state(sound_slider, has_manager)
+	_apply_slider_enabled_state(ambient_slider, has_manager)
 	_apply_slider_enabled_state(voice_slider, has_manager)
 	if bgm_reset_button != null:
 		bgm_reset_button.disabled = not has_manager
+	if sound_reset_button != null:
+		sound_reset_button.disabled = not has_manager
+	if ambient_reset_button != null:
+		ambient_reset_button.disabled = not has_manager
 	if voice_reset_button != null:
 		voice_reset_button.disabled = not has_manager
 
 	if not has_manager:
 		_update_bgm_percent_label(0)
+		_update_sound_percent_label(0)
+		_update_ambient_percent_label(0)
 		_update_voice_percent_label(0)
 		_update_audio_status_label("音量設定マネージャーが未接続")
 		return
 
-	var bgm_percent: int = 0
-	if manager.has_method("get_bgm_percent"):
-		bgm_percent = int(manager.call("get_bgm_percent"))
-	elif manager.has_method("get_bgm_ratio"):
-		bgm_percent = int(round(float(manager.call("get_bgm_ratio")) * 100.0))
+	var bgm_percent: int = _get_manager_percent(manager, "get_bgm_percent", "get_bgm_ratio", 0)
+	var sound_percent: int = _get_manager_percent(manager, "get_sound_percent", "get_sound_ratio", 100)
+	var ambient_percent: int = _get_manager_percent(manager, "get_ambient_percent", "get_ambient_ratio", 100)
+	var voice_percent: int = _get_manager_percent(manager, "get_voice_percent", "get_voice_ratio", 100)
 
-	var voice_percent: int = 100
-	if manager.has_method("get_voice_percent"):
-		voice_percent = int(manager.call("get_voice_percent"))
-	elif manager.has_method("get_voice_ratio"):
-		voice_percent = int(round(float(manager.call("get_voice_ratio")) * 100.0))
-
-	bgm_percent = clampi(bgm_percent, 0, 100)
-	voice_percent = clampi(voice_percent, 0, 100)
-
-	if bgm_slider != null:
-		_suppress_bgm_slider_callback = true
-		bgm_slider.value = bgm_percent
-		_suppress_bgm_slider_callback = false
-	if voice_slider != null:
-		_suppress_voice_slider_callback = true
-		voice_slider.value = voice_percent
-		_suppress_voice_slider_callback = false
+	_set_slider_value_without_callback(bgm_slider, bgm_percent, "bgm")
+	_set_slider_value_without_callback(sound_slider, sound_percent, "sound")
+	_set_slider_value_without_callback(ambient_slider, ambient_percent, "ambient")
+	_set_slider_value_without_callback(voice_slider, voice_percent, "voice")
 
 	_update_bgm_percent_label(bgm_percent)
+	_update_sound_percent_label(sound_percent)
+	_update_ambient_percent_label(ambient_percent)
 	_update_voice_percent_label(voice_percent)
-	_update_audio_status_label("現在のBGM音量: %d%% / ボイス音量: %d%%" % [bgm_percent, voice_percent])
+	_update_audio_status_label(_build_audio_status_text(manager))
 
 
 func _refresh_graphics_controls() -> void:
@@ -456,6 +553,16 @@ func _update_bgm_percent_label(percent: int) -> void:
 		bgm_percent_label.text = "%d%%" % clampi(percent, 0, 100)
 
 
+func _update_sound_percent_label(percent: int) -> void:
+	if sound_percent_label != null:
+		sound_percent_label.text = "%d%%" % clampi(percent, 0, 100)
+
+
+func _update_ambient_percent_label(percent: int) -> void:
+	if ambient_percent_label != null:
+		ambient_percent_label.text = "%d%%" % clampi(percent, 0, 100)
+
+
 func _update_voice_percent_label(percent: int) -> void:
 	if voice_percent_label != null:
 		voice_percent_label.text = "%d%%" % clampi(percent, 0, 100)
@@ -477,6 +584,52 @@ func _get_percent_text(slider: HSlider, label: Label) -> String:
 	if slider != null:
 		return "%d%%" % clampi(int(round(slider.value)), 0, 100)
 	return "0%"
+
+
+func _build_audio_status_text(manager: Node = null) -> String:
+	if manager == null:
+		manager = _find_bgm_settings_manager()
+	if manager == null:
+		return "音量設定マネージャーが未接続"
+
+	var bgm_percent: int = _get_manager_percent(manager, "get_bgm_percent", "get_bgm_ratio", 0)
+	var sound_percent: int = _get_manager_percent(manager, "get_sound_percent", "get_sound_ratio", 100)
+	var ambient_percent: int = _get_manager_percent(manager, "get_ambient_percent", "get_ambient_ratio", 100)
+	var voice_percent: int = _get_manager_percent(manager, "get_voice_percent", "get_voice_ratio", 100)
+	return "BGM: %d%% / 効果音: %d%% / 環境音: %d%% / ボイス: %d%%" % [bgm_percent, sound_percent, ambient_percent, voice_percent]
+
+
+func _get_manager_percent(manager: Node, percent_method: String, ratio_method: String, fallback_percent: int) -> int:
+	if manager == null:
+		return clampi(fallback_percent, 0, 100)
+	if manager.has_method(percent_method):
+		return clampi(int(manager.call(percent_method)), 0, 100)
+	if manager.has_method(ratio_method):
+		return clampi(int(round(float(manager.call(ratio_method)) * 100.0)), 0, 100)
+	return clampi(fallback_percent, 0, 100)
+
+
+func _set_slider_value_without_callback(slider: HSlider, percent: int, channel: String) -> void:
+	if slider == null:
+		return
+
+	match channel:
+		"bgm":
+			_suppress_bgm_slider_callback = true
+			slider.value = percent
+			_suppress_bgm_slider_callback = false
+		"sound":
+			_suppress_sound_slider_callback = true
+			slider.value = percent
+			_suppress_sound_slider_callback = false
+		"ambient":
+			_suppress_ambient_slider_callback = true
+			slider.value = percent
+			_suppress_ambient_slider_callback = false
+		"voice":
+			_suppress_voice_slider_callback = true
+			slider.value = percent
+			_suppress_voice_slider_callback = false
 
 
 func _find_bgm_settings_manager() -> Node:
