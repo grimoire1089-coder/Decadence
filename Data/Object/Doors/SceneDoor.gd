@@ -14,6 +14,10 @@ class_name SceneDoor
 @export var write_message_log: bool = false
 @export var message_text: String = ""
 
+@export_group("Transition FX")
+@export var use_transition_fade: bool = true
+@export var transition_sfx: AudioStream
+
 @onready var interact_area: Area2D = $InteractArea
 
 
@@ -42,20 +46,43 @@ func interact(_player: Node) -> void:
 		return
 
 	var current_scene: Node = get_tree().current_scene
-	if current_scene == null or not current_scene.has_method("request_map_transition"):
-		push_warning("SceneDoor: request_map_transition() を持つ current_scene が見つかりません: %s" % name)
+	if current_scene == null:
+		push_warning("SceneDoor: current_scene が見つかりません: %s" % name)
 		return
 
 	var resolved_message: String = message_text if not message_text.is_empty() else "%sに入った" % door_name
 	var fallback_log_text: String = resolved_message if write_message_log else ""
 
-	current_scene.call(
-		"request_map_transition",
-		normalized_scene_path,
-		target_spawn_id.strip_edges(),
-		door_name,
-		fallback_log_text
-	)
+	var request: Dictionary = {
+		"target_map_scene_path": normalized_scene_path,
+		"target_spawn_id": target_spawn_id.strip_edges(),
+		"transition_name": door_name,
+		"log_text": fallback_log_text,
+		"use_fade_transition": use_transition_fade,
+	}
+
+	if transition_sfx != null:
+		request["transition_sfx"] = transition_sfx
+
+	var map_transition_manager: Node = null
+	if current_scene.has_method("get_map_transition_manager"):
+		map_transition_manager = current_scene.call("get_map_transition_manager")
+
+	if map_transition_manager != null and map_transition_manager.has_method("request_transition_request"):
+		map_transition_manager.call("request_transition_request", request)
+		return
+
+	if current_scene.has_method("request_map_transition"):
+		current_scene.call(
+			"request_map_transition",
+			normalized_scene_path,
+			target_spawn_id.strip_edges(),
+			door_name,
+			fallback_log_text
+		)
+		return
+
+	push_warning("SceneDoor: 遷移先を処理できるノードが見つかりません: %s" % name)
 
 
 func get_interact_action_text() -> String:

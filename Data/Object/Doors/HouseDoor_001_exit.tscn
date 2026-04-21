@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://cta60t25ma76i" path="res://Data/Object/Doors/SceneDoor.gd" id="1_door_script"]
 [ext_resource type="Texture2D" uid="uid://ci581tu051dpe" path="res://Image/House_Door_001.png" id="2_door_tex"]
+[ext_resource type="AudioStream" uid="uid://3jiunuflnttk" path="res://Sound/Sci-fi_door_opening.ogg" id="2_oyyx7"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
 size = Vector2(556, 710)
@@ -14,6 +15,7 @@ script = ExtResource("1_door_script")
 door_name = "外"
 interact_action_text = "出る"
 interact_prompt_offset = Vector2(0, -120)
+transition_sfx = ExtResource("2_oyyx7")
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=1881369181]
 texture = ExtResource("2_door_tex")

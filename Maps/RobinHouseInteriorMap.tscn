@@ -1,22 +1,23 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://bonnpgbpdceu4"]
 
-[ext_resource type="PackedScene" path="res://HouseDoor_001.tscn" id="1_door_scene"]
+[ext_resource type="PackedScene" uid="uid://cs3fxoq26b54n" path="res://HouseDoor_001.tscn" id="1_door_scene"]
 [ext_resource type="PackedScene" path="res://Data/Object/Doors/SceneSpawnPoint.tscn" id="2_spawn_point_scene"]
+[ext_resource type="AudioStream" uid="uid://3jiunuflnttk" path="res://Sound/Sci-fi_door_opening.ogg" id="3_brkbw"]
 
-[node name="RobinHouseInteriorMap" type="Node2D"]
+[node name="RobinHouseInteriorMap" type="Node2D" unique_id=1302931553]
 
-[node name="Sortables" type="Node2D" parent="."]
+[node name="Sortables" type="Node2D" parent="." unique_id=159804784]
 y_sort_enabled = true
 
-[node name="EntryFromOutside" parent="Sortables" instance=ExtResource("2_spawn_point_scene")]
+[node name="EntryFromOutside" parent="Sortables" unique_id=1986526987 instance=ExtResource("2_spawn_point_scene")]
 position = Vector2(0, 80)
 spawn_id = "entry_from_outside"
 
-[node name="HouseExit" parent="Sortables" instance=ExtResource("1_door_scene")]
+[node name="HouseExit" parent="Sortables" unique_id=497111399 instance=ExtResource("1_door_scene")]
 position = Vector2(0, -80)
 scale = Vector2(0.25, 0.25)
 door_name = "外"
 target_scene_path = "res://Maps/TownMap_MainExtract.tscn"
 target_spawn_id = "robin_house_outside"
 interact_action_text = "出る"
-interact_prompt_offset = Vector2(0, -120)
+transition_sfx = ExtResource("3_brkbw")

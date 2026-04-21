@@ -12,6 +12,16 @@ signal map_load_failed(map_scene_path: String)
 @export_node_path("Node") var player_path: NodePath = NodePath("../Sortables/Player")
 @export_node_path("Node") var loading_overlay_path: NodePath = NodePath("../UI/LoadingOverlay")
 
+@export_group("Transition FX")
+@export var use_fade_transition: bool = true
+@export_range(0.0, 2.0, 0.01) var fade_out_duration: float = 0.18
+@export_range(0.0, 2.0, 0.01) var fade_in_duration: float = 0.18
+@export_range(0.0, 1.0, 0.01) var transition_hold_duration: float = 0.03
+@export_range(0.0, 1.0, 0.01) var post_spawn_fade_in_delay: float = 0.10
+@export_range(0.0, 1.0, 0.01) var transition_black_alpha: float = 1.0
+@export var default_transition_sfx: AudioStream
+@export var transition_sfx_bus: StringName = &"Master"
+
 @onready var map_root: Node2D = get_node_or_null(map_root_path) as Node2D
 @onready var sortables: Node2D = get_node_or_null(sortables_path) as Node2D
 @onready var player: Node = get_node_or_null(player_path)
@@ -22,10 +32,12 @@ var _active_map_root_nodes: Array[Node] = []
 var _active_map_sortable_nodes: Array[Node] = []
 var _map_session_state_by_path: Dictionary = {}
 var _transition_in_progress: bool = false
+var _transition_sfx_player: AudioStreamPlayer = null
 
 
 func _ready() -> void:
 	add_to_group("map_transition_manager")
+	_ensure_transition_sfx_player()
 
 
 func set_default_map_scene_path(value: String) -> void:
@@ -85,6 +97,14 @@ func request_transition_request(request: Dictionary) -> void:
 		"target_spawn_id": String(request.get("target_spawn_id", request.get("spawn_id", ""))).strip_edges(),
 		"transition_name": String(request.get("transition_name", request.get("name", ""))),
 		"log_text": String(request.get("log_text", request.get("message_text", request.get("log", "")))),
+		"use_fade_transition": _as_bool(request.get("use_fade_transition", use_fade_transition), use_fade_transition),
+		"fade_out_duration": max(float(request.get("fade_out_duration", fade_out_duration)), 0.0),
+		"fade_in_duration": max(float(request.get("fade_in_duration", fade_in_duration)), 0.0),
+		"transition_hold_duration": max(float(request.get("transition_hold_duration", transition_hold_duration)), 0.0),
+		"post_spawn_fade_in_delay": max(float(request.get("post_spawn_fade_in_delay", post_spawn_fade_in_delay)), 0.0),
+		"transition_black_alpha": clamp(float(request.get("transition_black_alpha", transition_black_alpha)), 0.0, 1.0),
+		"transition_sfx": request.get("transition_sfx", default_transition_sfx),
+		"transition_sfx_bus": StringName(String(request.get("transition_sfx_bus", String(transition_sfx_bus)))),
 	}
 
 	call_deferred("_perform_map_transition", normalized_request)
@@ -99,10 +119,24 @@ func _perform_map_transition(request: Dictionary) -> void:
 	emit_signal("transition_started", request)
 
 	_set_player_input_locked(true)
-	_open_loading_overlay("移動中…", 0)
-	await get_tree().process_frame
 
-	_update_loading_overlay("マップを切り替え中…", 60)
+	var should_fade: bool = _as_bool(request.get("use_fade_transition", use_fade_transition), use_fade_transition)
+	var fade_out_time: float = max(float(request.get("fade_out_duration", fade_out_duration)), 0.0)
+	var fade_in_time: float = max(float(request.get("fade_in_duration", fade_in_duration)), 0.0)
+	var hold_time: float = max(float(request.get("transition_hold_duration", transition_hold_duration)), 0.0)
+	var black_alpha: float = clamp(float(request.get("transition_black_alpha", transition_black_alpha)), 0.0, 1.0)
+	var post_spawn_delay: float = max(float(request.get("post_spawn_fade_in_delay", post_spawn_fade_in_delay)), 0.0)
+
+	_play_transition_sfx(request)
+
+	if should_fade and loading_overlay != null and loading_overlay.has_method("fade_out_to_black"):
+		await loading_overlay.call("fade_out_to_black", fade_out_time, black_alpha)
+		if hold_time > 0.0:
+			await get_tree().create_timer(hold_time).timeout
+	else:
+		_open_loading_overlay("移動中…", 0)
+		await get_tree().process_frame
+
 	var loaded: bool = _load_map_scene(target_map_scene_path)
 	await get_tree().process_frame
 
@@ -117,20 +151,52 @@ func _perform_map_transition(request: Dictionary) -> void:
 			_write_log(log_text)
 		elif not transition_name.is_empty():
 			_write_log("%sへ移動した" % transition_name)
-
-		_update_loading_overlay("完了", 100)
-		await get_tree().create_timer(0.1).timeout
 	else:
-		_update_loading_overlay("移動に失敗しました", 100)
-		await get_tree().create_timer(0.2).timeout
 		push_warning("MapTransitionManager: マップ切替に失敗しました: %s" % target_map_scene_path)
 
-	_close_loading_overlay()
+	if loaded and should_fade:
+		await _wait_after_spawn_before_fade_in(post_spawn_delay)
+
+	if should_fade and loading_overlay != null and loading_overlay.has_method("fade_in_from_black"):
+		await loading_overlay.call("fade_in_from_black", fade_in_time)
+	else:
+		_close_loading_overlay()
+
 	_set_player_input_locked(false)
 
 	_transition_in_progress = false
 	if loaded:
 		emit_signal("transition_finished", request)
+
+
+func _ensure_transition_sfx_player() -> void:
+	if _transition_sfx_player != null and is_instance_valid(_transition_sfx_player):
+		return
+
+	_transition_sfx_player = get_node_or_null("TransitionSfxPlayer") as AudioStreamPlayer
+	if _transition_sfx_player != null:
+		return
+
+	var player_node := AudioStreamPlayer.new()
+	player_node.name = "TransitionSfxPlayer"
+	player_node.bus = transition_sfx_bus
+	add_child(player_node)
+	_transition_sfx_player = player_node
+
+
+func _play_transition_sfx(request: Dictionary) -> void:
+	var stream: AudioStream = request.get("transition_sfx", default_transition_sfx) as AudioStream
+	if stream == null:
+		return
+
+	_ensure_transition_sfx_player()
+	if _transition_sfx_player == null:
+		return
+
+	var bus_name: StringName = StringName(String(request.get("transition_sfx_bus", String(transition_sfx_bus))))
+	_transition_sfx_player.bus = bus_name
+	_transition_sfx_player.stream = stream
+	_transition_sfx_player.play()
 
 
 func _instantiate_map_fragment(target_map_scene_path: String) -> Node:
@@ -359,6 +425,13 @@ func _close_loading_overlay() -> void:
 		loading_overlay.call("close")
 
 
+func _wait_after_spawn_before_fade_in(delay: float) -> void:
+	await get_tree().process_frame
+	await get_tree().process_frame
+	if delay > 0.0:
+		await get_tree().create_timer(delay).timeout
+
+
 func _get_persistent_id(node: Node) -> String:
 	if node.has_method("get_persistent_save_id"):
 		return String(node.call("get_persistent_save_id")).strip_edges()
@@ -391,3 +464,20 @@ func _write_log(text: String) -> void:
 		log_node.call("add_system", text)
 	elif log_node.has_method("add_message"):
 		log_node.call("add_message", text, "SYSTEM")
+
+
+func _as_bool(value: Variant, default_value: bool) -> bool:
+	match typeof(value):
+		TYPE_BOOL:
+			return value
+		TYPE_INT:
+			return value != 0
+		TYPE_FLOAT:
+			return not is_zero_approx(value)
+		TYPE_STRING, TYPE_STRING_NAME:
+			var text: String = String(value).strip_edges().to_lower()
+			if text in ["true", "1", "yes", "on"]:
+				return true
+			if text in ["false", "0", "no", "off", ""]:
+				return false
+	return default_value

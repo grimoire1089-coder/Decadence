@@ -1,7 +1,8 @@
 [gd_scene format=3 uid="uid://cs3fxoq26b54n"]
 
-[ext_resource type="Script" path="res://Data/Object/Doors/SceneDoor.gd" id="1_door_script"]
-[ext_resource type="Texture2D" path="res://Image/House_Door_001.png" id="2_door_tex"]
+[ext_resource type="Script" uid="uid://cta60t25ma76i" path="res://Data/Object/Doors/SceneDoor.gd" id="1_door_script"]
+[ext_resource type="AudioStream" uid="uid://3jiunuflnttk" path="res://Sound/Sci-fi_door_opening.ogg" id="2_3hdb5"]
+[ext_resource type="Texture2D" uid="uid://ci581tu051dpe" path="res://Image/House_Door_001.png" id="2_door_tex"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
 size = Vector2(556, 710)
@@ -14,19 +15,18 @@ script = ExtResource("1_door_script")
 door_name = "ロビンの家"
 target_scene_path = "res://Maps/RobinHouseInteriorMap.tscn"
 target_spawn_id = "entry_from_outside"
-interact_action_text = "入る"
 interact_prompt_offset = Vector2(0, -120)
+transition_sfx = ExtResource("2_3hdb5")
 
-[node name="Sprite2D" type="Sprite2D" parent="."]
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1302019328]
 texture = ExtResource("2_door_tex")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1817366966]
 position = Vector2(2, 0)
 shape = SubResource("RectangleShape2D_body")
 
-[node name="InteractArea" type="Area2D" parent="."]
+[node name="InteractArea" type="Area2D" parent="." unique_id=966057599]
 collision_layer = 0
-collision_mask = 1
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="InteractArea"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="InteractArea" unique_id=2139791558]
 shape = SubResource("CircleShape2D_interact")
