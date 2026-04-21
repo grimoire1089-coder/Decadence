@@ -4,12 +4,22 @@ class_name BootManager
 const BOOT_MODE_CONTINUE: String = "continue"
 const BOOT_MODE_NEW_GAME: String = "new_game"
 
+const NETWORK_BOOT_MODE_DISABLED: String = "disabled"
+const NETWORK_BOOT_MODE_HOST: String = "host"
+const NETWORK_BOOT_MODE_CLIENT: String = "client"
+
 @export_file("*.tscn") var default_game_scene_path: String = "res://BaseWorld.tscn"
 @export_file("*.tscn") var new_game_scene_path: String = "res://BaseWorld.tscn"
 @export var slot_name: String = "slot_01"
 @export var threaded_load_poll_interval_sec: float = 0.03
 @export var auto_start_boot: bool = true
+@export var show_startup_menu: bool = true
 @export_enum("continue", "new_game") var boot_mode: String = BOOT_MODE_CONTINUE
+
+@export_group("Network Defaults")
+@export var startup_network_host_port: int = 7000
+@export var startup_network_client_address: String = "127.0.0.1"
+@export var startup_network_client_port: int = 7000
 
 @onready var dim_rect: ColorRect = $Root/Dim
 @onready var panel: PanelContainer = $Root/Panel
@@ -18,13 +28,31 @@ const BOOT_MODE_NEW_GAME: String = "new_game"
 @onready var progress_bar: ProgressBar = $Root/Panel/Margin/VBox/ProgressBar
 @onready var detail_label: Label = $Root/Panel/Margin/VBox/DetailLabel
 
+@onready var startup_menu: Control = get_node_or_null("Root/StartupMenu")
+@onready var startup_title_label: Label = get_node_or_null("Root/StartupMenu/Margin/VBox/Title")
+@onready var startup_client_address_edit: LineEdit = get_node_or_null("Root/StartupMenu/Margin/VBox/ClientAddressRow/ClientAddressEdit")
+@onready var startup_port_spin_box: SpinBox = get_node_or_null("Root/StartupMenu/Margin/VBox/PortRow/PortSpinBox")
+@onready var start_solo_button: Button = get_node_or_null("Root/StartupMenu/Margin/VBox/ButtonRow/SoloButton")
+@onready var start_host_button: Button = get_node_or_null("Root/StartupMenu/Margin/VBox/ButtonRow/HostButton")
+@onready var start_client_button: Button = get_node_or_null("Root/StartupMenu/Margin/VBox/ButtonRow/ClientButton")
+
 var _boot_started: bool = false
+var _startup_network_mode: String = NETWORK_BOOT_MODE_DISABLED
 
 
 func _ready() -> void:
 	layer = 100
 	visible = true
 	_set_progress(0.0, "起動準備中...", "")
+
+	_configure_startup_menu_defaults()
+	_connect_startup_menu_signals()
+
+	if show_startup_menu and startup_menu != null:
+		_show_startup_menu()
+		return
+
+	_hide_startup_menu()
 	if auto_start_boot:
 		call_deferred("start_boot")
 
@@ -49,11 +77,12 @@ func start_boot() -> void:
 	if _boot_started:
 		return
 	_boot_started = true
+	_hide_startup_menu()
 	call_deferred("_run_boot_sequence")
 
 
 func _run_boot_sequence() -> void:
-	await _step(0.02, "ロード画面を準備中...", "Boot scene を初期化しています")
+	await _step(0.02, "ロード画面を準備中...", "")
 	_stop_time_manager()
 
 	var save_manager: Node = _get_save_manager()
@@ -99,6 +128,8 @@ func _run_boot_sequence() -> void:
 		_set_progress(1.0, "起動に失敗しました", "シーンの生成に失敗しました")
 		return
 
+	_apply_startup_network_settings(new_scene)
+
 	if new_scene.has_method("prepare_world_before_restore"):
 		new_scene.call("prepare_world_before_restore", save_data)
 
@@ -116,6 +147,88 @@ func _run_boot_sequence() -> void:
 	await _step(1.0, "起動完了", "ゲームを開始します")
 	await get_tree().process_frame
 	queue_free()
+
+
+func _configure_startup_menu_defaults() -> void:
+	if startup_title_label != null:
+		startup_title_label.text = "Decadence"
+
+	if startup_client_address_edit != null:
+		startup_client_address_edit.text = startup_network_client_address
+
+	if startup_port_spin_box != null:
+		startup_port_spin_box.min_value = 1
+		startup_port_spin_box.max_value = 65535
+		startup_port_spin_box.step = 1
+		startup_port_spin_box.value = startup_network_host_port
+
+
+func _connect_startup_menu_signals() -> void:
+	if start_solo_button != null and not start_solo_button.pressed.is_connected(_on_start_solo_button_pressed):
+		start_solo_button.pressed.connect(_on_start_solo_button_pressed)
+
+	if start_host_button != null and not start_host_button.pressed.is_connected(_on_start_host_button_pressed):
+		start_host_button.pressed.connect(_on_start_host_button_pressed)
+
+	if start_client_button != null and not start_client_button.pressed.is_connected(_on_start_client_button_pressed):
+		start_client_button.pressed.connect(_on_start_client_button_pressed)
+
+
+func _show_startup_menu() -> void:
+	if startup_menu != null:
+		startup_menu.visible = true
+	if panel != null:
+		panel.visible = false
+	if dim_rect != null:
+		dim_rect.visible = true
+
+
+func _hide_startup_menu() -> void:
+	if startup_menu != null:
+		startup_menu.visible = false
+	if panel != null:
+		panel.visible = true
+	if dim_rect != null:
+		dim_rect.visible = true
+
+
+func _on_start_solo_button_pressed() -> void:
+	_startup_network_mode = NETWORK_BOOT_MODE_DISABLED
+	start_boot()
+
+
+func _on_start_host_button_pressed() -> void:
+	_startup_network_mode = NETWORK_BOOT_MODE_HOST
+	if startup_port_spin_box != null:
+		startup_network_host_port = int(startup_port_spin_box.value)
+		startup_network_client_port = int(startup_port_spin_box.value)
+	start_boot()
+
+
+func _on_start_client_button_pressed() -> void:
+	_startup_network_mode = NETWORK_BOOT_MODE_CLIENT
+	if startup_client_address_edit != null:
+		startup_network_client_address = startup_client_address_edit.text.strip_edges()
+	if startup_port_spin_box != null:
+		startup_network_client_port = int(startup_port_spin_box.value)
+	start_boot()
+
+
+func _apply_startup_network_settings(target_scene: Node) -> void:
+	if target_scene == null:
+		return
+
+	_set_property_if_exists(target_scene, "network_boot_mode", _startup_network_mode)
+	_set_property_if_exists(target_scene, "network_host_port", startup_network_host_port)
+	_set_property_if_exists(target_scene, "network_client_address", startup_network_client_address)
+	_set_property_if_exists(target_scene, "network_client_port", startup_network_client_port)
+
+
+func _set_property_if_exists(target: Object, property_name: String, value: Variant) -> void:
+	for property_info in target.get_property_list():
+		if String(property_info.get("name", "")) == property_name:
+			target.set(property_name, value)
+			return
 
 
 func _set_progress(ratio: float, status: String, detail: String) -> void:

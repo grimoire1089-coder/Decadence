@@ -5,6 +5,7 @@ signal interactable_changed(target)
 const UI_MODAL_MANAGER_SCRIPT_NAME: String = "UIModalManager.gd"
 const PAUSE_MENU_SCENE_PATH: String = "res://UI/PauseMenuUI.tscn"
 const DEBUG_SAVE_SLOT_NAME: String = "slot_01"
+const PLAYER_NETWORK_STATE_SCRIPT_PATH: String = "res://Gameplay/Player/PlayerNetworkState.gd"
 const MODAL_UI_GROUPS: Array[StringName] = [
 	&"vending_ui",
 	&"crop_machine_ui",
@@ -40,18 +41,20 @@ var _facing: int = Facing.DOWN
 var _sprite_base_position: Vector2 = Vector2.ZERO
 var _walk_anim_time: float = 0.0
 
-
 var current_interactable: Node2D = null
 var nearby_interactables: Array = []
 
 var selected_item_data: Resource = null
 var selected_item_amount: int = 0
 
+var player_network_state: PlayerNetworkState = null
+
 
 func _ready() -> void:
 	add_to_group("player")
 	refresh_from_stats()
 	_resolve_player_sprite()
+	_ensure_player_network_state()
 
 	if PlayerStatsManager != null and not PlayerStatsManager.stats_changed.is_connected(_on_player_stats_changed):
 		PlayerStatsManager.stats_changed.connect(_on_player_stats_changed)
@@ -65,6 +68,10 @@ func _exit_tree() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	if _is_remote_network_player():
+		_update_remote_network_player(delta)
+		return
+
 	if _is_player_control_locked():
 		velocity = Vector2.ZERO
 		move_and_slide()
@@ -193,6 +200,9 @@ func _safe_set_input_as_handled() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if _is_remote_network_player():
+		return
+
 	if _is_player_control_locked():
 		if event.is_action_pressed("interact") or event.is_action_pressed("eat_selected_item"):
 			_safe_set_input_as_handled()
@@ -574,6 +584,109 @@ func getCredit() -> int:
 
 func spendCredit(amount: int) -> bool:
 	return spend_credits(amount)
+
+
+func configure_network_peer(local_peer_id: int, target_peer_id: int, new_player_id: int = 0, new_display_name: String = "") -> void:
+	_ensure_player_network_state()
+	if player_network_state == null:
+		return
+	player_network_state.configure_from_peer(local_peer_id, target_peer_id, new_player_id, new_display_name)
+
+
+func set_network_local_player(value: bool) -> void:
+	_ensure_player_network_state()
+	if player_network_state == null:
+		return
+	player_network_state.set_local_remote_flags(value, not value)
+
+
+func set_network_authority_peer_id(value: int) -> void:
+	_ensure_player_network_state()
+	if player_network_state == null:
+		return
+	player_network_state.set_authority_peer_id(value)
+
+
+func apply_remote_network_snapshot(payload: Dictionary) -> void:
+	_ensure_player_network_state()
+	if player_network_state == null:
+		return
+	player_network_state.apply_snapshot_payload(payload)
+
+
+func export_network_spawn_payload() -> Dictionary:
+	_ensure_player_network_state()
+	if player_network_state == null:
+		return {}
+	return player_network_state.to_spawn_payload()
+
+
+func get_network_player_id() -> int:
+	_ensure_player_network_state()
+	if player_network_state == null:
+		return 0
+	return player_network_state.player_id
+
+
+func get_network_peer_id() -> int:
+	_ensure_player_network_state()
+	if player_network_state == null:
+		return 0
+	return player_network_state.peer_id
+
+
+func is_network_local_player() -> bool:
+	return not _is_remote_network_player()
+
+
+func is_network_remote_player() -> bool:
+	return _is_remote_network_player()
+
+
+func _ensure_player_network_state() -> void:
+	if player_network_state != null:
+		return
+
+	if not ResourceLoader.exists(PLAYER_NETWORK_STATE_SCRIPT_PATH):
+		return
+
+	var state_script: Script = load(PLAYER_NETWORK_STATE_SCRIPT_PATH) as Script
+	if state_script == null:
+		push_warning("Player: PlayerNetworkState.gd を読み込めません")
+		return
+
+	var instance: Variant = state_script.new()
+	if instance is PlayerNetworkState:
+		player_network_state = instance as PlayerNetworkState
+		player_network_state.set_local_remote_flags(true, false)
+
+
+func _is_remote_network_player() -> bool:
+	if player_network_state == null:
+		return false
+	return player_network_state.should_accept_remote_sync()
+
+
+func _update_remote_network_player(delta: float) -> void:
+	if player_network_state == null:
+		velocity = Vector2.ZERO
+		_update_current_interactable()
+		_update_walk_bob(delta)
+		return
+
+	if player_network_state.has_remote_snapshot:
+		global_position = player_network_state.apply_remote_position(global_position, delta)
+		velocity = player_network_state.remote_velocity
+
+		if player_network_state.remote_facing >= Facing.DOWN and player_network_state.remote_facing <= Facing.LEFT:
+			if _facing != player_network_state.remote_facing:
+				_facing = player_network_state.remote_facing
+				_apply_facing_visual()
+	else:
+		velocity = Vector2.ZERO
+
+	_update_current_interactable()
+	_update_walk_bob(delta)
 
 
 func _get_inventory_ui() -> Node:
