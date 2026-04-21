@@ -126,6 +126,23 @@ func request_networked_map_transition(request: Dictionary) -> void:
 	rpc_id(1, "_rpc_request_map_transition", normalized_request)
 
 
+func request_networked_world_interaction(request: Dictionary) -> void:
+	var normalized_request: Dictionary = _normalize_world_interaction_request(request)
+	if normalized_request.is_empty():
+		return
+
+	if not _is_network_online():
+		_apply_world_interaction_request_local(normalized_request, _get_local_network_peer_id())
+		return
+
+	_ensure_network_session_manager()
+	if _can_accept_network_gameplay_requests():
+		_apply_world_interaction_request_local(normalized_request, _get_local_network_peer_id())
+		return
+
+	rpc_id(1, "_rpc_request_world_interaction", normalized_request)
+
+
 func start_network_host(port: int = -1) -> bool:
 	_ensure_network_session_manager()
 	_connect_network_session_signals()
@@ -378,6 +395,27 @@ func _rpc_apply_map_transition_request(request: Dictionary) -> void:
 	_apply_map_transition_request_local(normalized_request)
 
 
+@rpc("any_peer", "call_remote", "reliable")
+func _rpc_request_world_interaction(request: Dictionary) -> void:
+	if not _can_accept_network_gameplay_requests():
+		return
+
+	var normalized_request: Dictionary = _normalize_world_interaction_request(request)
+	if normalized_request.is_empty():
+		return
+
+	var sender_peer_id: int = multiplayer.get_remote_sender_id()
+	if sender_peer_id <= 0:
+		sender_peer_id = int(normalized_request.get("request_peer_id", 0))
+
+	_apply_world_interaction_request_local(normalized_request, sender_peer_id)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _rpc_open_vending_machine(machine_path: String) -> void:
+	_open_vending_machine_local(machine_path)
+
+
 func _normalize_map_transition_request(request: Dictionary) -> Dictionary:
 	var normalized_scene_path: String = String(request.get("target_map_scene_path", request.get("scene_path", request.get("target_scene_path", "")))).strip_edges()
 	if normalized_scene_path.is_empty():
@@ -403,6 +441,54 @@ func _apply_map_transition_request_local(request: Dictionary) -> void:
 		String(request.get("transition_name", "")),
 		String(request.get("log_text", ""))
 	)
+
+
+func _normalize_world_interaction_request(request: Dictionary) -> Dictionary:
+	var interaction_kind: String = String(request.get("interaction_kind", request.get("kind", ""))).strip_edges()
+	if interaction_kind.is_empty():
+		return {}
+
+	var normalized_request: Dictionary = request.duplicate(true)
+	normalized_request["interaction_kind"] = interaction_kind
+	normalized_request["machine_path"] = String(request.get("machine_path", request.get("target_node_path", ""))).strip_edges()
+	normalized_request["request_peer_id"] = int(request.get("request_peer_id", _get_local_network_peer_id()))
+	return normalized_request
+
+
+func _apply_world_interaction_request_local(request: Dictionary, requesting_peer_id: int) -> void:
+	var interaction_kind: String = String(request.get("interaction_kind", "")).strip_edges()
+	match interaction_kind:
+		"vending_machine_open":
+			var machine_path: String = String(request.get("machine_path", "")).strip_edges()
+			if machine_path.is_empty():
+				return
+
+			if _can_accept_network_gameplay_requests():
+				var target_peer_id: int = max(requesting_peer_id, 1)
+				if target_peer_id == _get_local_network_peer_id():
+					_open_vending_machine_local(machine_path)
+				elif _is_network_online():
+					rpc_id(target_peer_id, "_rpc_open_vending_machine", machine_path)
+				return
+
+			_open_vending_machine_local(machine_path)
+		_:
+			return
+
+
+func _open_vending_machine_local(machine_path: String) -> void:
+	var normalized_machine_path: String = machine_path.strip_edges()
+	if normalized_machine_path.is_empty():
+		return
+
+	var machine_node: Node = get_node_or_null(NodePath(normalized_machine_path))
+	var machine: VendingMachine = machine_node as VendingMachine
+	if machine == null:
+		return
+
+	var vending_ui: Node = get_tree().get_first_node_in_group("vending_ui")
+	if vending_ui != null and vending_ui.has_method("open_machine"):
+		vending_ui.call("open_machine", machine, player)
 
 
 func _on_network_peer_joined(peer_id: int) -> void:
