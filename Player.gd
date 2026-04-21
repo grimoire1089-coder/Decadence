@@ -1,16 +1,15 @@
 extends CharacterBody2D
 
-@warning_ignore("unused_signal")
 signal interactable_changed(target)
 
 const UI_MODAL_MANAGER_SCRIPT_NAME: String = "UIModalManager.gd"
 const PAUSE_MENU_SCENE_PATH: String = "res://UI/PauseMenuUI.tscn"
 const DEBUG_SAVE_SLOT_NAME: String = "slot_01"
-const PLAYER_BOOTSTRAP_CONTROLLER_SCRIPT_PATH: String = "res://Gameplay/Player/PlayerBootstrapController.gd"
 const PLAYER_NETWORK_CONTROLLER_SCRIPT_PATH: String = "res://Gameplay/Player/PlayerNetworkController.gd"
 const PLAYER_INPUT_CONTROLLER_SCRIPT_PATH: String = "res://Gameplay/Player/PlayerInputController.gd"
 const PLAYER_SUPPORT_CONTROLLER_SCRIPT_PATH: String = "res://Gameplay/Player/PlayerSupportController.gd"
 const PLAYER_INTERACTION_CONTROLLER_SCRIPT_PATH: String = "res://Gameplay/Player/PlayerInteractionController.gd"
+const PLAYER_MOTION_CONTROLLER_SCRIPT_PATH: String = "res://Gameplay/Player/PlayerMotionController.gd"
 const MODAL_UI_GROUPS: Array[StringName] = [
 	&"vending_ui",
 	&"crop_machine_ui",
@@ -53,23 +52,32 @@ var nearby_interactables: Array = []
 var selected_item_data: Resource = null
 var selected_item_amount: int = 0
 
-var player_bootstrap_controller: PlayerBootstrapController = null
 var player_network_controller: PlayerNetworkController = null
 var player_input_controller: PlayerInputController = null
 var player_support_controller: PlayerSupportController = null
 var player_interaction_controller: PlayerInteractionController = null
+var player_motion_controller: PlayerMotionController = null
 
 
 func _ready() -> void:
-	_ensure_player_bootstrap_controller()
-	if player_bootstrap_controller != null:
-		player_bootstrap_controller.boot_ready()
+	add_to_group("player")
+	refresh_from_stats()
+	_ensure_player_motion_controller()
+	_resolve_player_sprite()
+	_ensure_player_network_controller()
+	_ensure_player_input_controller()
+	_ensure_player_support_controller()
+	_ensure_player_interaction_controller()
+
+	if PlayerStatsManager != null and not PlayerStatsManager.stats_changed.is_connected(_on_player_stats_changed):
+		PlayerStatsManager.stats_changed.connect(_on_player_stats_changed)
+
+	call_deferred("_ensure_pause_menu_exists")
 
 
 func _exit_tree() -> void:
-	_ensure_player_bootstrap_controller()
-	if player_bootstrap_controller != null:
-		player_bootstrap_controller.cleanup_exit_tree()
+	if PlayerStatsManager != null and PlayerStatsManager.stats_changed.is_connected(_on_player_stats_changed):
+		PlayerStatsManager.stats_changed.disconnect(_on_player_stats_changed)
 
 
 func _physics_process(delta: float) -> void:
@@ -94,108 +102,39 @@ func _physics_process(delta: float) -> void:
 
 
 func _resolve_player_sprite() -> void:
-	if sprite_path != NodePath():
-		_player_sprite = get_node_or_null(sprite_path) as Sprite2D
-
-	if _player_sprite == null:
-		_player_sprite = get_node_or_null("Sprite2D") as Sprite2D
-
-	if _player_sprite == null:
-		return
-
-	_sprite_base_position = _player_sprite.position
-
-	if front_texture == null:
-		front_texture = _player_sprite.texture
-
-	_apply_facing_visual()
-	_reset_walk_bob_immediate()
+	_ensure_player_motion_controller()
+	if player_motion_controller != null:
+		player_motion_controller.resolve_player_sprite()
 
 
 func _update_facing_from_direction(direction: Vector2) -> void:
-	if direction == Vector2.ZERO:
-		return
-
-	if absf(direction.x) > absf(direction.y):
-		_facing = Facing.RIGHT if direction.x > 0.0 else Facing.LEFT
-	else:
-		_facing = Facing.DOWN if direction.y > 0.0 else Facing.UP
-
-	_apply_facing_visual()
+	_ensure_player_motion_controller()
+	if player_motion_controller != null:
+		player_motion_controller.update_facing_from_direction(direction)
 
 
 func _apply_facing_visual() -> void:
-	if _player_sprite == null:
-		return
-
-	match _facing:
-		Facing.DOWN:
-			if front_texture != null:
-				_player_sprite.texture = front_texture
-			_player_sprite.flip_h = false
-		Facing.UP:
-			if back_texture != null:
-				_player_sprite.texture = back_texture
-			elif front_texture != null:
-				_player_sprite.texture = front_texture
-			_player_sprite.flip_h = false
-		Facing.RIGHT:
-			if side_texture != null:
-				_player_sprite.texture = side_texture
-			elif front_texture != null:
-				_player_sprite.texture = front_texture
-			_player_sprite.flip_h = false
-		Facing.LEFT:
-			if side_texture != null:
-				_player_sprite.texture = side_texture
-			elif front_texture != null:
-				_player_sprite.texture = front_texture
-			_player_sprite.flip_h = flip_side_for_left
+	_ensure_player_motion_controller()
+	if player_motion_controller != null:
+		player_motion_controller.apply_facing_visual()
 
 
 func _update_walk_bob(delta: float) -> void:
-	if _player_sprite == null:
-		return
-
-	if not walk_bob_enabled:
-		_reset_walk_bob_smooth(delta)
-		return
-
-	var moving: bool = velocity.length_squared() > 1.0
-	if moving:
-		var speed_ratio: float = 1.0
-		if speed > 0.0:
-			speed_ratio = clampf(velocity.length() / speed, 0.0, 1.5)
-
-		_walk_anim_time += delta * walk_bob_speed * maxf(speed_ratio, 0.2)
-
-		var side_offset: float = sin(_walk_anim_time) * walk_bob_side_amount
-		var up_offset: float = -absf(cos(_walk_anim_time)) * walk_bob_up_amount
-		var tilt_amount: float = sin(_walk_anim_time) * walk_bob_tilt_degrees
-		var target_position: Vector2 = _sprite_base_position + Vector2(side_offset, up_offset)
-
-		_player_sprite.position = _player_sprite.position.lerp(target_position, clampf(delta * walk_bob_return_speed, 0.0, 1.0))
-		_player_sprite.rotation_degrees = lerpf(_player_sprite.rotation_degrees, tilt_amount, clampf(delta * walk_bob_return_speed, 0.0, 1.0))
-	else:
-		_reset_walk_bob_smooth(delta)
+	_ensure_player_motion_controller()
+	if player_motion_controller != null:
+		player_motion_controller.update_walk_bob(delta)
 
 
 func _reset_walk_bob_smooth(delta: float) -> void:
-	if _player_sprite == null:
-		return
-
-	_player_sprite.position = _player_sprite.position.lerp(_sprite_base_position, clampf(delta * walk_bob_return_speed, 0.0, 1.0))
-	_player_sprite.rotation_degrees = lerpf(_player_sprite.rotation_degrees, 0.0, clampf(delta * walk_bob_return_speed, 0.0, 1.0))
-	_walk_anim_time = 0.0 if _player_sprite.position.distance_squared_to(_sprite_base_position) < 0.01 and absf(_player_sprite.rotation_degrees) < 0.05 else _walk_anim_time
+	_ensure_player_motion_controller()
+	if player_motion_controller != null:
+		player_motion_controller.reset_walk_bob_smooth(delta)
 
 
 func _reset_walk_bob_immediate() -> void:
-	if _player_sprite == null:
-		return
-
-	_walk_anim_time = 0.0
-	_player_sprite.position = _sprite_base_position
-	_player_sprite.rotation_degrees = 0.0
+	_ensure_player_motion_controller()
+	if player_motion_controller != null:
+		player_motion_controller.reset_walk_bob_immediate()
 
 
 func _safe_set_input_as_handled() -> void:
@@ -483,75 +422,108 @@ func set_input_locked(value: bool) -> void:
 	_input_locked = value
 
 
-func _ensure_player_bootstrap_controller() -> void:
-	if player_bootstrap_controller != null:
+func _ensure_player_network_controller() -> void:
+	if player_network_controller != null:
 		return
 
-	if not ResourceLoader.exists(PLAYER_BOOTSTRAP_CONTROLLER_SCRIPT_PATH):
+	if not ResourceLoader.exists(PLAYER_NETWORK_CONTROLLER_SCRIPT_PATH):
 		return
 
-	var controller_script: Script = load(PLAYER_BOOTSTRAP_CONTROLLER_SCRIPT_PATH) as Script
+	var controller_script: Script = load(PLAYER_NETWORK_CONTROLLER_SCRIPT_PATH) as Script
 	if controller_script == null:
-		push_warning("Player: PlayerBootstrapController.gd を読み込めません")
+		push_warning("Player: PlayerNetworkController.gd を読み込めません")
 		return
 
 	var instance: Variant = controller_script.new()
-	if instance is PlayerBootstrapController:
-		player_bootstrap_controller = instance as PlayerBootstrapController
-		player_bootstrap_controller.setup(self)
-
-
-func _ensure_player_network_controller() -> void:
-	_ensure_player_bootstrap_controller()
-	if player_bootstrap_controller != null:
-		player_bootstrap_controller.ensure_network_controller()
+	if instance is PlayerNetworkController:
+		player_network_controller = instance as PlayerNetworkController
+		player_network_controller.setup(self)
+		player_network_controller.ensure_state()
 
 
 func _ensure_player_input_controller() -> void:
-	_ensure_player_bootstrap_controller()
-	if player_bootstrap_controller != null:
-		player_bootstrap_controller.ensure_input_controller()
+	if player_input_controller != null:
+		return
+
+	if not ResourceLoader.exists(PLAYER_INPUT_CONTROLLER_SCRIPT_PATH):
+		return
+
+	var controller_script: Script = load(PLAYER_INPUT_CONTROLLER_SCRIPT_PATH) as Script
+	if controller_script == null:
+		push_warning("Player: PlayerInputController.gd を読み込めません")
+		return
+
+	var instance: Variant = controller_script.new()
+	if instance is PlayerInputController:
+		player_input_controller = instance as PlayerInputController
+		player_input_controller.setup(self)
 
 
 func _ensure_player_support_controller() -> void:
-	_ensure_player_bootstrap_controller()
-	if player_bootstrap_controller != null:
-		player_bootstrap_controller.ensure_support_controller()
+	if player_support_controller != null:
+		return
+
+	if not ResourceLoader.exists(PLAYER_SUPPORT_CONTROLLER_SCRIPT_PATH):
+		return
+
+	var controller_script: Script = load(PLAYER_SUPPORT_CONTROLLER_SCRIPT_PATH) as Script
+	if controller_script == null:
+		push_warning("Player: PlayerSupportController.gd を読み込めません")
+		return
+
+	var instance: Variant = controller_script.new()
+	if instance is PlayerSupportController:
+		player_support_controller = instance as PlayerSupportController
+		player_support_controller.setup(self)
 
 
 func _ensure_player_interaction_controller() -> void:
-	_ensure_player_bootstrap_controller()
-	if player_bootstrap_controller != null:
-		player_bootstrap_controller.ensure_interaction_controller()
+	if player_interaction_controller != null:
+		return
+
+	if not ResourceLoader.exists(PLAYER_INTERACTION_CONTROLLER_SCRIPT_PATH):
+		return
+
+	var controller_script: Script = load(PLAYER_INTERACTION_CONTROLLER_SCRIPT_PATH) as Script
+	if controller_script == null:
+		push_warning("Player: PlayerInteractionController.gd を読み込めません")
+		return
+
+	var instance: Variant = controller_script.new()
+	if instance is PlayerInteractionController:
+		player_interaction_controller = instance as PlayerInteractionController
+		player_interaction_controller.setup(self, UI_MODAL_MANAGER_SCRIPT_NAME, PAUSE_MENU_SCENE_PATH, MODAL_UI_GROUPS)
+
+
+func _ensure_player_motion_controller() -> void:
+	if player_motion_controller != null:
+		return
+
+	if not ResourceLoader.exists(PLAYER_MOTION_CONTROLLER_SCRIPT_PATH):
+		return
+
+	var controller_script: Script = load(PLAYER_MOTION_CONTROLLER_SCRIPT_PATH) as Script
+	if controller_script == null:
+		push_warning("Player: PlayerMotionController.gd を読み込めません")
+		return
+
+	var instance: Variant = controller_script.new()
+	if instance is PlayerMotionController:
+		player_motion_controller = instance as PlayerMotionController
+		player_motion_controller.setup(self)
 
 
 func _is_remote_network_player() -> bool:
+	_ensure_player_network_controller()
 	if player_network_controller == null:
 		return false
 	return player_network_controller.is_remote_network_player()
 
 
 func _update_remote_network_player(delta: float) -> void:
-	if player_network_controller == null:
-		velocity = Vector2.ZERO
-		_update_current_interactable()
-		_update_walk_bob(delta)
-		return
-
-	if player_network_controller.has_remote_snapshot():
-		global_position = player_network_controller.apply_remote_position(global_position, delta)
-		velocity = player_network_controller.get_remote_velocity()
-
-		var remote_facing: int = player_network_controller.get_remote_facing()
-		if remote_facing >= Facing.DOWN and remote_facing <= Facing.LEFT:
-			if _facing != remote_facing:
-				_facing = remote_facing
-				_apply_facing_visual()
-	else:
-		velocity = Vector2.ZERO
-
-	_update_current_interactable()
-	_update_walk_bob(delta)
+	_ensure_player_motion_controller()
+	if player_motion_controller != null:
+		player_motion_controller.update_remote_network_player(delta)
 
 
 func _get_inventory_ui() -> Node:
