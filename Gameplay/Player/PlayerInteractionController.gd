@@ -15,6 +15,8 @@ func setup(owner_node: CharacterBody2D, modal_manager_script_name: String, pause
 
 
 func register_interactable(target: Node2D) -> void:
+	if not _is_local_gameplay_owner():
+		return
 	if owner == null or target == null:
 		return
 
@@ -25,6 +27,8 @@ func register_interactable(target: Node2D) -> void:
 
 
 func unregister_interactable(target: Node2D) -> void:
+	if not _is_local_gameplay_owner():
+		return
 	if owner == null or target == null:
 		return
 
@@ -34,6 +38,13 @@ func unregister_interactable(target: Node2D) -> void:
 
 func update_current_interactable() -> void:
 	if owner == null:
+		return
+
+	if not _is_local_gameplay_owner():
+		if owner.current_interactable != null:
+			owner.current_interactable = null
+			owner.interactable_changed.emit(owner.current_interactable)
+		owner.nearby_interactables.clear()
 		return
 
 	for i in range(owner.nearby_interactables.size() - 1, -1, -1):
@@ -55,10 +66,14 @@ func update_current_interactable() -> void:
 
 
 func is_interaction_ui_open() -> bool:
+	if not _is_local_gameplay_owner():
+		return false
 	return is_any_modal_ui_visible()
 
 
 func is_player_control_locked() -> bool:
+	if not _is_local_gameplay_owner():
+		return false
 	if owner == null:
 		return false
 
@@ -76,6 +91,8 @@ func is_player_control_locked() -> bool:
 
 
 func is_any_modal_ui_visible() -> bool:
+	if not _is_local_gameplay_owner():
+		return false
 	if owner == null:
 		return false
 
@@ -87,6 +104,8 @@ func is_any_modal_ui_visible() -> bool:
 
 
 func has_non_pause_modal_visible() -> bool:
+	if not _is_local_gameplay_owner():
+		return false
 	if owner == null:
 		return false
 
@@ -102,12 +121,16 @@ func has_non_pause_modal_visible() -> bool:
 
 
 func get_pause_menu_ui() -> Control:
+	if not _is_local_gameplay_owner():
+		return null
 	if owner == null:
 		return null
 	return owner.get_tree().get_first_node_in_group("pause_menu_ui") as Control
 
 
 func ensure_pause_menu_exists() -> Control:
+	if not _is_local_gameplay_owner():
+		return null
 	if owner == null:
 		return null
 
@@ -135,6 +158,8 @@ func ensure_pause_menu_exists() -> Control:
 
 
 func find_ui_modal_manager() -> Node:
+	if not _is_local_gameplay_owner():
+		return null
 	if owner == null:
 		return null
 
@@ -154,3 +179,11 @@ func find_ui_modal_manager() -> Node:
 				return child
 
 	return null
+
+
+func _is_local_gameplay_owner() -> bool:
+	if owner == null or not is_instance_valid(owner):
+		return false
+	if owner.has_method("is_network_remote_player"):
+		return not bool(owner.call("is_network_remote_player"))
+	return true
