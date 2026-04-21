@@ -41,10 +41,17 @@ enum Facing {
 	LEFT
 }
 
+@warning_ignore("unused_private_class_variable")
 var _player_sprite: Sprite2D = null
+
 var _facing: int = Facing.DOWN
+
+@warning_ignore("unused_private_class_variable")
 var _sprite_base_position: Vector2 = Vector2.ZERO
+
+@warning_ignore("unused_private_class_variable")
 var _walk_anim_time: float = 0.0
+
 var _input_locked: bool = false
 
 var current_interactable: Node2D = null
