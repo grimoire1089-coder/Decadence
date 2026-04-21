@@ -51,7 +51,6 @@ var player_network_state: PlayerNetworkState = null
 
 
 func _ready() -> void:
-	print("PLAYER_SYNC_TEST BUILD_02")
 	add_to_group("player")
 	refresh_from_stats()
 	_resolve_player_sprite()
