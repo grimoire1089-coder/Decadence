@@ -1,5 +1,6 @@
 extends CharacterBody2D
 
+@warning_ignore("unused_signal")
 signal interactable_changed(target)
 
 const UI_MODAL_MANAGER_SCRIPT_NAME: String = "UIModalManager.gd"
