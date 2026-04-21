@@ -6,6 +6,7 @@ const UI_MODAL_MANAGER_SCRIPT_NAME: String = "UIModalManager.gd"
 const PAUSE_MENU_SCENE_PATH: String = "res://UI/PauseMenuUI.tscn"
 const DEBUG_SAVE_SLOT_NAME: String = "slot_01"
 const PLAYER_NETWORK_CONTROLLER_SCRIPT_PATH: String = "res://Gameplay/Player/PlayerNetworkController.gd"
+const PLAYER_INPUT_CONTROLLER_SCRIPT_PATH: String = "res://Gameplay/Player/PlayerInputController.gd"
 const MODAL_UI_GROUPS: Array[StringName] = [
 	&"vending_ui",
 	&"crop_machine_ui",
@@ -40,6 +41,7 @@ var _player_sprite: Sprite2D = null
 var _facing: int = Facing.DOWN
 var _sprite_base_position: Vector2 = Vector2.ZERO
 var _walk_anim_time: float = 0.0
+var _input_locked: bool = false
 
 var current_interactable: Node2D = null
 var nearby_interactables: Array = []
@@ -48,6 +50,7 @@ var selected_item_data: Resource = null
 var selected_item_amount: int = 0
 
 var player_network_controller: PlayerNetworkController = null
+var player_input_controller: PlayerInputController = null
 
 
 func _ready() -> void:
@@ -55,6 +58,7 @@ func _ready() -> void:
 	refresh_from_stats()
 	_resolve_player_sprite()
 	_ensure_player_network_controller()
+	_ensure_player_input_controller()
 
 	if PlayerStatsManager != null and not PlayerStatsManager.stats_changed.is_connected(_on_player_stats_changed):
 		PlayerStatsManager.stats_changed.connect(_on_player_stats_changed)
@@ -200,73 +204,8 @@ func _safe_set_input_as_handled() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if _is_remote_network_player():
+	if player_input_controller != null and player_input_controller.handle_unhandled_input(event):
 		return
-
-	if _is_player_control_locked():
-		if event.is_action_pressed("interact") or event.is_action_pressed("eat_selected_item"):
-			_safe_set_input_as_handled()
-			return
-
-	if _handle_debug_save_input(event):
-		return
-
-	if event.is_action_pressed("ui_cancel"):
-		if _has_non_pause_modal_visible():
-			return
-
-		var pause_menu: Control = _ensure_pause_menu_exists()
-		if pause_menu != null and pause_menu.has_method("toggle_menu"):
-			pause_menu.call("toggle_menu")
-			_safe_set_input_as_handled()
-		return
-
-	if event.is_action_pressed("interact"):
-		if _is_interaction_ui_open():
-			return
-
-		if current_interactable != null and current_interactable.has_method("interact"):
-			current_interactable.interact(self)
-			_safe_set_input_as_handled()
-
-	if event.is_action_pressed("eat_selected_item"):
-		try_consume_selected_item()
-
-
-func _handle_debug_save_input(event: InputEvent) -> bool:
-	var should_save: bool = false
-
-	if InputMap.has_action("debug_save"):
-		should_save = event.is_action_pressed("debug_save")
-	elif event is InputEventKey:
-		var key_event: InputEventKey = event as InputEventKey
-		if key_event != null and key_event.pressed and not key_event.echo and key_event.keycode == KEY_F5:
-			should_save = true
-
-	if not should_save:
-		return false
-
-	_debug_save_game()
-	_safe_set_input_as_handled()
-	return true
-
-
-func _debug_save_game() -> void:
-	if SaveManager == null:
-		push_warning("SaveManager が見つかりません")
-		return
-
-	var ok: bool = SaveManager.save_game(get_tree().current_scene, DEBUG_SAVE_SLOT_NAME)
-	if ok:
-		var log_node: Node = get_node_or_null("/root/MessageLog")
-		if log_node != null:
-			if log_node.has_method("add_system_message"):
-				log_node.call("add_system_message", "仮セーブ完了: %s" % DEBUG_SAVE_SLOT_NAME)
-			elif log_node.has_method("add_system"):
-				log_node.call("add_system", "仮セーブ完了: %s" % DEBUG_SAVE_SLOT_NAME)
-		print("仮セーブ完了: %s" % DEBUG_SAVE_SLOT_NAME)
-	else:
-		push_warning("仮セーブ失敗: %s" % DEBUG_SAVE_SLOT_NAME)
 
 
 func _is_interaction_ui_open() -> bool:
@@ -274,6 +213,9 @@ func _is_interaction_ui_open() -> bool:
 
 
 func _is_player_control_locked() -> bool:
+	if _input_locked:
+		return true
+
 	var any_modal_visible: bool = _is_any_modal_ui_visible()
 
 	var ui_modal_manager: Node = _find_ui_modal_manager()
@@ -652,6 +594,10 @@ func is_network_remote_player() -> bool:
 	return _is_remote_network_player()
 
 
+func set_input_locked(value: bool) -> void:
+	_input_locked = value
+
+
 func _ensure_player_network_controller() -> void:
 	if player_network_controller != null:
 		return
@@ -669,6 +615,24 @@ func _ensure_player_network_controller() -> void:
 		player_network_controller = instance as PlayerNetworkController
 		player_network_controller.setup(self)
 		player_network_controller.ensure_state()
+
+
+func _ensure_player_input_controller() -> void:
+	if player_input_controller != null:
+		return
+
+	if not ResourceLoader.exists(PLAYER_INPUT_CONTROLLER_SCRIPT_PATH):
+		return
+
+	var controller_script: Script = load(PLAYER_INPUT_CONTROLLER_SCRIPT_PATH) as Script
+	if controller_script == null:
+		push_warning("Player: PlayerInputController.gd を読み込めません")
+		return
+
+	var instance: Variant = controller_script.new()
+	if instance is PlayerInputController:
+		player_input_controller = instance as PlayerInputController
+		player_input_controller.setup(self)
 
 
 func _is_remote_network_player() -> bool:
