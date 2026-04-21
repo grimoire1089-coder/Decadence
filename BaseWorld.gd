@@ -416,6 +416,16 @@ func _rpc_open_vending_machine(machine_path: String) -> void:
 	_open_vending_machine_local(machine_path)
 
 
+@rpc("authority", "call_remote", "reliable")
+func _rpc_sync_vending_machine_state(machine_path: String, state: Dictionary) -> void:
+	_apply_vending_machine_state_local(machine_path, state)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _rpc_receive_vending_action_result(result: Dictionary) -> void:
+	_deliver_vending_action_result_local(result)
+
+
 func _normalize_map_transition_request(request: Dictionary) -> Dictionary:
 	var normalized_scene_path: String = String(request.get("target_map_scene_path", request.get("scene_path", request.get("target_scene_path", "")))).strip_edges()
 	if normalized_scene_path.is_empty():
@@ -452,6 +462,8 @@ func _normalize_world_interaction_request(request: Dictionary) -> Dictionary:
 	normalized_request["interaction_kind"] = interaction_kind
 	normalized_request["machine_path"] = String(request.get("machine_path", request.get("target_node_path", ""))).strip_edges()
 	normalized_request["request_peer_id"] = int(request.get("request_peer_id", _get_local_network_peer_id()))
+	normalized_request["slot_index"] = int(request.get("slot_index", -1))
+	normalized_request["action_amount"] = max(int(request.get("action_amount", 0)), 0)
 	return normalized_request
 
 
@@ -472,6 +484,12 @@ func _apply_world_interaction_request_local(request: Dictionary, requesting_peer
 				return
 
 			_open_vending_machine_local(machine_path)
+		"vending_machine_stock_one":
+			_handle_vending_machine_stock_request(request, requesting_peer_id)
+		"vending_machine_take_back_one":
+			_handle_vending_machine_take_back_request(request, requesting_peer_id)
+		"vending_machine_collect_earnings":
+			_handle_vending_machine_collect_request(request, requesting_peer_id)
 		_:
 			return
 
@@ -489,6 +507,168 @@ func _open_vending_machine_local(machine_path: String) -> void:
 	var vending_ui: Node = get_tree().get_first_node_in_group("vending_ui")
 	if vending_ui != null and vending_ui.has_method("open_machine"):
 		vending_ui.call("open_machine", machine, player)
+
+
+func _find_vending_machine(machine_path: String) -> VendingMachine:
+	var normalized_machine_path: String = machine_path.strip_edges()
+	if normalized_machine_path.is_empty():
+		return null
+	return get_node_or_null(NodePath(normalized_machine_path)) as VendingMachine
+
+
+func _broadcast_vending_machine_state(machine: VendingMachine) -> void:
+	if machine == null or not is_instance_valid(machine):
+		return
+	if not machine.has_method("export_network_state"):
+		return
+
+	var state_variant: Variant = machine.call("export_network_state")
+	if typeof(state_variant) != TYPE_DICTIONARY:
+		return
+
+	var machine_path: String = str(machine.get_path())
+	var state: Dictionary = state_variant as Dictionary
+
+	_apply_vending_machine_state_local(machine_path, state)
+	if _is_network_online():
+		rpc("_rpc_sync_vending_machine_state", machine_path, state)
+
+
+func _apply_vending_machine_state_local(machine_path: String, state: Dictionary) -> void:
+	var machine: VendingMachine = _find_vending_machine(machine_path)
+	if machine == null:
+		return
+	if machine.has_method("import_network_state"):
+		machine.call("import_network_state", state)
+
+	var vending_ui: Node = get_tree().get_first_node_in_group("vending_ui")
+	if vending_ui != null and vending_ui.visible and vending_ui.has_method("refresh"):
+		var current_machine: Object = vending_ui.get("current_machine") as Object
+		if current_machine == machine:
+			vending_ui.call("refresh")
+
+
+func _deliver_vending_action_result_local(result: Dictionary) -> void:
+	var vending_ui: Node = get_tree().get_first_node_in_group("vending_ui")
+	if vending_ui != null and vending_ui.has_method("handle_network_action_result"):
+		vending_ui.call("handle_network_action_result", result)
+
+
+func _send_vending_action_result_to_peer(target_peer_id: int, result: Dictionary) -> void:
+	if target_peer_id <= 0:
+		return
+
+	if target_peer_id == _get_local_network_peer_id():
+		_deliver_vending_action_result_local(result)
+	elif _is_network_online():
+		rpc_id(target_peer_id, "_rpc_receive_vending_action_result", result)
+
+
+func _handle_vending_machine_stock_request(request: Dictionary, requesting_peer_id: int) -> void:
+	if not _can_accept_network_gameplay_requests() and _is_network_online():
+		return
+
+	var machine: VendingMachine = _find_vending_machine(String(request.get("machine_path", "")))
+	if machine == null:
+		_send_vending_action_result_to_peer(max(requesting_peer_id, 1), {
+			"interaction_kind": "vending_machine_stock_one",
+			"success": false,
+			"message": "自販機が見つからない",
+		})
+		return
+
+	var item_payload: Dictionary = request.get("item_payload", {}) as Dictionary
+	var item_resource: Resource = null
+	if machine.has_method("build_item_from_network_payload"):
+		item_resource = machine.call("build_item_from_network_payload", item_payload) as Resource
+
+	var slot_index: int = int(request.get("slot_index", -1))
+	var action_amount: int = max(int(request.get("action_amount", 0)), 0)
+	var success: bool = false
+	if item_resource != null and action_amount > 0:
+		success = machine.stock_item(slot_index, item_resource, action_amount, 0)
+
+	if success:
+		_broadcast_vending_machine_state(machine)
+
+	_send_vending_action_result_to_peer(max(requesting_peer_id, 1), {
+		"interaction_kind": "vending_machine_stock_one",
+		"success": success,
+		"message": "補充した" if success else "そのスロットには別の商品が入ってる",
+		"machine_path": str(machine.get_path()),
+		"slot_index": slot_index,
+		"action_amount": action_amount,
+		"rollback_item_payload": item_payload,
+		"rollback_amount": action_amount,
+	})
+
+
+func _handle_vending_machine_take_back_request(request: Dictionary, requesting_peer_id: int) -> void:
+	if not _can_accept_network_gameplay_requests() and _is_network_online():
+		return
+
+	var machine: VendingMachine = _find_vending_machine(String(request.get("machine_path", "")))
+	if machine == null:
+		_send_vending_action_result_to_peer(max(requesting_peer_id, 1), {
+			"interaction_kind": "vending_machine_take_back_one",
+			"success": false,
+			"message": "自販機が見つからない",
+		})
+		return
+
+	var slot_index: int = int(request.get("slot_index", -1))
+	var action_amount: int = max(int(request.get("action_amount", 0)), 0)
+	var take_result: Dictionary = machine.take_back_item(slot_index, action_amount)
+	var success: bool = bool(take_result.get("success", false))
+
+	var returned_item_payload: Dictionary = {}
+	var returned_amount: int = int(take_result.get("amount", 0))
+	if success and returned_amount > 0 and machine.has_method("build_network_item_payload"):
+		var returned_item: Resource = take_result.get("item_data", null) as Resource
+		returned_item_payload = machine.call("build_network_item_payload", returned_item) as Dictionary
+
+	if success:
+		_broadcast_vending_machine_state(machine)
+
+	_send_vending_action_result_to_peer(max(requesting_peer_id, 1), {
+		"interaction_kind": "vending_machine_take_back_one",
+		"success": success,
+		"message": "%d個取り戻した" % returned_amount if success else "取り出せない",
+		"machine_path": str(machine.get_path()),
+		"slot_index": slot_index,
+		"returned_item_payload": returned_item_payload,
+		"returned_amount": returned_amount,
+	})
+
+
+func _handle_vending_machine_collect_request(request: Dictionary, requesting_peer_id: int) -> void:
+	if not _can_accept_network_gameplay_requests() and _is_network_online():
+		return
+
+	var machine: VendingMachine = _find_vending_machine(String(request.get("machine_path", "")))
+	if machine == null:
+		_send_vending_action_result_to_peer(max(requesting_peer_id, 1), {
+			"interaction_kind": "vending_machine_collect_earnings",
+			"success": false,
+			"message": "自販機が見つからない",
+		})
+		return
+
+	var collected_amount: int = 0
+	if machine.has_method("consume_earnings_for_network"):
+		collected_amount = int(machine.call("consume_earnings_for_network"))
+
+	var success: bool = collected_amount > 0
+	if success:
+		_broadcast_vending_machine_state(machine)
+
+	_send_vending_action_result_to_peer(max(requesting_peer_id, 1), {
+		"interaction_kind": "vending_machine_collect_earnings",
+		"success": success,
+		"message": "売上を回収した" if success else "回収できる売上がない",
+		"machine_path": str(machine.get_path()),
+		"collected_amount": collected_amount,
+	})
 
 
 func _on_network_peer_joined(peer_id: int) -> void:

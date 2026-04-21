@@ -165,6 +165,15 @@ func collect_earnings(player: Node) -> int:
 	return 0
 
 
+func consume_earnings_for_network() -> int:
+	var amount: int = earnings
+	if amount <= 0:
+		return 0
+	earnings = 0
+	save_data()
+	return amount
+
+
 func set_paused_by_ui(value: bool) -> void:
 	if customer_timer == null:
 		return
@@ -183,6 +192,92 @@ func is_customer_timer_paused() -> bool:
 	if customer_timer == null:
 		return false
 	return customer_timer.paused
+
+
+func export_network_state() -> Dictionary:
+	var slots_data: Array = []
+	for slot in slots:
+		var item_payload: Dictionary = {}
+		if slot.item_data != null:
+			item_payload = build_network_item_payload(slot.item_data)
+
+		slots_data.append({
+			"item_payload": item_payload,
+			"amount": int(slot.amount),
+			"price": int(slot.price),
+		})
+
+	return {
+		"earnings": earnings,
+		"slots": slots_data,
+	}
+
+
+func import_network_state(state: Dictionary) -> void:
+	earnings = maxi(int(state.get("earnings", 0)), 0)
+
+	var loaded_slots: Variant = state.get("slots", [])
+	if typeof(loaded_slots) != TYPE_ARRAY:
+		return
+
+	var loaded_slots_array: Array = loaded_slots
+	if slots.size() != slot_count:
+		_init_slots()
+
+	var count: int = mini(slots.size(), loaded_slots_array.size())
+	for i in range(slots.size()):
+		var slot = slots[i]
+		slot.clear()
+
+	for i in range(count):
+		var slot_data: Dictionary = loaded_slots_array[i] as Dictionary
+		if slot_data.is_empty():
+			continue
+
+		var slot = slots[i]
+		var amount: int = maxi(int(slot_data.get("amount", 0)), 0)
+		var price: int = maxi(int(slot_data.get("price", 0)), 0)
+		var item_payload: Dictionary = slot_data.get("item_payload", {}) as Dictionary
+		var item_data: Resource = build_item_from_network_payload(item_payload)
+
+		if item_data == null or amount <= 0:
+			continue
+
+		slot.item_data = item_data
+		slot.amount = amount
+		slot.price = price if price > 0 else _get_item_sell_price(item_data)
+
+	var ui: Node = get_tree().get_first_node_in_group("vending_ui")
+	if ui != null and ui.visible and ui.has_method("refresh"):
+		var current_machine: Object = ui.get("current_machine") as Object
+		if current_machine == self:
+			ui.call("refresh")
+
+
+func build_network_item_payload(item_data: Resource) -> Dictionary:
+	var item: ItemData = item_data as ItemData
+	if item == null:
+		return {}
+
+	var item_path: String = _get_item_source_path(item)
+	return {
+		"item_path": item_path,
+		"item_id": str(item.id),
+		"quality": item.get_quality(),
+		"rank": item.get_rank(),
+	}
+
+
+func build_item_from_network_payload(payload: Dictionary) -> Resource:
+	if payload.is_empty():
+		return null
+
+	var item_path: String = str(payload.get("item_path", ""))
+	var item_id: String = str(payload.get("item_id", ""))
+	var quality: int = maxi(int(payload.get("quality", 0)), 0)
+	var rank: int = clamp(int(payload.get("rank", 0)), 0, 5)
+
+	return _build_item_from_saved_data(item_path, item_id, quality, rank)
 
 
 func _on_customer_timer_timeout() -> void:

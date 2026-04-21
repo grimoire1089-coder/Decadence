@@ -172,6 +172,52 @@ func refresh() -> void:
 		grid.add_child(button)
 
 
+func handle_network_action_result(result: Dictionary) -> void:
+	if result.is_empty():
+		return
+
+	var interaction_kind: String = String(result.get("interaction_kind", "")).strip_edges()
+	if interaction_kind.is_empty():
+		return
+
+	var bound_player: Node = _get_bound_player_for_result()
+	var message_text: String = String(result.get("message", ""))
+
+	match interaction_kind:
+		"vending_machine_stock_one":
+			var success: bool = bool(result.get("success", false))
+			if not success:
+				var rollback_payload: Dictionary = result.get("rollback_item_payload", {}) as Dictionary
+				var rollback_amount: int = max(int(result.get("rollback_amount", 0)), 0)
+				if bound_player != null and current_machine != null and rollback_amount > 0 and current_machine.has_method("build_item_from_network_payload"):
+					var rollback_item: Resource = current_machine.call("build_item_from_network_payload", rollback_payload) as Resource
+					if rollback_item != null:
+						bound_player.call("add_item_to_inventory", rollback_item, rollback_amount)
+		"vending_machine_take_back_one":
+			if bool(result.get("success", false)) and bound_player != null and current_machine != null:
+				var returned_payload: Dictionary = result.get("returned_item_payload", {}) as Dictionary
+				var returned_amount: int = max(int(result.get("returned_amount", 0)), 0)
+				if returned_amount > 0 and current_machine.has_method("build_item_from_network_payload"):
+					var returned_item: Resource = current_machine.call("build_item_from_network_payload", returned_payload) as Resource
+					if returned_item != null:
+						var ok: bool = bool(bound_player.call("add_item_to_inventory", returned_item, returned_amount))
+						if not ok and message_text.is_empty():
+							message_text = "インベントリに戻せない"
+		"vending_machine_collect_earnings":
+			if bool(result.get("success", false)) and bound_player != null:
+				var collected_amount: int = max(int(result.get("collected_amount", 0)), 0)
+				if collected_amount > 0:
+					bound_player.call("add_credits", collected_amount)
+		_:
+			return
+
+	if visible and not message_text.is_empty():
+		info_label.text = message_text
+
+	if visible and current_machine != null:
+		refresh()
+
+
 func _populate_slot_button(button: Button, slot: VendingSlot, slot_index: int, is_selected: bool) -> void:
 	var content: VBoxContainer = VBoxContainer.new()
 	content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -331,7 +377,7 @@ func _setup_content_layout() -> void:
 	grid.add_theme_constant_override("v_separation", 12)
 	grid.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	grid.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	grid.custom_minimum_size = Vector2(898, 230) # 170 * 5 + 12 * 4
+	grid.custom_minimum_size = Vector2(898, 230)
 
 	stock_one_button.custom_minimum_size = Vector2(0, 40)
 	take_back_one_button.custom_minimum_size = Vector2(0, 40)
@@ -401,6 +447,31 @@ func _on_stock_one_pressed() -> void:
 		return
 
 	var action_amount: int = _get_effective_action_amount()
+
+	if _can_request_networked_vending_actions():
+		var removed_variant: Variant = current_player.call("remove_item_from_inventory", selected_item_data, action_amount)
+		var removed: bool = bool(removed_variant)
+		if not removed:
+			info_label.text = "在庫が足りない"
+			return
+
+		info_label.text = "補充要求を送信した"
+
+		var item_payload: Dictionary = {}
+		if current_machine.has_method("build_network_item_payload"):
+			item_payload = current_machine.call("build_network_item_payload", selected_item_data) as Dictionary
+
+		_request_networked_vending_action({
+			"interaction_kind": "vending_machine_stock_one",
+			"machine_path": str(current_machine.get_path()),
+			"request_peer_id": _get_request_peer_id(current_player),
+			"slot_index": selected_slot_index,
+			"action_amount": action_amount,
+			"item_payload": item_payload,
+		})
+		refresh()
+		return
+
 	var removed_variant: Variant = current_player.call("remove_item_from_inventory", selected_item_data, action_amount)
 	var removed: bool = bool(removed_variant)
 	if not removed:
@@ -424,6 +495,17 @@ func _on_take_back_one_pressed() -> void:
 		return
 
 	if selected_slot_index < 0:
+		return
+
+	if _can_request_networked_vending_actions():
+		info_label.text = "取り戻し要求を送信した"
+		_request_networked_vending_action({
+			"interaction_kind": "vending_machine_take_back_one",
+			"machine_path": str(current_machine.get_path()),
+			"request_peer_id": _get_request_peer_id(current_player),
+			"slot_index": selected_slot_index,
+			"action_amount": _get_effective_action_amount(),
+		})
 		return
 
 	var old_price: int = current_machine.peek_slot_price(selected_slot_index)
@@ -461,6 +543,15 @@ func _on_collect_pressed() -> void:
 	if before <= 0:
 		info_label.text = "回収できる売上がない"
 		refresh()
+		return
+
+	if _can_request_networked_vending_actions():
+		info_label.text = "売上回収要求を送信した"
+		_request_networked_vending_action({
+			"interaction_kind": "vending_machine_collect_earnings",
+			"machine_path": str(current_machine.get_path()),
+			"request_peer_id": _get_request_peer_id(current_player),
+		})
 		return
 
 	if current_player.has_method("add_credits"):
@@ -659,3 +750,31 @@ func _log_error(text: String) -> void:
 	var log_node: Node = _get_message_log()
 	if log_node != null and log_node.has_method("add_error"):
 		log_node.call("add_error", text)
+
+
+func _can_request_networked_vending_actions() -> bool:
+	var current_scene: Node = get_tree().current_scene
+	return current_scene != null and current_scene.has_method("request_networked_world_interaction")
+
+
+func _request_networked_vending_action(request: Dictionary) -> void:
+	var current_scene: Node = get_tree().current_scene
+	if current_scene != null and current_scene.has_method("request_networked_world_interaction"):
+		current_scene.call("request_networked_world_interaction", request)
+
+
+func _get_request_peer_id(player: Node) -> int:
+	if player != null and player.has_method("get_network_peer_id"):
+		return max(int(player.call("get_network_peer_id")), 1)
+
+	var multiplayer_api: MultiplayerAPI = get_tree().get_multiplayer()
+	if multiplayer_api != null:
+		return max(multiplayer_api.get_unique_id(), 1)
+
+	return 1
+
+
+func _get_bound_player_for_result() -> Node:
+	if current_player != null and is_instance_valid(current_player):
+		return current_player
+	return get_tree().get_first_node_in_group("player")
