@@ -6,6 +6,7 @@ const NETWORK_BOOT_MODE_HOST: String = "host"
 const NETWORK_BOOT_MODE_CLIENT: String = "client"
 const NETWORK_SESSION_MANAGER_SCRIPT_PATH: String = "res://Core/Network/NetworkSessionManager.gd"
 const NETWORK_HELPER_SCRIPT_PATH: String = "res://Core/Network/BaseWorldNetworkHelper.gd"
+const WORLD_TIME_SYNC_MODULE_SCRIPT_PATH: String = "res://Core/World/BaseWorldTimeSyncModule.gd"
 
 @export_file("*.tscn") var default_map_scene_path: String = "res://Maps/TownMap_MainExtract.tscn"
 
@@ -18,6 +19,7 @@ const NETWORK_HELPER_SCRIPT_PATH: String = "res://Core/Network/BaseWorldNetworkH
 @export var remote_player_spawn_offset: Vector2 = Vector2(40.0, 0.0)
 @export var network_peer_sync_interval_sec: float = 0.25
 @export var network_snapshot_send_interval_sec: float = 0.05
+@export var network_time_sync_interval_sec: float = 0.25
 
 @onready var player: Node = get_node_or_null("Sortables/Player")
 @onready var loading_overlay: Node = $UI/LoadingOverlay
@@ -31,10 +33,12 @@ var _network_signals_connected: bool = false
 var _network_peer_sync_accumulator: float = 0.0
 var _network_snapshot_send_accumulator: float = 0.0
 var _network_helper: BaseWorldNetworkHelper = null
+var _time_sync_module: BaseWorldTimeSyncModule = null
 
 
 func _ready() -> void:
 	_ensure_network_helper()
+	_ensure_time_sync_module()
 	_ensure_map_transition_manager()
 	if map_transition_manager != null and map_transition_manager.has_method("set_default_map_scene_path"):
 		map_transition_manager.call("set_default_map_scene_path", default_map_scene_path)
@@ -62,6 +66,9 @@ func _process(delta: float) -> void:
 		_network_snapshot_send_accumulator = 0.0
 		if _network_helper != null:
 			_network_helper.send_local_player_snapshot_if_needed()
+
+	if _time_sync_module != null:
+		_time_sync_module.process(delta)
 
 
 func prepare_world_before_restore(save_data: Dictionary) -> void:
@@ -229,6 +236,24 @@ func _ensure_network_helper() -> void:
 	if helper_instance is BaseWorldNetworkHelper:
 		_network_helper = helper_instance as BaseWorldNetworkHelper
 		_network_helper.setup(self)
+
+
+
+func _ensure_time_sync_module() -> void:
+	if _time_sync_module != null:
+		return
+	if not ResourceLoader.exists(WORLD_TIME_SYNC_MODULE_SCRIPT_PATH):
+		return
+
+	var module_script: Script = load(WORLD_TIME_SYNC_MODULE_SCRIPT_PATH) as Script
+	if module_script == null:
+		push_warning("BaseWorld: BaseWorldTimeSyncModule.gd を読み込めません")
+		return
+
+	var module_instance: Variant = module_script.new()
+	if module_instance is BaseWorldTimeSyncModule:
+		_time_sync_module = module_instance as BaseWorldTimeSyncModule
+		_time_sync_module.setup(self)
 
 
 func _ensure_map_transition_manager() -> void:
@@ -439,6 +464,12 @@ func _rpc_sync_crop_machine_state(machine_path: String, state_payload: Dictionar
 @rpc("authority", "call_remote", "reliable")
 func _rpc_handle_crop_machine_plant_result(result: Dictionary) -> void:
 	_handle_crop_machine_plant_result_local(result)
+
+@rpc("authority", "call_remote", "reliable")
+func _rpc_sync_world_time_state(state: Dictionary) -> void:
+	if _time_sync_module != null:
+		_time_sync_module.apply_remote_time_state(state)
+
 
 
 func _normalize_map_transition_request(request: Dictionary) -> Dictionary:
@@ -870,9 +901,22 @@ func _handle_crop_machine_plant_result_local(result: Dictionary) -> void:
 		crop_machine_ui.call("handle_network_plant_result", result)
 
 
+
+func _broadcast_time_manager_state() -> void:
+	if _time_sync_module != null:
+		_time_sync_module.push_current_time_state_to_peers()
+
+
+func _sync_time_manager_state_to_peer(peer_id: int) -> void:
+	if _time_sync_module != null:
+		_time_sync_module.push_current_time_state_to_peer(peer_id)
+
+
 func _on_network_peer_joined(peer_id: int) -> void:
 	if _network_helper != null:
 		_network_helper.spawn_remote_network_player_for_peer(peer_id)
+	if _time_sync_module != null:
+		_time_sync_module.on_network_peer_joined(peer_id)
 
 
 func _on_network_peer_left(peer_id: int) -> void:
@@ -884,24 +928,32 @@ func _on_network_connected_to_session() -> void:
 	if _network_helper != null:
 		_network_helper.configure_local_network_player()
 		_network_helper.sync_remote_network_players_from_session()
+	if _time_sync_module != null:
+		_time_sync_module.on_network_connected_to_session()
 
 
 func _on_network_disconnected_from_session() -> void:
 	if _network_helper != null:
 		_network_helper.clear_remote_network_players()
 		_network_helper.configure_local_network_player()
+	if _time_sync_module != null:
+		_time_sync_module.on_network_disconnected_from_session()
 
 
 func _on_network_local_peer_id_changed(_peer_id: int) -> void:
 	if _network_helper != null:
 		_network_helper.configure_local_network_player()
 		_network_helper.sync_remote_network_players_from_session()
+	if _time_sync_module != null:
+		_time_sync_module.on_network_local_peer_id_changed()
 
 
 func _on_network_hosting_started(_port: int, _max_clients: int) -> void:
 	if _network_helper != null:
 		_network_helper.configure_local_network_player()
 		_network_helper.sync_remote_network_players_from_session()
+	if _time_sync_module != null:
+		_time_sync_module.on_network_hosting_started()
 
 
 func _apply_pending_boot_spawn_if_needed() -> void:
@@ -923,6 +975,10 @@ func _reapply_saved_persistent_nodes() -> void:
 
 
 func _resume_time_manager() -> void:
+	if _time_sync_module != null:
+		_time_sync_module.resume_time_manager()
+		return
+
 	var time_manager: Node = get_node_or_null("/root/TimeManager")
 	if time_manager == null:
 		return
