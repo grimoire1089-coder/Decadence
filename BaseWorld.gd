@@ -16,8 +16,9 @@ const NETWORK_SESSION_MANAGER_SCRIPT_PATH: String = "res://Core/Network/NetworkS
 @export var network_session_manager_root_path: NodePath = NodePath("/root/NetworkSessionManager")
 @export var remote_player_spawn_offset: Vector2 = Vector2(40.0, 0.0)
 @export var network_peer_sync_interval_sec: float = 0.25
+@export var network_snapshot_send_interval_sec: float = 0.05
 
-@onready var player: Node = $Sortables/Player
+@onready var player: Node = get_node_or_null("Sortables/Player")
 @onready var loading_overlay: Node = $UI/LoadingOverlay
 @onready var inventory_ui: Node = $UI/InventoryUI
 @onready var map_transition_manager: Node = get_node_or_null("MapTransitionManager")
@@ -28,10 +29,90 @@ var _network_session_manager: Node = null
 var _network_signals_connected: bool = false
 var _network_players_root: Node2D = null
 var _remote_players_by_peer_id: Dictionary = {}
+var _remote_player_roots_by_peer_id: Dictionary = {}
+var _local_player_spawn_source: Node = null
 var _network_peer_sync_accumulator: float = 0.0
+var _network_snapshot_send_accumulator: float = 0.0
+
+
+
+func _resolve_local_player_actor() -> Node:
+	if player != null and is_instance_valid(player) and player.has_method("configure_network_peer"):
+		return player
+
+	var direct_root: Node = get_node_or_null("Sortables/Player")
+	if direct_root != null and is_instance_valid(direct_root):
+		_local_player_spawn_source = direct_root
+		if direct_root.has_method("configure_network_peer"):
+			player = direct_root
+			return player
+
+		var nested_actor: Node = _find_first_network_player_node(direct_root)
+		if nested_actor != null:
+			player = nested_actor
+			return player
+
+	var sortables: Node = sortables_root
+	if sortables == null:
+		sortables = get_node_or_null("Sortables")
+
+	if sortables != null and is_instance_valid(sortables):
+		var found_actor: Node = _find_first_network_player_node(sortables)
+		if found_actor != null:
+			player = found_actor
+			if _local_player_spawn_source == null:
+				var actor_parent: Node = found_actor.get_parent()
+				_local_player_spawn_source = actor_parent if actor_parent != null else found_actor
+			return player
+
+	return player
+
+
+func _resolve_local_player_spawn_source() -> Node:
+	if _local_player_spawn_source != null and is_instance_valid(_local_player_spawn_source):
+		return _local_player_spawn_source
+
+	var direct_root: Node = get_node_or_null("Sortables/Player")
+	if direct_root != null and is_instance_valid(direct_root):
+		_local_player_spawn_source = direct_root
+		return _local_player_spawn_source
+
+	var actor: Node = _resolve_local_player_actor()
+	if actor != null and is_instance_valid(actor):
+		var actor_parent: Node = actor.get_parent()
+		_local_player_spawn_source = actor_parent if actor_parent != null else actor
+
+	return _local_player_spawn_source
+
+
+func _find_first_network_player_node(root: Node) -> Node:
+	if root == null:
+		return null
+
+	for child in root.get_children():
+		var node: Node = child as Node
+		if node == null:
+			continue
+		if node.has_method("configure_network_peer"):
+			return node
+		var nested: Node = _find_first_network_player_node(node)
+		if nested != null:
+			return nested
+
+	return null
+
+
+func _find_network_player_actor_in_instance(root: Node) -> Node:
+	if root == null:
+		return null
+	if root.has_method("configure_network_peer"):
+		return root
+	return _find_first_network_player_node(root)
 
 
 func _ready() -> void:
+	_resolve_local_player_actor()
+	_resolve_local_player_spawn_source()
 	_ensure_map_transition_manager()
 	if map_transition_manager != null and map_transition_manager.has_method("set_default_map_scene_path"):
 		map_transition_manager.call("set_default_map_scene_path", default_map_scene_path)
@@ -49,11 +130,14 @@ func _process(delta: float) -> void:
 		return
 
 	_network_peer_sync_accumulator += maxf(delta, 0.0)
-	if _network_peer_sync_accumulator < maxf(network_peer_sync_interval_sec, 0.05):
-		return
+	if _network_peer_sync_accumulator >= maxf(network_peer_sync_interval_sec, 0.05):
+		_network_peer_sync_accumulator = 0.0
+		_sync_remote_network_players_from_session()
 
-	_network_peer_sync_accumulator = 0.0
-	_sync_remote_network_players_from_session()
+	_network_snapshot_send_accumulator += maxf(delta, 0.0)
+	if _network_snapshot_send_accumulator >= maxf(network_snapshot_send_interval_sec, 0.01):
+		_network_snapshot_send_accumulator = 0.0
+		_send_local_player_snapshot_if_needed()
 
 
 func prepare_world_before_restore(save_data: Dictionary) -> void:
@@ -132,6 +216,8 @@ func stop_network_session() -> void:
 		_network_session_manager.call("close_session")
 	_clear_remote_network_players()
 	_configure_local_network_player()
+	_network_peer_sync_accumulator = 0.0
+	_network_snapshot_send_accumulator = 0.0
 
 
 func _boot_game() -> void:
@@ -296,16 +382,17 @@ func _ensure_network_players_root() -> void:
 
 
 func _configure_local_network_player() -> void:
-	if player == null:
+	var local_player_actor: Node = _resolve_local_player_actor()
+	if local_player_actor == null:
 		return
 
 	var local_peer_id: int = _get_local_network_peer_id()
-	if player.has_method("configure_network_peer"):
-		player.call("configure_network_peer", local_peer_id, local_peer_id, local_peer_id, "Player %d" % max(local_peer_id, 1))
-	if player.has_method("set_network_local_player"):
-		player.call("set_network_local_player", true)
-	if player.has_method("set_network_authority_peer_id"):
-		player.call("set_network_authority_peer_id", max(local_peer_id, 1))
+	if local_player_actor.has_method("configure_network_peer"):
+		local_player_actor.call("configure_network_peer", local_peer_id, local_peer_id, local_peer_id, "Player %d" % max(local_peer_id, 1))
+	if local_player_actor.has_method("set_network_local_player"):
+		local_player_actor.call("set_network_local_player", true)
+	if local_player_actor.has_method("set_network_authority_peer_id"):
+		local_player_actor.call("set_network_authority_peer_id", max(local_peer_id, 1))
 
 
 func _sync_remote_network_players_from_session() -> void:
@@ -343,60 +430,82 @@ func _spawn_remote_network_player_for_peer(peer_id: int) -> Node:
 
 	var local_peer_id: int = _get_local_network_peer_id()
 	if peer_id == local_peer_id:
-		return player
+		return _resolve_local_player_actor()
 
 	var existing: Node = _remote_players_by_peer_id.get(peer_id, null) as Node
 	if existing != null and is_instance_valid(existing):
 		return existing
 
-	if player == null:
+	var local_spawn_source: Node = _resolve_local_player_spawn_source()
+	if local_spawn_source == null:
 		return null
 
 	_ensure_network_players_root()
 
-	var new_player: Node = _instantiate_network_player_clone()
-	if new_player == null:
+	var remote_root: Node = _instantiate_network_player_clone()
+	if remote_root == null:
 		return null
 
-	new_player.name = "RemotePlayer_%d" % peer_id
+	remote_root.name = "RemotePlayer_%d" % peer_id
 
-	if new_player.has_method("configure_network_peer"):
-		new_player.call("configure_network_peer", local_peer_id, peer_id, peer_id, "Peer %d" % peer_id)
-	if new_player.has_method("set_network_local_player"):
-		new_player.call("set_network_local_player", false)
-	if new_player.has_method("set_network_authority_peer_id"):
-		new_player.call("set_network_authority_peer_id", peer_id)
+	var remote_actor: Node = _find_network_player_actor_in_instance(remote_root)
+	if remote_actor == null:
+		remote_root.queue_free()
+		return null
 
-	if new_player is Node2D:
-		var node_2d: Node2D = new_player as Node2D
-		node_2d.global_position = _get_remote_network_spawn_position(peer_id)
+	if remote_actor.has_method("configure_network_peer"):
+		remote_actor.call("configure_network_peer", local_peer_id, peer_id, peer_id, "Peer %d" % peer_id)
+	if remote_actor.has_method("set_network_local_player"):
+		remote_actor.call("set_network_local_player", false)
+	if remote_actor.has_method("set_network_authority_peer_id"):
+		remote_actor.call("set_network_authority_peer_id", peer_id)
 
-	_network_players_root.add_child(new_player)
-	new_player.remove_from_group("player")
-	new_player.add_to_group("remote_player")
-	_remote_players_by_peer_id[peer_id] = new_player
-	return new_player
+	_network_players_root.add_child(remote_root)
+
+	if remote_root is Node2D:
+		var remote_root_2d: Node2D = remote_root as Node2D
+		var spawn_position: Vector2 = _get_remote_network_spawn_position(peer_id)
+		remote_root_2d.global_position = spawn_position
+
+		if local_spawn_source is Node2D:
+			var local_source_2d: Node2D = local_spawn_source as Node2D
+			remote_root_2d.scale = local_source_2d.scale
+			remote_root_2d.rotation = local_source_2d.rotation
+
+	remote_root.remove_from_group("player")
+	remote_root.add_to_group("remote_player")
+	remote_actor.remove_from_group("player")
+	remote_actor.add_to_group("remote_player")
+
+	_remote_player_roots_by_peer_id[peer_id] = remote_root
+	_remote_players_by_peer_id[peer_id] = remote_actor
+	return remote_actor
 
 
 func _instantiate_network_player_clone() -> Node:
-	if player == null:
+	var local_spawn_source: Node = _resolve_local_player_spawn_source()
+	if local_spawn_source == null:
 		return null
 
-	if player.scene_file_path != "" and ResourceLoader.exists(player.scene_file_path):
-		var packed_scene: PackedScene = load(player.scene_file_path) as PackedScene
+	if local_spawn_source.scene_file_path != "" and ResourceLoader.exists(local_spawn_source.scene_file_path):
+		var packed_scene: PackedScene = load(local_spawn_source.scene_file_path) as PackedScene
 		if packed_scene != null:
 			var instance: Node = packed_scene.instantiate()
 			if instance != null:
 				return instance
 
-	return player.duplicate()
+	return local_spawn_source.duplicate()
 
 
 func _get_remote_network_spawn_position(peer_id: int) -> Vector2:
-	if not player is Node2D:
-		return Vector2.ZERO
+	var local_spawn_source: Node = _resolve_local_player_spawn_source()
+	if not local_spawn_source is Node2D:
+		var local_player_actor: Node = _resolve_local_player_actor()
+		if not local_player_actor is Node2D:
+			return Vector2.ZERO
+		local_spawn_source = local_player_actor
 
-	var local_player_2d: Node2D = player as Node2D
+	var local_player_2d: Node2D = local_spawn_source as Node2D
 
 	var peer_ids: Array[int] = []
 	for key in _remote_players_by_peer_id.keys():
@@ -415,8 +524,15 @@ func _get_remote_network_spawn_position(peer_id: int) -> Vector2:
 
 
 func _remove_remote_network_player(peer_id: int) -> void:
+	var remote_root: Node = _remote_player_roots_by_peer_id.get(peer_id, null) as Node
 	var remote_player: Node = _remote_players_by_peer_id.get(peer_id, null) as Node
+	_remote_player_roots_by_peer_id.erase(peer_id)
 	_remote_players_by_peer_id.erase(peer_id)
+
+	if remote_root != null and is_instance_valid(remote_root):
+		remote_root.queue_free()
+		return
+
 	if remote_player != null and is_instance_valid(remote_player):
 		remote_player.queue_free()
 
@@ -438,6 +554,53 @@ func _get_local_network_peer_id() -> int:
 	if _network_session_manager == null or not _network_session_manager.has_method("get_local_peer_id"):
 		return 1
 	return max(int(_network_session_manager.call("get_local_peer_id")), 1)
+
+
+func _send_local_player_snapshot_if_needed() -> void:
+	var local_player_actor: Node = _resolve_local_player_actor()
+	if local_player_actor == null:
+		return
+	if not _is_network_online():
+		return
+	if not local_player_actor.has_method("get_network_snapshot_payload"):
+		return
+
+	var peers_variant: Variant = PackedInt32Array()
+	if _network_session_manager != null and _network_session_manager.has_method("get_remote_peer_ids"):
+		peers_variant = _network_session_manager.call("get_remote_peer_ids")
+
+	if peers_variant is PackedInt32Array and (peers_variant as PackedInt32Array).is_empty():
+		return
+
+	var payload_variant: Variant = local_player_actor.call("get_network_snapshot_payload")
+	if typeof(payload_variant) != TYPE_DICTIONARY:
+		return
+
+	var payload: Dictionary = payload_variant as Dictionary
+	if payload.is_empty():
+		return
+
+	rpc("_rpc_receive_player_snapshot", payload)
+
+
+@rpc("any_peer", "call_remote", "unreliable")
+func _rpc_receive_player_snapshot(payload: Dictionary) -> void:
+	var sender_peer_id: int = multiplayer.get_remote_sender_id()
+	if sender_peer_id <= 0:
+		sender_peer_id = int(payload.get("peer_id", 0))
+
+	if sender_peer_id <= 0:
+		return
+
+	if sender_peer_id == _get_local_network_peer_id():
+		return
+
+	var remote_player: Node = _spawn_remote_network_player_for_peer(sender_peer_id)
+	if remote_player == null:
+		return
+
+	if remote_player.has_method("apply_remote_network_snapshot"):
+		remote_player.call("apply_remote_network_snapshot", payload)
 
 
 func _on_network_peer_joined(peer_id: int) -> void:
@@ -506,8 +669,9 @@ func _resume_time_manager() -> void:
 
 
 func _set_player_input_locked(value: bool) -> void:
-	if player != null and player.has_method("set_input_locked"):
-		player.call("set_input_locked", value)
+	var local_player_actor: Node = _resolve_local_player_actor()
+	if local_player_actor != null and local_player_actor.has_method("set_input_locked"):
+		local_player_actor.call("set_input_locked", value)
 
 
 func _open_loading_overlay(text: String, progress: float = -1.0) -> void:

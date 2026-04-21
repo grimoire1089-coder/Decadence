@@ -51,6 +51,7 @@ var player_network_state: PlayerNetworkState = null
 
 
 func _ready() -> void:
+	print("PLAYER_SYNC_TEST BUILD_02")
 	add_to_group("player")
 	refresh_from_stats()
 	_resolve_player_sprite()
@@ -280,7 +281,6 @@ func _is_player_control_locked() -> bool:
 	if ui_modal_manager != null and ui_modal_manager.has_method("is_player_input_blocked"):
 		var blocked_by_manager: bool = bool(ui_modal_manager.call("is_player_input_blocked"))
 
-		# UIが実際に見えている時だけ、マネージャーのロックを信用する
 		if blocked_by_manager and any_modal_visible:
 			return true
 
@@ -573,7 +573,6 @@ func spend_credits(amount: int) -> bool:
 	return false
 
 
-# 旧命名互換
 func addCredit(amount: int) -> void:
 	add_credits(amount)
 
@@ -619,6 +618,23 @@ func export_network_spawn_payload() -> Dictionary:
 	if player_network_state == null:
 		return {}
 	return player_network_state.to_spawn_payload()
+
+
+func get_network_snapshot_payload() -> Dictionary:
+	return {
+		"player_id": get_network_player_id(),
+		"peer_id": get_network_peer_id(),
+		"position_x": global_position.x,
+		"position_y": global_position.y,
+		"velocity_x": velocity.x,
+		"velocity_y": velocity.y,
+		"facing": _facing,
+		"snapshot_time_msec": Time.get_ticks_msec(),
+	}
+
+
+func get_current_facing() -> int:
+	return _facing
 
 
 func get_network_player_id() -> int:
