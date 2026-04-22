@@ -438,6 +438,12 @@ func _handle_vending_machine_collect_request(request: Dictionary, requesting_pee
 		})
 		return
 
+	var shared_credits: int = 0
+	if _world != null and _world.has_method("_add_shared_credits"):
+		_world.call("_add_shared_credits", collected_amount)
+	if _world != null and _world.has_method("_get_shared_credits"):
+		shared_credits = int(_world.call("_get_shared_credits"))
+
 	var machine_state: Dictionary = {}
 	if collect_machine.has_method("export_network_state"):
 		machine_state = collect_machine.call("export_network_state") as Dictionary
@@ -447,6 +453,7 @@ func _handle_vending_machine_collect_request(request: Dictionary, requesting_pee
 		"success": true,
 		"message": "売上を回収した",
 		"collected_amount": collected_amount,
+		"shared_credits": shared_credits,
 		"machine_state": machine_state,
 	})
 

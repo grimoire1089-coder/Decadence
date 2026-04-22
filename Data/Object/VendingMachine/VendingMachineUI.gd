@@ -108,9 +108,6 @@ func open_machine(machine: VendingMachine, player: Node) -> void:
 	if inventory_ui != null:
 		inventory_ui.move_to_front()
 
-	_acquire_ui_lock()
-	refresh()
-
 
 func close() -> void:
 	visible = false
@@ -204,10 +201,7 @@ func handle_network_action_result(result: Dictionary) -> void:
 						if not ok and message_text.is_empty():
 							message_text = "インベントリに戻せない"
 		"vending_machine_collect_earnings":
-			if bool(result.get("success", false)) and bound_player != null:
-				var collected_amount: int = max(int(result.get("collected_amount", 0)), 0)
-				if collected_amount > 0:
-					bound_player.call("add_credits", collected_amount)
+			pass
 		_:
 			return
 
@@ -449,9 +443,9 @@ func _on_stock_one_pressed() -> void:
 	var action_amount: int = _get_effective_action_amount()
 
 	if _can_request_networked_vending_actions():
-		var request_removed_variant: Variant = current_player.call("remove_item_from_inventory", selected_item_data, action_amount)
-		var request_removed: bool = bool(request_removed_variant)
-		if not request_removed:
+		var removed_variant: Variant = current_player.call("remove_item_from_inventory", selected_item_data, action_amount)
+		var removed: bool = bool(removed_variant)
+		if not removed:
 			info_label.text = "在庫が足りない"
 			return
 

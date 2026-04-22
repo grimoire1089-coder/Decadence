@@ -43,6 +43,7 @@ func _ready() -> void:
 	_ensure_time_sync_module()
 	_ensure_interaction_module()
 	_ensure_map_transition_manager()
+	_connect_shared_credits_signal()
 	if map_transition_manager != null and map_transition_manager.has_method("set_default_map_scene_path"):
 		map_transition_manager.call("set_default_map_scene_path", default_map_scene_path)
 	if network_boot_mode != NETWORK_BOOT_MODE_DISABLED:
@@ -497,6 +498,21 @@ func _rpc_sync_world_time_state(state: Dictionary) -> void:
 		_time_sync_module.apply_remote_time_state(state)
 
 
+@rpc("authority", "call_remote", "reliable")
+func _rpc_sync_shared_credits(credits_value: int) -> void:
+	_set_shared_credits_local(credits_value)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _rpc_request_shared_credits_sync() -> void:
+	if not _can_accept_network_gameplay_requests():
+		return
+	var sender_peer_id: int = multiplayer.get_remote_sender_id()
+	if sender_peer_id <= 0:
+		return
+	_push_shared_credits_to_peer(sender_peer_id)
+
+
 func _normalize_map_transition_request(request: Dictionary) -> Dictionary:
 	var normalized_scene_path: String = String(request.get("target_map_scene_path", request.get("scene_path", request.get("target_scene_path", "")))).strip_edges()
 	if normalized_scene_path.is_empty():
@@ -550,6 +566,8 @@ func _on_network_peer_joined(peer_id: int) -> void:
 		_network_helper.spawn_remote_network_player_for_peer(peer_id)
 	if _time_sync_module != null:
 		_time_sync_module.on_network_peer_joined(peer_id)
+	if _can_accept_network_gameplay_requests():
+		_push_shared_credits_to_peer(peer_id)
 
 
 func _on_network_peer_left(peer_id: int) -> void:
@@ -563,6 +581,8 @@ func _on_network_connected_to_session() -> void:
 		_network_helper.sync_remote_network_players_from_session()
 	if _time_sync_module != null:
 		_time_sync_module.on_network_connected_to_session()
+	if _is_network_online() and not _can_accept_network_gameplay_requests():
+		rpc_id(1, "_rpc_request_shared_credits_sync")
 
 
 func _on_network_disconnected_from_session() -> void:
@@ -654,6 +674,58 @@ func _update_loading_overlay(text: String, progress: float = -1.0) -> void:
 func _close_loading_overlay() -> void:
 	if loading_overlay != null and loading_overlay.has_method("close"):
 		loading_overlay.call("close")
+
+
+func _connect_shared_credits_signal() -> void:
+	if CurrencyManager == null:
+		return
+	if CurrencyManager.has_signal("credits_changed") and not CurrencyManager.credits_changed.is_connected(_on_shared_credits_changed):
+		CurrencyManager.credits_changed.connect(_on_shared_credits_changed)
+
+
+func _on_shared_credits_changed(_value: int) -> void:
+	if not _is_network_online():
+		return
+	if not _can_accept_network_gameplay_requests():
+		return
+	_push_shared_credits_to_remote_peers()
+
+
+func _get_shared_credits() -> int:
+	if CurrencyManager != null and CurrencyManager.has_method("get_credits"):
+		return int(CurrencyManager.get_credits())
+	return 0
+
+
+func _set_shared_credits_local(value: int) -> void:
+	var clamped_value: int = max(value, 0)
+	if CurrencyManager != null and CurrencyManager.has_method("set_credits"):
+		CurrencyManager.set_credits(clamped_value)
+
+
+func _add_shared_credits(amount: int) -> void:
+	if amount <= 0:
+		return
+	if CurrencyManager != null and CurrencyManager.has_method("add_credits"):
+		CurrencyManager.add_credits(amount)
+		return
+	_set_shared_credits_local(_get_shared_credits() + amount)
+
+
+func _push_shared_credits_to_remote_peers() -> void:
+	if not _is_network_online():
+		return
+	rpc("_rpc_sync_shared_credits", _get_shared_credits())
+
+
+func _push_shared_credits_to_peer(peer_id: int) -> void:
+	var target_peer_id: int = max(peer_id, 1)
+	if not _is_network_online():
+		return
+	if target_peer_id == _get_local_network_peer_id():
+		_set_shared_credits_local(_get_shared_credits())
+		return
+	rpc_id(target_peer_id, "_rpc_sync_shared_credits", _get_shared_credits())
 
 
 func _variant_to_bool(value: Variant) -> bool:
