@@ -24,6 +24,10 @@ func configure_local_network_player() -> void:
 	if world.player.has_method("set_network_authority_peer_id"):
 		world.player.call("set_network_authority_peer_id", max(local_peer_id, 1))
 
+	var player_registry: BaseWorldPlayerRegistry = world.get_player_registry()
+	if player_registry != null:
+		player_registry.register_local_player(world.player)
+
 
 func sync_remote_network_players_from_session() -> void:
 	if world == null:
@@ -129,12 +133,24 @@ func spawn_remote_network_player_for_peer(peer_id: int) -> Node:
 	_prepare_remote_network_player_instance(remote_player, peer_id, spawn_position)
 
 	remote_players_by_peer_id[peer_id] = remote_player
+
+	var player_registry: BaseWorldPlayerRegistry = world.get_player_registry()
+	if player_registry != null:
+		player_registry.register_remote_player(peer_id, remote_player)
+
 	return remote_player
 
 
 func remove_remote_network_player(peer_id: int) -> void:
 	var remote_player: Node = remote_players_by_peer_id.get(peer_id, null) as Node
 	remote_players_by_peer_id.erase(peer_id)
+
+	var player_registry: BaseWorldPlayerRegistry = null
+	if world != null:
+		player_registry = world.get_player_registry()
+	if player_registry != null:
+		player_registry.unregister_remote_player(peer_id)
+
 	if remote_player != null and is_instance_valid(remote_player):
 		remote_player.queue_free()
 
@@ -144,6 +160,12 @@ func clear_remote_network_players() -> void:
 	for peer_id_variant in peer_ids:
 		remove_remote_network_player(int(peer_id_variant))
 	remote_players_by_peer_id.clear()
+
+	var player_registry: BaseWorldPlayerRegistry = null
+	if world != null:
+		player_registry = world.get_player_registry()
+	if player_registry != null:
+		player_registry.clear_remote_players()
 
 
 func ensure_network_players_root() -> void:
@@ -281,6 +303,9 @@ func _apply_initial_snapshot_visual_state(remote_player: Node, payload: Dictiona
 	if remote_player is CharacterBody2D:
 		var remote_body: CharacterBody2D = remote_player as CharacterBody2D
 		remote_body.velocity = Vector2.ZERO
+
+	if remote_player.has_method("apply_peer_identity_payload"):
+		remote_player.call("apply_peer_identity_payload", payload)
 
 	remote_player.set("_facing", snapshot_facing)
 	if remote_player.has_method("_apply_facing_visual"):

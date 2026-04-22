@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://cg3da2baj54m3" path="res://BaseWorld.gd" id="1_baseworld"]
 [ext_resource type="Script" uid="uid://dxl3iu7jkce32" path="res://InventoryToggle.gd" id="2_inventory_toggle"]
-[ext_resource type="PackedScene" uid="uid://ufqrur381hty" path="res://Robin.tscn" id="3_player_scene"]
+[ext_resource type="PackedScene" path="res://Player.tscn" id="3_player_scene"]
 [ext_resource type="PackedScene" uid="uid://duji2d2efbu8d" path="res://GameMessageLog.tscn" id="4_message_log"]
 [ext_resource type="PackedScene" uid="uid://bon7n357ps8jk" path="res://UI/PlayerVitalBarsUI.tscn" id="5_vital_bars"]
 [ext_resource type="PackedScene" uid="uid://c7xvolyalc24f" path="res://UI/LevelExpBar.tscn" id="6_level_exp"]

@@ -33,39 +33,67 @@ func configure_network_peer(local_peer_id: int, target_peer_id: int, new_player_
 	ensure_state()
 	if player_network_state == null:
 		return
+
 	player_network_state.configure_from_peer(local_peer_id, target_peer_id, new_player_id, new_display_name)
+
+	var peer_state: PlayerPeerState = _get_owner_peer_state()
+	if peer_state != null:
+		peer_state.configure_from_peer(local_peer_id, target_peer_id, new_player_id, new_display_name)
 
 
 func set_network_local_player(value: bool) -> void:
 	ensure_state()
 	if player_network_state == null:
 		return
+
 	player_network_state.set_local_remote_flags(value, not value)
+
+	var peer_state: PlayerPeerState = _get_owner_peer_state()
+	if peer_state != null:
+		peer_state.set_local_remote_flags(value, not value)
 
 
 func set_network_authority_peer_id(value: int) -> void:
 	ensure_state()
 	if player_network_state == null:
 		return
+
 	player_network_state.set_authority_peer_id(value)
+
+	var peer_state: PlayerPeerState = _get_owner_peer_state()
+	if peer_state != null:
+		peer_state.set_authority_peer_id(value)
 
 
 func apply_remote_network_snapshot(payload: Dictionary) -> void:
 	ensure_state()
 	if player_network_state == null:
 		return
+
 	player_network_state.apply_snapshot_payload(payload)
+
+	var peer_state: PlayerPeerState = _get_owner_peer_state()
+	if peer_state != null:
+		peer_state.apply_identity_payload(payload)
+
+	if owner != null and owner.has_method("apply_peer_identity_payload"):
+		owner.call("apply_peer_identity_payload", payload)
 
 
 func export_network_spawn_payload() -> Dictionary:
 	ensure_state()
 	if player_network_state == null:
 		return {}
-	return player_network_state.to_spawn_payload()
+
+	var payload: Dictionary = player_network_state.to_spawn_payload()
+	var identity_payload: Dictionary = _get_owner_identity_payload()
+	if not identity_payload.is_empty():
+		payload.merge(identity_payload, true)
+	return payload
 
 
 func get_network_snapshot_payload(position: Vector2, velocity: Vector2, facing: int) -> Dictionary:
-	return {
+	var payload: Dictionary = {
 		"player_id": get_network_player_id(),
 		"peer_id": get_network_peer_id(),
 		"position_x": position.x,
@@ -75,6 +103,12 @@ func get_network_snapshot_payload(position: Vector2, velocity: Vector2, facing: 
 		"facing": facing,
 		"snapshot_time_msec": Time.get_ticks_msec(),
 	}
+
+	var identity_payload: Dictionary = _get_owner_identity_payload()
+	if not identity_payload.is_empty():
+		payload.merge(identity_payload, true)
+
+	return payload
 
 
 func get_network_player_id() -> int:
@@ -121,3 +155,27 @@ func get_remote_facing() -> int:
 	if player_network_state == null:
 		return -1
 	return player_network_state.remote_facing
+
+
+func _get_owner_peer_state() -> PlayerPeerState:
+	if owner == null:
+		return null
+	if not owner.has_method("get_player_peer_state"):
+		return null
+
+	var state_variant: Variant = owner.call("get_player_peer_state")
+	if state_variant is PlayerPeerState:
+		return state_variant as PlayerPeerState
+	return null
+
+
+func _get_owner_identity_payload() -> Dictionary:
+	if owner == null:
+		return {}
+	if not owner.has_method("get_network_identity_payload"):
+		return {}
+
+	var payload_variant: Variant = owner.call("get_network_identity_payload")
+	if typeof(payload_variant) == TYPE_DICTIONARY:
+		return payload_variant as Dictionary
+	return {}

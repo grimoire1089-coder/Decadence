@@ -8,6 +8,7 @@ const NETWORK_SESSION_MANAGER_SCRIPT_PATH: String = "res://Core/Network/NetworkS
 const NETWORK_HELPER_SCRIPT_PATH: String = "res://Core/Network/BaseWorldNetworkHelper.gd"
 const WORLD_TIME_SYNC_MODULE_SCRIPT_PATH: String = "res://Core/World/BaseWorldTimeSyncModule.gd"
 const WORLD_INTERACTION_MODULE_SCRIPT_PATH: String = "res://Core/World/BaseWorldInteractionModule.gd"
+const WORLD_PLAYER_REGISTRY_SCRIPT_PATH: String = "res://Core/World/BaseWorldPlayerRegistry.gd"
 
 @export_file("*.tscn") var default_map_scene_path: String = "res://Maps/TownMap_MainExtract.tscn"
 
@@ -21,6 +22,16 @@ const WORLD_INTERACTION_MODULE_SCRIPT_PATH: String = "res://Core/World/BaseWorld
 @export var network_peer_sync_interval_sec: float = 0.25
 @export var network_snapshot_send_interval_sec: float = 0.05
 @export var network_time_sync_interval_sec: float = 0.25
+
+@export_group("Local Player Identity")
+@export var host_player_display_name: String = "Host"
+@export_file("*.png", "*.jpg", "*.jpeg", "*.webp") var host_front_texture_path: String = ""
+@export_file("*.png", "*.jpg", "*.jpeg", "*.webp") var host_back_texture_path: String = ""
+@export_file("*.png", "*.jpg", "*.jpeg", "*.webp") var host_side_texture_path: String = ""
+@export var client_player_display_name: String = "Client"
+@export_file("*.png", "*.jpg", "*.jpeg", "*.webp") var client_front_texture_path: String = ""
+@export_file("*.png", "*.jpg", "*.jpeg", "*.webp") var client_back_texture_path: String = ""
+@export_file("*.png", "*.jpg", "*.jpeg", "*.webp") var client_side_texture_path: String = ""
 
 @onready var player: Node = get_node_or_null("Sortables/Player")
 @onready var loading_overlay: Node = $UI/LoadingOverlay
@@ -36,9 +47,12 @@ var _network_snapshot_send_accumulator: float = 0.0
 var _network_helper: BaseWorldNetworkHelper = null
 var _time_sync_module: BaseWorldTimeSyncModule = null
 var _interaction_module: BaseWorldInteractionModule = null
+var _player_registry: BaseWorldPlayerRegistry = null
 
 
 func _ready() -> void:
+	_ensure_player_registry()
+	_register_local_player_if_possible()
 	_ensure_network_helper()
 	_ensure_time_sync_module()
 	_ensure_interaction_module()
@@ -111,6 +125,27 @@ func get_map_transition_manager() -> Node:
 func get_network_session_manager() -> Node:
 	_ensure_network_session_manager()
 	return _network_session_manager
+
+
+func get_player_registry() -> BaseWorldPlayerRegistry:
+	_ensure_player_registry()
+	return _player_registry
+
+
+func get_local_player() -> Node:
+	_ensure_player_registry()
+	if _player_registry != null:
+		var local_player: Node = _player_registry.get_local_player()
+		if local_player != null:
+			return local_player
+	return player
+
+
+func get_player_by_peer_id(peer_id: int) -> Node:
+	_ensure_player_registry()
+	if _player_registry == null:
+		return null
+	return _player_registry.get_player_by_peer_id(peer_id)
 
 
 func request_map_transition(target_map_scene_path: String, target_spawn_id: String = "", transition_name: String = "", log_text: String = "") -> void:
@@ -187,6 +222,7 @@ func stop_network_session() -> void:
 	if _network_helper != null:
 		_network_helper.clear_remote_network_players()
 		_network_helper.configure_local_network_player()
+	_apply_local_player_identity_preset()
 	_network_peer_sync_accumulator = 0.0
 	_network_snapshot_send_accumulator = 0.0
 
@@ -196,6 +232,8 @@ func _boot_game() -> void:
 		return
 	_boot_started = true
 
+	_ensure_player_registry()
+	_register_local_player_if_possible()
 	_ensure_map_transition_manager()
 	_set_player_input_locked(true)
 	_open_loading_overlay("読み込み中…", 0)
@@ -220,9 +258,74 @@ func _boot_game() -> void:
 	_bootstrap_network_session_if_needed()
 	if _network_helper != null:
 		_network_helper.configure_local_network_player()
+	_apply_local_player_identity_preset()
+	if _network_helper != null:
 		_network_helper.sync_remote_network_players_from_session()
+		_network_helper.send_local_player_snapshot_now()
 	_resume_time_manager()
 	_set_player_input_locked(false)
+
+
+func _ensure_player_registry() -> void:
+	if _player_registry != null:
+		return
+	if not ResourceLoader.exists(WORLD_PLAYER_REGISTRY_SCRIPT_PATH):
+		return
+
+	var registry_script: Script = load(WORLD_PLAYER_REGISTRY_SCRIPT_PATH) as Script
+	if registry_script == null:
+		push_warning("BaseWorld: BaseWorldPlayerRegistry.gd を読み込めません")
+		return
+
+	var registry_instance: Variant = registry_script.new()
+	if registry_instance is BaseWorldPlayerRegistry:
+		_player_registry = registry_instance as BaseWorldPlayerRegistry
+		_player_registry.setup(self)
+
+
+func _register_local_player_if_possible() -> void:
+	_ensure_player_registry()
+	if _player_registry == null:
+		return
+	if player == null or not is_instance_valid(player):
+		return
+	_player_registry.register_local_player(player)
+
+
+func _apply_local_player_identity_preset() -> void:
+	var local_player: Node = get_local_player()
+	if local_player == null or not is_instance_valid(local_player):
+		return
+
+	var payload: Dictionary = _build_local_player_identity_payload()
+	if payload.is_empty():
+		return
+
+	if local_player.has_method("apply_peer_identity_payload"):
+		local_player.call("apply_peer_identity_payload", payload)
+	elif local_player.has_method("set_player_display_name") and payload.has("display_name"):
+		local_player.call("set_player_display_name", String(payload.get("display_name", "")))
+
+
+func _build_local_player_identity_payload() -> Dictionary:
+	var use_client_preset: bool = network_boot_mode == NETWORK_BOOT_MODE_CLIENT
+
+	var display_name: String = client_player_display_name.strip_edges() if use_client_preset else host_player_display_name.strip_edges()
+	var front_path: String = client_front_texture_path.strip_edges() if use_client_preset else host_front_texture_path.strip_edges()
+	var back_path: String = client_back_texture_path.strip_edges() if use_client_preset else host_back_texture_path.strip_edges()
+	var side_path: String = client_side_texture_path.strip_edges() if use_client_preset else host_side_texture_path.strip_edges()
+
+	var payload: Dictionary = {}
+	if not display_name.is_empty():
+		payload["display_name"] = display_name
+	if not front_path.is_empty():
+		payload["appearance_front_texture_path"] = front_path
+	if not back_path.is_empty():
+		payload["appearance_back_texture_path"] = back_path
+	if not side_path.is_empty():
+		payload["appearance_side_texture_path"] = side_path
+
+	return payload
 
 
 func _ensure_network_helper() -> void:
@@ -584,7 +687,10 @@ func _on_network_peer_left(peer_id: int) -> void:
 func _on_network_connected_to_session() -> void:
 	if _network_helper != null:
 		_network_helper.configure_local_network_player()
+	_apply_local_player_identity_preset()
+	if _network_helper != null:
 		_network_helper.sync_remote_network_players_from_session()
+		_network_helper.send_local_player_snapshot_now()
 	if _time_sync_module != null:
 		_time_sync_module.on_network_connected_to_session()
 	if _is_network_online() and not _can_accept_network_gameplay_requests():
@@ -595,6 +701,7 @@ func _on_network_disconnected_from_session() -> void:
 	if _network_helper != null:
 		_network_helper.clear_remote_network_players()
 		_network_helper.configure_local_network_player()
+	_apply_local_player_identity_preset()
 	if _time_sync_module != null:
 		_time_sync_module.on_network_disconnected_from_session()
 
@@ -602,7 +709,10 @@ func _on_network_disconnected_from_session() -> void:
 func _on_network_local_peer_id_changed(_peer_id: int) -> void:
 	if _network_helper != null:
 		_network_helper.configure_local_network_player()
+	_apply_local_player_identity_preset()
+	if _network_helper != null:
 		_network_helper.sync_remote_network_players_from_session()
+		_network_helper.send_local_player_snapshot_now()
 	if _time_sync_module != null:
 		_time_sync_module.on_network_local_peer_id_changed()
 
@@ -610,7 +720,10 @@ func _on_network_local_peer_id_changed(_peer_id: int) -> void:
 func _on_network_hosting_started(_port: int, _max_clients: int) -> void:
 	if _network_helper != null:
 		_network_helper.configure_local_network_player()
+	_apply_local_player_identity_preset()
+	if _network_helper != null:
 		_network_helper.sync_remote_network_players_from_session()
+		_network_helper.send_local_player_snapshot_now()
 	if _time_sync_module != null:
 		_time_sync_module.on_network_hosting_started()
 
@@ -657,8 +770,9 @@ func _resume_time_manager() -> void:
 
 
 func _set_player_input_locked(value: bool) -> void:
-	if player != null and player.has_method("set_input_locked"):
-		player.call("set_input_locked", value)
+	var local_player: Node = get_local_player()
+	if local_player != null and local_player.has_method("set_input_locked"):
+		local_player.call("set_input_locked", value)
 
 
 func _open_loading_overlay(text: String, progress: float = -1.0) -> void:
