@@ -2,6 +2,7 @@ extends StaticBody2D
 class_name VendingMachine
 
 const SAVE_PATH_PREFIX: String = "user://vending_machine_"
+const CUSTOMER_MODULE_SCRIPT_PATH: String = "res://Data/Object/VendingMachine/VendingMachineCustomerModule.gd"
 
 @export var machine_name: String = "委託自販機"
 @export var interact_action_text: String = "開く"
@@ -11,6 +12,7 @@ const SAVE_PATH_PREFIX: String = "user://vending_machine_"
 
 var slots: Array = []
 var earnings: int = 0
+var customer_module: VendingMachineCustomerModule = null
 
 @onready var interact_area: Area2D = $InteractArea
 @onready var customer_timer: Timer = $CustomerTimer
@@ -21,6 +23,7 @@ func _ready() -> void:
 
 	_init_slots()
 	load_data()
+	_ensure_customer_module()
 
 	if interact_area != null:
 		interact_area.body_entered.connect(_on_body_entered)
@@ -29,22 +32,36 @@ func _ready() -> void:
 	if customer_timer != null:
 		customer_timer.timeout.connect(_on_customer_timer_timeout)
 		customer_timer.start()
-		customer_timer.paused = not _is_customer_simulation_authority()
+		if customer_module != null:
+			customer_module.sync_customer_timer_authority()
 
 
 func _process(_delta: float) -> void:
-	if customer_timer == null:
-		return
-
-	var should_pause: bool = not _is_customer_simulation_authority()
-	if customer_timer.paused != should_pause:
-		customer_timer.paused = should_pause
+	if customer_module != null:
+		customer_module.sync_customer_timer_authority()
 
 
 func _init_slots() -> void:
 	slots.clear()
 	for _i in range(slot_count):
 		slots.append(VendingSlot.new())
+
+
+func _ensure_customer_module() -> void:
+	if customer_module != null:
+		return
+	if not ResourceLoader.exists(CUSTOMER_MODULE_SCRIPT_PATH):
+		return
+
+	var module_script: Script = load(CUSTOMER_MODULE_SCRIPT_PATH) as Script
+	if module_script == null:
+		push_warning("VendingMachine: VendingMachineCustomerModule.gd を読み込めません")
+		return
+
+	var module_instance: Variant = module_script.new()
+	if module_instance is VendingMachineCustomerModule:
+		customer_module = module_instance as VendingMachineCustomerModule
+		customer_module.setup(self)
 
 
 func _on_body_entered(body: Node) -> void:
@@ -292,34 +309,13 @@ func build_item_from_network_payload(payload: Dictionary) -> Resource:
 
 
 func _on_customer_timer_timeout() -> void:
-	if not _is_customer_simulation_authority():
-		if customer_timer != null:
-			customer_timer.paused = true
-		return
-	_simulate_customer_purchase()
+	if customer_module != null:
+		customer_module.on_customer_timer_timeout()
 
 
 func _simulate_customer_purchase() -> void:
-	var candidates: Array[int] = []
-
-	for i in range(slots.size()):
-		if not slots[i].is_empty():
-			candidates.append(i)
-
-	if candidates.is_empty():
-		return
-
-	var chosen_index: int = candidates[randi() % candidates.size()]
-	var slot = slots[chosen_index]
-
-	slot.amount -= 1
-	earnings += slot.price
-
-	if slot.amount <= 0:
-		slot.clear()
-
-	save_data()
-	_notify_state_changed()
+	if customer_module != null:
+		customer_module.simulate_customer_purchase()
 
 
 func _refresh_open_ui() -> void:
@@ -351,15 +347,8 @@ func _notify_state_changed() -> void:
 
 
 func _is_customer_simulation_authority() -> bool:
-	var current_scene: Node = get_tree().current_scene
-	if current_scene == null:
-		return true
-
-	if current_scene.has_method("_is_network_online") and bool(current_scene.call("_is_network_online")):
-		if current_scene.has_method("_can_accept_network_gameplay_requests"):
-			return bool(current_scene.call("_can_accept_network_gameplay_requests"))
-		return false
-
+	if customer_module != null:
+		return customer_module.is_customer_simulation_authority()
 	return true
 
 
