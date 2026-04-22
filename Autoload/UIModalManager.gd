@@ -8,6 +8,7 @@ const TIME_PAUSE_PREFIX: String = "UI:"
 const MANAGER_GROUP: StringName = &"ui_modal_manager"
 const TIME_MANAGER_GROUP: StringName = &"time_manager"
 const TIME_MANAGER_SCRIPT_NAME: String = "TimeManager.gd"
+const NETWORK_SESSION_MANAGER_GROUP: StringName = &"network_session_manager"
 
 var _locks: Dictionary = {}
 
@@ -28,12 +29,14 @@ func acquire_lock(source: String, lock_player_input: bool = true, pause_time: bo
 		"pause_time": false
 	})
 
+	var effective_pause_time: bool = pause_time and _should_pause_time_for_ui()
+
 	entry["count"] = int(entry.get("count", 0)) + 1
 	entry["lock_player_input"] = bool(entry.get("lock_player_input", false)) or lock_player_input
-	entry["pause_time"] = bool(entry.get("pause_time", false)) or pause_time
+	entry["pause_time"] = bool(entry.get("pause_time", false)) or effective_pause_time
 	_locks[source] = entry
 
-	if pause_time:
+	if effective_pause_time:
 		_request_time_pause(source)
 
 	_emit_lock_state(player_locked_before)
@@ -45,9 +48,11 @@ func release_lock(source: String) -> void:
 		source = "unknown_ui"
 
 	var player_locked_before: bool = is_player_input_blocked()
+	var should_release_pause: bool = false
 
 	if _locks.has(source):
 		var entry: Dictionary = _locks[source]
+		should_release_pause = bool(entry.get("pause_time", false))
 		var count: int = int(entry.get("count", 1)) - 1
 
 		if count > 0:
@@ -56,7 +61,8 @@ func release_lock(source: String) -> void:
 		else:
 			_locks.erase(source)
 
-	_release_time_pause(source)
+	if should_release_pause:
+		_release_time_pause(source)
 	_emit_lock_state(player_locked_before)
 
 
@@ -65,7 +71,10 @@ func clear_all_locks() -> void:
 	var sources: Array = _locks.keys()
 
 	for source_value in sources:
-		_release_time_pause(str(source_value))
+		var source: String = str(source_value)
+		var entry: Dictionary = _locks.get(source, {}) as Dictionary
+		if bool(entry.get("pause_time", false)):
+			_release_time_pause(source)
 
 	_locks.clear()
 	_emit_lock_state(player_locked_before)
@@ -111,6 +120,30 @@ func _find_time_manager() -> Node:
 				return child
 
 	return null
+
+
+func _find_network_session_manager() -> Node:
+	var by_path: Node = get_node_or_null("/root/NetworkSessionManager")
+	if by_path != null:
+		return by_path
+
+	var by_group: Node = get_tree().get_first_node_in_group(NETWORK_SESSION_MANAGER_GROUP)
+	if by_group != null:
+		return by_group
+
+	return null
+
+
+func _should_pause_time_for_ui() -> bool:
+	var session_manager: Node = _find_network_session_manager()
+	if session_manager != null and session_manager.has_method("is_online"):
+		return not bool(session_manager.call("is_online"))
+
+	var current_scene: Node = get_tree().current_scene
+	if current_scene != null and current_scene.has_method("_is_network_online"):
+		return not bool(current_scene.call("_is_network_online"))
+
+	return true
 
 
 func _request_time_pause(source: String) -> void:
