@@ -13,6 +13,7 @@ const CUSTOMER_MODULE_SCRIPT_PATH: String = "res://Data/Object/VendingMachine/Ve
 var slots: Array = []
 var earnings: int = 0
 var customer_module: VendingMachineCustomerModule = null
+var _customer_timer_paused_by_ui: bool = false
 
 @onready var interact_area: Area2D = $InteractArea
 @onready var customer_timer: Timer = $CustomerTimer
@@ -33,12 +34,12 @@ func _ready() -> void:
 		customer_timer.timeout.connect(_on_customer_timer_timeout)
 		customer_timer.start()
 		if customer_module != null:
-			customer_module.sync_customer_timer_authority()
+			customer_module.sync_customer_timer_pause_state()
 
 
 func _process(_delta: float) -> void:
 	if customer_module != null:
-		customer_module.sync_customer_timer_authority()
+		customer_module.sync_customer_timer_pause_state()
 
 
 func _init_slots() -> void:
@@ -207,9 +208,12 @@ func consume_earnings_for_network() -> int:
 
 
 func set_paused_by_ui(value: bool) -> void:
-	if customer_timer == null:
+	_customer_timer_paused_by_ui = value
+	if customer_module != null:
+		customer_module.sync_customer_timer_pause_state()
 		return
-	customer_timer.paused = value
+	if customer_timer != null:
+		customer_timer.paused = value
 
 
 func pause_customer_timer() -> void:
@@ -224,6 +228,10 @@ func is_customer_timer_paused() -> bool:
 	if customer_timer == null:
 		return false
 	return customer_timer.paused
+
+
+func is_customer_timer_paused_by_ui() -> bool:
+	return _customer_timer_paused_by_ui
 
 
 func export_network_state() -> Dictionary:

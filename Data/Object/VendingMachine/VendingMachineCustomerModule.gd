@@ -8,11 +8,11 @@ func setup(owner_machine: VendingMachine) -> void:
 	machine = owner_machine
 
 
-func sync_customer_timer_authority() -> void:
+func sync_customer_timer_pause_state() -> void:
 	if machine == null or machine.customer_timer == null:
 		return
 
-	var should_pause: bool = not is_customer_simulation_authority()
+	var should_pause: bool = machine.is_customer_timer_paused_by_ui() or not is_customer_simulation_authority()
 	if machine.customer_timer.paused != should_pause:
 		machine.customer_timer.paused = should_pause
 
@@ -20,10 +20,15 @@ func sync_customer_timer_authority() -> void:
 func on_customer_timer_timeout() -> void:
 	if machine == null:
 		return
-	if not is_customer_simulation_authority():
-		if machine.customer_timer != null:
-			machine.customer_timer.paused = true
+
+	if machine.is_customer_timer_paused_by_ui():
+		sync_customer_timer_pause_state()
 		return
+
+	if not is_customer_simulation_authority():
+		sync_customer_timer_pause_state()
+		return
+
 	simulate_customer_purchase()
 
 

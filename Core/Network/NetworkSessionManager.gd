@@ -90,11 +90,15 @@ func join_game(address: String, port: int = DEFAULT_PORT) -> bool:
 func close_session() -> void:
 	_disconnect_multiplayer_signals()
 
-	var current_peer: MultiplayerPeer = multiplayer.multiplayer_peer
+	var api: MultiplayerAPI = _get_multiplayer_api()
+	var current_peer: MultiplayerPeer = null
+	if api != null:
+		current_peer = api.multiplayer_peer
 	if current_peer != null:
 		current_peer.close()
 
-	multiplayer.multiplayer_peer = null
+	if api != null:
+		api.multiplayer_peer = null
 
 	if _enet_adapter != null:
 		_enet_adapter.close()
@@ -107,7 +111,10 @@ func close_session() -> void:
 
 
 func is_online() -> bool:
-	return multiplayer.multiplayer_peer != null and session_mode != MODE_OFFLINE
+	var api: MultiplayerAPI = _get_multiplayer_api()
+	if api == null:
+		return false
+	return api.multiplayer_peer != null and session_mode != MODE_OFFLINE
 
 
 func is_host() -> bool:
@@ -127,9 +134,10 @@ func get_local_peer_id() -> int:
 
 
 func get_remote_peer_ids() -> PackedInt32Array:
-	if multiplayer == null:
+	var api: MultiplayerAPI = _get_multiplayer_api()
+	if api == null:
 		return PackedInt32Array()
-	return multiplayer.get_peers()
+	return api.get_peers()
 
 
 func get_current_port() -> int:
@@ -164,7 +172,10 @@ func _ensure_enet_adapter() -> EnetSessionAdapter:
 
 
 func _attach_peer(peer: MultiplayerPeer, mode: StringName) -> void:
-	multiplayer.multiplayer_peer = peer
+	var api: MultiplayerAPI = _get_multiplayer_api()
+	if api == null:
+		return
+	api.multiplayer_peer = peer
 	_connect_multiplayer_signals()
 	_set_session_mode(mode)
 	_refresh_local_peer_id()
@@ -179,8 +190,9 @@ func _set_session_mode(next_mode: StringName) -> void:
 
 func _refresh_local_peer_id() -> void:
 	var next_peer_id: int = 1
-	if multiplayer != null and multiplayer.multiplayer_peer != null:
-		next_peer_id = multiplayer.get_unique_id()
+	var api: MultiplayerAPI = _get_multiplayer_api()
+	if api != null and api.multiplayer_peer != null:
+		next_peer_id = api.get_unique_id()
 
 	if local_peer_id == next_peer_id:
 		return
@@ -193,11 +205,15 @@ func _connect_multiplayer_signals() -> void:
 	if _signals_connected:
 		return
 
-	multiplayer.peer_connected.connect(_on_peer_connected)
-	multiplayer.peer_disconnected.connect(_on_peer_disconnected)
-	multiplayer.connected_to_server.connect(_on_connected_to_server)
-	multiplayer.connection_failed.connect(_on_connection_failed)
-	multiplayer.server_disconnected.connect(_on_server_disconnected)
+	var api: MultiplayerAPI = _get_multiplayer_api()
+	if api == null:
+		return
+
+	api.peer_connected.connect(_on_peer_connected)
+	api.peer_disconnected.connect(_on_peer_disconnected)
+	api.connected_to_server.connect(_on_connected_to_server)
+	api.connection_failed.connect(_on_connection_failed)
+	api.server_disconnected.connect(_on_server_disconnected)
 	_signals_connected = true
 
 
@@ -205,16 +221,21 @@ func _disconnect_multiplayer_signals() -> void:
 	if not _signals_connected:
 		return
 
-	if multiplayer.peer_connected.is_connected(_on_peer_connected):
-		multiplayer.peer_connected.disconnect(_on_peer_connected)
-	if multiplayer.peer_disconnected.is_connected(_on_peer_disconnected):
-		multiplayer.peer_disconnected.disconnect(_on_peer_disconnected)
-	if multiplayer.connected_to_server.is_connected(_on_connected_to_server):
-		multiplayer.connected_to_server.disconnect(_on_connected_to_server)
-	if multiplayer.connection_failed.is_connected(_on_connection_failed):
-		multiplayer.connection_failed.disconnect(_on_connection_failed)
-	if multiplayer.server_disconnected.is_connected(_on_server_disconnected):
-		multiplayer.server_disconnected.disconnect(_on_server_disconnected)
+	var api: MultiplayerAPI = _get_multiplayer_api()
+	if api == null:
+		_signals_connected = false
+		return
+
+	if api.peer_connected.is_connected(_on_peer_connected):
+		api.peer_connected.disconnect(_on_peer_connected)
+	if api.peer_disconnected.is_connected(_on_peer_disconnected):
+		api.peer_disconnected.disconnect(_on_peer_disconnected)
+	if api.connected_to_server.is_connected(_on_connected_to_server):
+		api.connected_to_server.disconnect(_on_connected_to_server)
+	if api.connection_failed.is_connected(_on_connection_failed):
+		api.connection_failed.disconnect(_on_connection_failed)
+	if api.server_disconnected.is_connected(_on_server_disconnected):
+		api.server_disconnected.disconnect(_on_server_disconnected)
 
 	_signals_connected = false
 
@@ -236,7 +257,9 @@ func _on_connected_to_server() -> void:
 func _on_connection_failed() -> void:
 	last_error_message = "サーバーとの接続に失敗しました"
 	_disconnect_multiplayer_signals()
-	multiplayer.multiplayer_peer = null
+	var api: MultiplayerAPI = _get_multiplayer_api()
+	if api != null:
+		api.multiplayer_peer = null
 	if _enet_adapter != null:
 		_enet_adapter.close()
 	current_port = DEFAULT_PORT
@@ -249,7 +272,9 @@ func _on_connection_failed() -> void:
 func _on_server_disconnected() -> void:
 	last_error_message = "サーバーとの接続が切断されました"
 	_disconnect_multiplayer_signals()
-	multiplayer.multiplayer_peer = null
+	var api: MultiplayerAPI = _get_multiplayer_api()
+	if api != null:
+		api.multiplayer_peer = null
 	if _enet_adapter != null:
 		_enet_adapter.close()
 	current_port = DEFAULT_PORT
@@ -257,3 +282,10 @@ func _on_server_disconnected() -> void:
 	_set_session_mode(MODE_OFFLINE)
 	_refresh_local_peer_id()
 	disconnected_from_session.emit()
+
+
+func _get_multiplayer_api() -> MultiplayerAPI:
+	var api: MultiplayerAPI = multiplayer
+	if api == null:
+		return null
+	return api
