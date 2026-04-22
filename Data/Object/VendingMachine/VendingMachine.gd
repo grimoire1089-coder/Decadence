@@ -29,7 +29,16 @@ func _ready() -> void:
 	if customer_timer != null:
 		customer_timer.timeout.connect(_on_customer_timer_timeout)
 		customer_timer.start()
-		_refresh_customer_timer_authority_state()
+		customer_timer.paused = not _is_customer_simulation_authority()
+
+
+func _process(_delta: float) -> void:
+	if customer_timer == null:
+		return
+
+	var should_pause: bool = not _is_customer_simulation_authority()
+	if customer_timer.paused != should_pause:
+		customer_timer.paused = should_pause
 
 
 func _init_slots() -> void:
@@ -87,14 +96,14 @@ func stock_item(slot_index: int, item_data: Resource, amount: int, _price: int) 
 		slot.amount = amount
 		slot.price = sell_price
 		save_data()
-		_notify_machine_state_changed()
+		_notify_state_changed()
 		return true
 
 	if _can_stack_item(slot.item_data, item_data):
 		slot.amount += amount
 		slot.price = sell_price
 		save_data()
-		_notify_machine_state_changed()
+		_notify_state_changed()
 		return true
 
 	return false
@@ -124,7 +133,7 @@ func take_back_item(slot_index: int, amount: int) -> Dictionary:
 		slot.clear()
 
 	save_data()
-	_notify_machine_state_changed()
+	_notify_state_changed()
 	return result
 
 
@@ -138,7 +147,7 @@ func set_slot_price(slot_index: int, _new_price: int) -> void:
 
 	slot.price = _get_item_sell_price(slot.item_data)
 	save_data()
-	_notify_machine_state_changed()
+	_notify_state_changed()
 
 
 func peek_slot_price(slot_index: int) -> int:
@@ -164,7 +173,7 @@ func collect_earnings(player: Node) -> int:
 		player.call("add_credits", amount)
 		earnings = 0
 		save_data()
-		_notify_machine_state_changed()
+		_notify_state_changed()
 		return amount
 
 	return 0
@@ -176,7 +185,7 @@ func consume_earnings_for_network() -> int:
 		return 0
 	earnings = 0
 	save_data()
-	_notify_machine_state_changed()
+	_notify_state_changed()
 	return amount
 
 
@@ -283,7 +292,9 @@ func build_item_from_network_payload(payload: Dictionary) -> Resource:
 
 
 func _on_customer_timer_timeout() -> void:
-	if not _should_run_local_machine_logic():
+	if not _is_customer_simulation_authority():
+		if customer_timer != null:
+			customer_timer.paused = true
 		return
 	_simulate_customer_purchase()
 
@@ -308,7 +319,48 @@ func _simulate_customer_purchase() -> void:
 		slot.clear()
 
 	save_data()
-	_notify_machine_state_changed()
+	_notify_state_changed()
+
+
+func _refresh_open_ui() -> void:
+	var ui: Node = get_tree().get_first_node_in_group("vending_ui")
+	if ui == null or not ui.visible:
+		return
+	if not ui.has_method("refresh"):
+		return
+
+	var current_machine_variant: Variant = ui.get("current_machine")
+	if current_machine_variant == self:
+		ui.call("refresh")
+
+
+func _notify_state_changed() -> void:
+	_refresh_open_ui()
+
+	var current_scene: Node = get_tree().current_scene
+	if current_scene == null:
+		return
+
+	var module_variant: Variant = current_scene.get("_interaction_module")
+	if module_variant == null:
+		return
+
+	var module_object: Object = module_variant as Object
+	if module_object != null and module_object.has_method("on_vending_machine_state_changed"):
+		module_object.call("on_vending_machine_state_changed", str(get_path()), export_network_state())
+
+
+func _is_customer_simulation_authority() -> bool:
+	var current_scene: Node = get_tree().current_scene
+	if current_scene == null:
+		return true
+
+	if current_scene.has_method("_is_network_online") and bool(current_scene.call("_is_network_online")):
+		if current_scene.has_method("_can_accept_network_gameplay_requests"):
+			return bool(current_scene.call("_can_accept_network_gameplay_requests"))
+		return false
+
+	return true
 
 
 func _can_stack_item(left_item: Resource, right_item: Resource) -> bool:
@@ -563,67 +615,3 @@ func _extract_request_peer_id(player: Node) -> int:
 	if multiplayer_api != null:
 		return max(multiplayer_api.get_unique_id(), 1)
 	return 1
-
-
-func _notify_machine_state_changed() -> void:
-	_refresh_open_ui()
-	_push_network_state_to_clients_if_needed()
-
-
-func _refresh_open_ui() -> void:
-	var ui: Node = get_tree().get_first_node_in_group("vending_ui")
-	if ui == null or not ui.visible or not ui.has_method("refresh"):
-		return
-
-	var current_machine_variant: Variant = ui.get("current_machine")
-	if current_machine_variant == self:
-		ui.call("refresh")
-
-
-func _push_network_state_to_clients_if_needed() -> void:
-	if not _is_authoritative_machine_owner():
-		return
-
-	var current_scene: Node = get_tree().current_scene
-	if current_scene == null:
-		return
-	if not current_scene.has_method("_push_vending_machine_state_to_remote_peers"):
-		return
-
-	current_scene.call("_push_vending_machine_state_to_remote_peers", str(get_path()), export_network_state())
-
-
-func _refresh_customer_timer_authority_state() -> void:
-	if customer_timer == null:
-		return
-	customer_timer.paused = not _should_run_local_machine_logic()
-
-
-func _should_run_local_machine_logic() -> bool:
-	var current_scene: Node = get_tree().current_scene
-	if current_scene == null:
-		return true
-
-	var boot_mode: String = String(current_scene.get("network_boot_mode")).strip_edges()
-	if boot_mode == "disabled" or boot_mode.is_empty():
-		return true
-	if boot_mode == "client":
-		return false
-
-	if current_scene.has_method("_is_network_online") and bool(current_scene.call("_is_network_online")):
-		if current_scene.has_method("_can_accept_network_gameplay_requests"):
-			return bool(current_scene.call("_can_accept_network_gameplay_requests"))
-		return multiplayer != null and multiplayer.is_server()
-
-	return boot_mode != "client"
-
-
-func _is_authoritative_machine_owner() -> bool:
-	var current_scene: Node = get_tree().current_scene
-	if current_scene == null:
-		return true
-	if current_scene.has_method("_is_network_online") and not bool(current_scene.call("_is_network_online")):
-		return true
-	if current_scene.has_method("_can_accept_network_gameplay_requests"):
-		return bool(current_scene.call("_can_accept_network_gameplay_requests"))
-	return multiplayer != null and multiplayer.is_server()

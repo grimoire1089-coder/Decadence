@@ -135,6 +135,17 @@ func push_vending_machine_state_to_remote_peers(machine_path: String, state: Dic
 	_world.rpc("_rpc_sync_vending_machine_state", machine_path, state)
 
 
+func on_vending_machine_state_changed(machine_path: String, state: Dictionary) -> void:
+	_refresh_open_vending_ui(machine_path)
+
+	if not _is_network_online():
+		return
+	if not _can_accept_network_gameplay_requests():
+		return
+
+	push_vending_machine_state_to_remote_peers(machine_path, state)
+
+
 func send_vending_action_result_to_peer(target_peer_id: int, machine_path: String, result: Dictionary) -> void:
 	var resolved_peer_id: int = max(target_peer_id, 1)
 	var normalized_result: Dictionary = result.duplicate(true)
@@ -329,7 +340,6 @@ func _handle_vending_machine_stock_request(request: Dictionary, requesting_peer_
 	var machine_state: Dictionary = {}
 	if stock_machine.has_method("export_network_state"):
 		machine_state = stock_machine.call("export_network_state") as Dictionary
-		push_vending_machine_state_to_remote_peers(stock_machine_path, machine_state)
 
 	send_vending_action_result_to_peer(stock_target_peer_id, stock_machine_path, {
 		"interaction_kind": interaction_kind,
@@ -381,7 +391,6 @@ func _handle_vending_machine_take_back_request(request: Dictionary, requesting_p
 	var machine_state: Dictionary = {}
 	if take_machine.has_method("export_network_state"):
 		machine_state = take_machine.call("export_network_state") as Dictionary
-		push_vending_machine_state_to_remote_peers(take_machine_path, machine_state)
 
 	send_vending_action_result_to_peer(take_target_peer_id, take_machine_path, {
 		"interaction_kind": interaction_kind,
@@ -432,7 +441,6 @@ func _handle_vending_machine_collect_request(request: Dictionary, requesting_pee
 	var machine_state: Dictionary = {}
 	if collect_machine.has_method("export_network_state"):
 		machine_state = collect_machine.call("export_network_state") as Dictionary
-		push_vending_machine_state_to_remote_peers(collect_machine_path, machine_state)
 
 	send_vending_action_result_to_peer(collect_target_peer_id, collect_machine_path, {
 		"interaction_kind": interaction_kind,
@@ -458,6 +466,22 @@ func _handle_crop_machine_plant_request(request: Dictionary, requesting_peer_id:
 		return
 
 	_world.rpc_id(target_peer_id, "_rpc_handle_crop_machine_plant_result", result)
+
+
+func _refresh_open_vending_ui(machine_path: String) -> void:
+	var vending_ui: Node = _world.get_tree().get_first_node_in_group("vending_ui")
+	if vending_ui == null or not vending_ui.visible:
+		return
+	if not vending_ui.has_method("refresh"):
+		return
+
+	var machine_node: Node = _world.get_node_or_null(NodePath(machine_path))
+	if machine_node == null:
+		return
+
+	var current_machine_variant: Variant = vending_ui.get("current_machine")
+	if current_machine_variant == machine_node:
+		vending_ui.call("refresh")
 
 
 func _get_local_network_peer_id() -> int:
