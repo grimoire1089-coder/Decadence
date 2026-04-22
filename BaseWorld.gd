@@ -493,6 +493,12 @@ func _rpc_handle_crop_machine_plant_result(result: Dictionary) -> void:
 
 
 @rpc("authority", "call_remote", "reliable")
+func _rpc_handle_crop_machine_unlock_result(result: Dictionary) -> void:
+	if _interaction_module != null:
+		_interaction_module.handle_crop_machine_unlock_result_local(result)
+
+
+@rpc("authority", "call_remote", "reliable")
 func _rpc_sync_world_time_state(state: Dictionary) -> void:
 	if _time_sync_module != null:
 		_time_sync_module.apply_remote_time_state(state)
@@ -710,6 +716,26 @@ func _add_shared_credits(amount: int) -> void:
 		CurrencyManager.add_credits(amount)
 		return
 	_set_shared_credits_local(_get_shared_credits() + amount)
+
+
+func _can_spend_shared_credits(amount: int) -> bool:
+	if amount < 0:
+		return false
+	if CurrencyManager != null and CurrencyManager.has_method("can_spend"):
+		return bool(CurrencyManager.can_spend(amount))
+	return _get_shared_credits() >= amount
+
+
+func _spend_shared_credits(amount: int) -> bool:
+	if amount <= 0:
+		return false
+	if CurrencyManager != null and CurrencyManager.has_method("spend_credits"):
+		return bool(CurrencyManager.spend_credits(amount))
+	var current_credits: int = _get_shared_credits()
+	if current_credits < amount:
+		return false
+	_set_shared_credits_local(current_credits - amount)
+	return true
 
 
 func _push_shared_credits_to_remote_peers() -> void:

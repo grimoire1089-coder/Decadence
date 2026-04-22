@@ -81,6 +81,9 @@ func apply_world_interaction_request_local(request: Dictionary, requesting_peer_
 		"crop_machine_plant":
 			_handle_crop_machine_plant_request(request, requesting_peer_id)
 
+		"crop_machine_unlock_slot":
+			_handle_crop_machine_unlock_request(request, requesting_peer_id)
+
 		_:
 			return
 
@@ -133,17 +136,6 @@ func push_vending_machine_state_to_remote_peers(machine_path: String, state: Dic
 	if not _is_network_online():
 		return
 	_world.rpc("_rpc_sync_vending_machine_state", machine_path, state)
-
-
-func on_vending_machine_state_changed(machine_path: String, state: Dictionary) -> void:
-	_refresh_open_vending_ui(machine_path)
-
-	if not _is_network_online():
-		return
-	if not _can_accept_network_gameplay_requests():
-		return
-
-	push_vending_machine_state_to_remote_peers(machine_path, state)
 
 
 func send_vending_action_result_to_peer(target_peer_id: int, machine_path: String, result: Dictionary) -> void:
@@ -282,7 +274,16 @@ func apply_crop_machine_state_local(machine_path: String, state_payload: Diction
 
 func handle_crop_machine_plant_result_local(result: Dictionary) -> void:
 	var crop_machine_ui: Node = _world.get_tree().get_first_node_in_group("crop_machine_ui")
-	if crop_machine_ui != null and crop_machine_ui.has_method("handle_network_plant_result"):
+	if crop_machine_ui == null:
+		return
+
+	var interaction_kind: String = String(result.get("interaction_kind", "")).strip_edges()
+	if interaction_kind == "crop_machine_unlock_slot":
+		if crop_machine_ui.has_method("handle_network_unlock_result"):
+			crop_machine_ui.call("handle_network_unlock_result", result)
+		return
+
+	if crop_machine_ui.has_method("handle_network_plant_result"):
 		crop_machine_ui.call("handle_network_plant_result", result)
 
 
@@ -340,6 +341,7 @@ func _handle_vending_machine_stock_request(request: Dictionary, requesting_peer_
 	var machine_state: Dictionary = {}
 	if stock_machine.has_method("export_network_state"):
 		machine_state = stock_machine.call("export_network_state") as Dictionary
+		push_vending_machine_state_to_remote_peers(stock_machine_path, machine_state)
 
 	send_vending_action_result_to_peer(stock_target_peer_id, stock_machine_path, {
 		"interaction_kind": interaction_kind,
@@ -391,6 +393,7 @@ func _handle_vending_machine_take_back_request(request: Dictionary, requesting_p
 	var machine_state: Dictionary = {}
 	if take_machine.has_method("export_network_state"):
 		machine_state = take_machine.call("export_network_state") as Dictionary
+		push_vending_machine_state_to_remote_peers(take_machine_path, machine_state)
 
 	send_vending_action_result_to_peer(take_target_peer_id, take_machine_path, {
 		"interaction_kind": interaction_kind,
@@ -438,22 +441,16 @@ func _handle_vending_machine_collect_request(request: Dictionary, requesting_pee
 		})
 		return
 
-	var shared_credits: int = 0
-	if _world != null and _world.has_method("_add_shared_credits"):
-		_world.call("_add_shared_credits", collected_amount)
-	if _world != null and _world.has_method("_get_shared_credits"):
-		shared_credits = int(_world.call("_get_shared_credits"))
-
 	var machine_state: Dictionary = {}
 	if collect_machine.has_method("export_network_state"):
 		machine_state = collect_machine.call("export_network_state") as Dictionary
+		push_vending_machine_state_to_remote_peers(collect_machine_path, machine_state)
 
 	send_vending_action_result_to_peer(collect_target_peer_id, collect_machine_path, {
 		"interaction_kind": interaction_kind,
 		"success": true,
 		"message": "売上を回収した",
 		"collected_amount": collected_amount,
-		"shared_credits": shared_credits,
 		"machine_state": machine_state,
 	})
 
@@ -475,20 +472,80 @@ func _handle_crop_machine_plant_request(request: Dictionary, requesting_peer_id:
 	_world.rpc_id(target_peer_id, "_rpc_handle_crop_machine_plant_result", result)
 
 
-func _refresh_open_vending_ui(machine_path: String) -> void:
-	var vending_ui: Node = _world.get_tree().get_first_node_in_group("vending_ui")
-	if vending_ui == null or not vending_ui.visible:
-		return
-	if not vending_ui.has_method("refresh"):
+func _handle_crop_machine_unlock_request(request: Dictionary, requesting_peer_id: int) -> void:
+	var target_peer_id: int = max(requesting_peer_id, 1)
+	var machine_path: String = String(request.get("machine_path", "")).strip_edges()
+	var result: Dictionary = {
+		"interaction_kind": "crop_machine_unlock_slot",
+		"success": false,
+		"message": "",
+		"machine_path": machine_path,
+		"shared_credits": _world._get_shared_credits(),
+		"unlocked_slot_index": -1,
+	}
+
+	if machine_path.is_empty():
+		result["message"] = "栽培機が見つからない"
+		_deliver_crop_machine_unlock_result(target_peer_id, result)
 		return
 
 	var machine_node: Node = _world.get_node_or_null(NodePath(machine_path))
-	if machine_node == null:
+	var machine: CropMachine = machine_node as CropMachine
+	if machine == null:
+		result["message"] = "栽培機が見つからない"
+		_deliver_crop_machine_unlock_result(target_peer_id, result)
 		return
 
-	var current_machine_variant: Variant = vending_ui.get("current_machine")
-	if current_machine_variant == machine_node:
-		vending_ui.call("refresh")
+	if not machine.can_unlock_slot():
+		result["message"] = "これ以上スロットを増やせない"
+		_deliver_crop_machine_unlock_result(target_peer_id, result)
+		return
+
+	var unlock_cost: int = max(int(machine.get_next_slot_unlock_cost()), 0)
+	var current_shared_credits: int = _world._get_shared_credits()
+	if current_shared_credits < unlock_cost:
+		result["message"] = "クレジットが足りない（必要: %d Cr / 所持: %d Cr）" % [unlock_cost, current_shared_credits]
+		result["shared_credits"] = current_shared_credits
+		_deliver_crop_machine_unlock_result(target_peer_id, result)
+		return
+
+	_world._set_shared_credits_local(current_shared_credits - unlock_cost)
+
+	var next_slot_number: int = machine.get_unlocked_slot_count() + 1
+	var unlocked: bool = machine.unlock_slot()
+	if not unlocked:
+		_world._set_shared_credits_local(current_shared_credits)
+		result["message"] = "スロット解放に失敗した"
+		result["shared_credits"] = _world._get_shared_credits()
+		_deliver_crop_machine_unlock_result(target_peer_id, result)
+		return
+
+	machine._refresh_open_ui()
+
+	var machine_state: Dictionary = {}
+	if machine.has_method("export_network_state_payload"):
+		machine_state = machine.call("export_network_state_payload") as Dictionary
+	else:
+		machine_state = machine.get_save_payload()
+
+	if not machine_state.is_empty() and _is_network_online():
+		_world.rpc("_rpc_sync_crop_machine_state", machine_path, machine_state)
+
+	result["success"] = true
+	result["message"] = "スロット%dを解放した（-%d Cr）" % [next_slot_number, unlock_cost]
+	result["shared_credits"] = _world._get_shared_credits()
+	result["machine_state"] = machine_state
+	result["unlocked_slot_index"] = machine.get_unlocked_slot_count() - 1
+
+	_deliver_crop_machine_unlock_result(target_peer_id, result)
+
+
+func _deliver_crop_machine_unlock_result(target_peer_id: int, result: Dictionary) -> void:
+	if not _is_network_online() or target_peer_id == _get_local_network_peer_id():
+		handle_crop_machine_plant_result_local(result)
+		return
+
+	_world.rpc_id(target_peer_id, "_rpc_handle_crop_machine_plant_result", result)
 
 
 func _get_local_network_peer_id() -> int:

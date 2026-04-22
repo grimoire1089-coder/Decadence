@@ -119,6 +119,10 @@ func _ready() -> void:
 	if not resized.is_connected(_on_ui_resized):
 		resized.connect(_on_ui_resized)
 
+	if CurrencyManager != null:
+		if not CurrencyManager.credits_changed.is_connected(_on_credits_changed):
+			CurrencyManager.credits_changed.connect(_on_credits_changed)
+
 
 func _exit_tree() -> void:
 	_release_ui_lock()
@@ -339,6 +343,7 @@ func _ensure_unlock_slot_button() -> void:
 
 	if not unlock_slot_button.pressed.is_connected(_on_unlock_slot_pressed):
 		unlock_slot_button.pressed.connect(_on_unlock_slot_pressed)
+
 
 func _ensure_recipe_selector_row() -> void:
 	if root_vbox == null or recipe_option == null:
@@ -752,7 +757,7 @@ func _get_player_item_count(item_data: ItemData) -> int:
 		"get_inventory_item_count",
 		"get_item_quantity",
 		"count_item_in_inventory",
-		"get_total_item_count"
+        "get_total_item_count"
 	]
 
 	var best_result: int = -1
@@ -1289,10 +1294,18 @@ func _on_unlock_slot_pressed() -> void:
 		return
 
 	var unlock_cost: int = current_machine.get_next_slot_unlock_cost()
-	var next_slot_number: int = current_machine.get_unlocked_slot_count() + 1
 	if not _can_player_spend_credits(unlock_cost):
 		info_label.text = "クレジットが足りない（必要: %d Cr / 所持: %d Cr）" % [unlock_cost, _get_player_credits()]
 		_update_action_buttons()
+		return
+
+	if _can_route_crop_actions_through_world():
+		info_label.text = "スロット解放要求を送信した"
+		_request_networked_crop_action({
+			"interaction_kind": "crop_machine_unlock_slot",
+			"machine_path": str(current_machine.get_path()),
+			"request_peer_id": _get_request_peer_id(current_player),
+		})
 		return
 
 	if not _spend_player_credits(unlock_cost):
@@ -1300,6 +1313,7 @@ func _on_unlock_slot_pressed() -> void:
 		_update_action_buttons()
 		return
 
+	var next_slot_number: int = current_machine.get_unlocked_slot_count() + 1
 	var unlocked: bool = current_machine.unlock_slot()
 	if not unlocked:
 		_refund_player_credits(unlock_cost)
@@ -1336,6 +1350,39 @@ func handle_network_plant_result(result: Dictionary) -> void:
 
 	if visible and current_machine != null:
 		refresh()
+
+
+func handle_network_unlock_result(result: Dictionary) -> void:
+	if result.is_empty():
+		return
+	if String(result.get("interaction_kind", "")).strip_edges() != "crop_machine_unlock_slot":
+		return
+
+	_apply_shared_credits_from_result(result)
+
+	if bool(result.get("success", false)):
+		selected_slot_index = max(int(result.get("unlocked_slot_index", selected_slot_index)), 0)
+
+	var message_text: String = String(result.get("message", ""))
+	if visible and not message_text.is_empty():
+		info_label.text = message_text
+
+	if visible and current_machine != null:
+		refresh()
+
+
+func _apply_shared_credits_from_result(result: Dictionary) -> void:
+	if not result.has("shared_credits"):
+		return
+
+	var credits_value: int = max(int(result.get("shared_credits", 0)), 0)
+	var current_scene: Node = get_tree().current_scene
+	if current_scene != null and current_scene.has_method("_set_shared_credits_local"):
+		current_scene.call("_set_shared_credits_local", credits_value)
+		return
+
+	if CurrencyManager != null and CurrencyManager.has_method("set_credits"):
+		CurrencyManager.set_credits(credits_value)
 
 
 func _build_removed_entries_payload(removed_entries: Array) -> Array:
@@ -1586,3 +1633,8 @@ func _log_system(text: String) -> void:
 	var log_node: Node = _get_message_log()
 	if log_node != null and log_node.has_method("add_system"):
 		log_node.call("add_system", text)
+
+
+func _on_credits_changed(_value: int) -> void:
+	if visible and current_machine != null:
+		refresh()
