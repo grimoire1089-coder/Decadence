@@ -1,0 +1,81 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" uid="uid://dymegn6c7shvl" path="res://Gameplay/Player/Player.gd" id="1_ux4uq"]
+[ext_resource type="Texture2D" uid="uid://ds21da0vhr7bf" path="res://Image/Player/Robin_Game_002.png" id="2_ux4uq"]
+[ext_resource type="Texture2D" uid="uid://dctnicvhwohuv" path="res://Image/Player/Robin_Game_004.png" id="3_tqq74"]
+[ext_resource type="Texture2D" uid="uid://bb4d84om17c41" path="res://Image/Player/Robin_Game_003.png" id="4_rxaeq"]
+[ext_resource type="Script" uid="uid://dkhlppyn1e054" path="res://UI/Active_Skills/SkillCaster.gd" id="5_kbytb"]
+[ext_resource type="Script" uid="uid://6uuw2beg8gd6" path="res://UI/Active_Skills/PlayerSkillController.gd" id="6_jiwum"]
+[ext_resource type="Script" uid="uid://cg50do0bvcfdl" path="res://UI/Targeting/TargetingController.gd" id="7_targeting"]
+[ext_resource type="Script" uid="uid://dyvs5xqhq72db" path="res://UI/Targeting/TargetMarker2D.gd" id="8_target_marker"]
+[ext_resource type="Script" uid="uid://dll6okwrlopgq" path="res://UI/AutoAttack/AutoAttackController.gd" id="9_auto_attack"]
+[ext_resource type="Resource" path="res://UI/AutoAttack/Modifiers/AA_Physical_Melee.tres" id="10_auto_modifier"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ux4uq"]
+size = Vector2(240, 486.66663)
+
+[sub_resource type="LabelSettings" id="LabelSettings_nameplate"]
+font_size = 18
+font_color = Color(1, 1, 1, 1)
+outline_size = 4
+outline_color = Color(0, 0, 0, 0.9)
+
+[node name="Player" type="CharacterBody2D" unique_id=783613640]
+y_sort_enabled = true
+scale = Vector2(0.15, 0.15)
+motion_mode = 1
+script = ExtResource("1_ux4uq")
+front_texture = ExtResource("2_ux4uq")
+back_texture = ExtResource("3_tqq74")
+side_texture = ExtResource("4_rxaeq")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1417043241]
+texture = ExtResource("2_ux4uq")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1347376614]
+position = Vector2(0, 250)
+shape = SubResource("RectangleShape2D_ux4uq")
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=1856173972]
+zoom = Vector2(2, 2)
+
+[node name="NameplateRoot" type="Node2D" parent="."]
+position = Vector2(0, -360)
+scale = Vector2(6.666667, 6.666667)
+z_index = 100
+
+[node name="Label" type="Label" parent="NameplateRoot"]
+offset_left = -96.0
+offset_top = -14.0
+offset_right = 96.0
+offset_bottom = 14.0
+text = "Robin"
+label_settings = SubResource("LabelSettings_nameplate")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="SkillCaster" type="Node2D" parent="." unique_id=1051362412]
+script = ExtResource("5_kbytb")
+caster_path = NodePath("..")
+
+[node name="TargetMarker2D" type="Node2D" parent="." unique_id=1815546762]
+script = ExtResource("8_target_marker")
+
+[node name="TargetingController" type="Node2D" parent="." unique_id=147039681]
+script = ExtResource("7_targeting")
+marker_path = NodePath("../TargetMarker2D")
+
+[node name="PlayerSkillController" type="Node2D" parent="." unique_id=1016286863]
+script = ExtResource("6_jiwum")
+skill_caster_path = NodePath("../SkillCaster")
+self_target_path = NodePath("..")
+targeting_controller_path = NodePath("../TargetingController")
+
+[node name="AutoAttackController" type="Node" parent="." unique_id=543058529]
+script = ExtResource("9_auto_attack")
+attacker_path = NodePath("..")
+stats_subject_path = NodePath("..")
+targeting_controller_path = NodePath("../TargetingController")
+skill_caster_path = NodePath("../SkillCaster")
+current_modifier = ExtResource("10_auto_modifier")
+write_state_log = true
