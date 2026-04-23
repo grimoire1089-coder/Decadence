@@ -223,6 +223,7 @@ func stop_network_session() -> void:
 		_network_helper.clear_remote_network_players()
 		_network_helper.configure_local_network_player()
 	_apply_local_player_identity_preset()
+	_bind_local_inventory_ui()
 	_network_peer_sync_accumulator = 0.0
 	_network_snapshot_send_accumulator = 0.0
 
@@ -259,6 +260,7 @@ func _boot_game() -> void:
 	if _network_helper != null:
 		_network_helper.configure_local_network_player()
 	_apply_local_player_identity_preset()
+	_bind_local_inventory_ui()
 	if _network_helper != null:
 		_network_helper.sync_remote_network_players_from_session()
 		_network_helper.send_local_player_snapshot_now()
@@ -290,6 +292,63 @@ func _register_local_player_if_possible() -> void:
 	if player == null or not is_instance_valid(player):
 		return
 	_player_registry.register_local_player(player)
+
+
+func _bind_local_inventory_ui() -> void:
+	if inventory_ui == null or not is_instance_valid(inventory_ui):
+		return
+	if not inventory_ui.has_method("bind_player"):
+		return
+	var local_player: Node = get_local_player()
+	if local_player == null or not is_instance_valid(local_player):
+		return
+	inventory_ui.call("bind_player", local_player)
+
+
+func _get_inventory_save_data_for_player(player_id: int) -> Dictionary:
+	if inventory_ui == null or not is_instance_valid(inventory_ui):
+		return {}
+	if not inventory_ui.has_method("get_player_inventory_save_data"):
+		return {}
+	var exported: Variant = inventory_ui.call("get_player_inventory_save_data", player_id)
+	if typeof(exported) == TYPE_DICTIONARY:
+		return exported as Dictionary
+	return {}
+
+
+func _apply_player_inventory_state_local(player_id: int, inventory_save_data: Dictionary) -> void:
+	if inventory_ui == null or not is_instance_valid(inventory_ui):
+		return
+	if not inventory_ui.has_method("apply_player_inventory_save_data"):
+		return
+	inventory_ui.call("apply_player_inventory_save_data", player_id, inventory_save_data, true, false)
+
+
+func request_networked_player_inventory_sync(player_id: int, inventory_save_data: Dictionary) -> void:
+	var resolved_player_id: int = max(player_id, 1)
+	var normalized_inventory: Dictionary = inventory_save_data.duplicate(true)
+	if not _is_network_online():
+		_apply_player_inventory_state_local(resolved_player_id, normalized_inventory)
+		return
+	if _can_accept_network_gameplay_requests():
+		_apply_player_inventory_state_local(resolved_player_id, normalized_inventory)
+		return
+	rpc_id(1, "_rpc_request_player_inventory_sync", resolved_player_id, normalized_inventory)
+
+
+func request_saved_player_inventory_sync() -> void:
+	if not _is_network_online():
+		return
+	if _can_accept_network_gameplay_requests():
+		var local_player: Node = get_local_player()
+		if local_player == null or not is_instance_valid(local_player):
+			return
+		if not local_player.has_method("get_player_id"):
+			return
+		var host_player_id: int = max(int(local_player.call("get_player_id")), 1)
+		_apply_player_inventory_state_local(host_player_id, _get_inventory_save_data_for_player(host_player_id))
+		return
+	rpc_id(1, "_rpc_request_saved_player_inventory_sync")
 
 
 func _apply_local_player_identity_preset() -> void:
@@ -622,6 +681,33 @@ func _rpc_request_shared_credits_sync() -> void:
 	_push_shared_credits_to_peer(sender_peer_id)
 
 
+@rpc("any_peer", "call_remote", "reliable")
+func _rpc_request_player_inventory_sync(player_id: int, inventory_save_data: Dictionary) -> void:
+	if not _can_accept_network_gameplay_requests():
+		return
+	var sender_peer_id: int = multiplayer.get_remote_sender_id()
+	if sender_peer_id <= 0:
+		return
+	var resolved_player_id: int = max(player_id, sender_peer_id)
+	_apply_player_inventory_state_local(resolved_player_id, inventory_save_data)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _rpc_request_saved_player_inventory_sync() -> void:
+	if not _can_accept_network_gameplay_requests():
+		return
+	var sender_peer_id: int = multiplayer.get_remote_sender_id()
+	if sender_peer_id <= 0:
+		return
+	var saved_inventory: Dictionary = _get_inventory_save_data_for_player(sender_peer_id)
+	rpc_id(sender_peer_id, "_rpc_apply_player_inventory_sync", sender_peer_id, saved_inventory)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _rpc_apply_player_inventory_sync(player_id: int, inventory_save_data: Dictionary) -> void:
+	_apply_player_inventory_state_local(player_id, inventory_save_data)
+
+
 func _normalize_map_transition_request(request: Dictionary) -> Dictionary:
 	var normalized_scene_path: String = String(request.get("target_map_scene_path", request.get("scene_path", request.get("target_scene_path", "")))).strip_edges()
 	if normalized_scene_path.is_empty():
@@ -688,6 +774,7 @@ func _on_network_connected_to_session() -> void:
 	if _network_helper != null:
 		_network_helper.configure_local_network_player()
 	_apply_local_player_identity_preset()
+	_bind_local_inventory_ui()
 	if _network_helper != null:
 		_network_helper.sync_remote_network_players_from_session()
 		_network_helper.send_local_player_snapshot_now()
@@ -695,6 +782,7 @@ func _on_network_connected_to_session() -> void:
 		_time_sync_module.on_network_connected_to_session()
 	if _is_network_online() and not _can_accept_network_gameplay_requests():
 		rpc_id(1, "_rpc_request_shared_credits_sync")
+		request_saved_player_inventory_sync()
 
 
 func _on_network_disconnected_from_session() -> void:
@@ -702,6 +790,7 @@ func _on_network_disconnected_from_session() -> void:
 		_network_helper.clear_remote_network_players()
 		_network_helper.configure_local_network_player()
 	_apply_local_player_identity_preset()
+	_bind_local_inventory_ui()
 	if _time_sync_module != null:
 		_time_sync_module.on_network_disconnected_from_session()
 
@@ -710,6 +799,7 @@ func _on_network_local_peer_id_changed(_peer_id: int) -> void:
 	if _network_helper != null:
 		_network_helper.configure_local_network_player()
 	_apply_local_player_identity_preset()
+	_bind_local_inventory_ui()
 	if _network_helper != null:
 		_network_helper.sync_remote_network_players_from_session()
 		_network_helper.send_local_player_snapshot_now()
@@ -721,6 +811,7 @@ func _on_network_hosting_started(_port: int, _max_clients: int) -> void:
 	if _network_helper != null:
 		_network_helper.configure_local_network_player()
 	_apply_local_player_identity_preset()
+	_bind_local_inventory_ui()
 	if _network_helper != null:
 		_network_helper.sync_remote_network_players_from_session()
 		_network_helper.send_local_player_snapshot_now()

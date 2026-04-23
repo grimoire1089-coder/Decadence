@@ -11,9 +11,13 @@ extends Control
 var items: Array = []
 var item_map: Dictionary = {}
 var selected_item_data: ItemData = null
+var inventories_by_player_id: Dictionary = {}
+var bound_player: Node = null
+var bound_player_id: int = 1
 @export var persistent_id: String = "inventory_ui"
 @export var add_debug_start_items: bool = false
 var _boot_initialized: bool = false
+var _suppress_inventory_network_sync: bool = false
 
 const PANEL_BG: Color = Color(0.05, 0.08, 0.12, 0.94)
 const PANEL_BORDER: Color = Color(0.30, 0.75, 1.0, 0.70)
@@ -24,6 +28,8 @@ const GRID_COLUMNS := 5
 const GRID_ROWS := 4
 const MIN_VISIBLE_SLOTS := GRID_COLUMNS * GRID_ROWS
 const SLOT_SIZE := 72
+const DEFAULT_PLAYER_INVENTORY_ID: int = 1
+
 
 func _ready() -> void:
 	add_to_group("inventory_ui")
@@ -59,7 +65,28 @@ func boot_initialize() -> void:
 		add_item_by_id("peach", 1)
 		add_item_by_id("seed_potato", 100)
 		add_item_by_id("seed_wheat", 100)
-	refresh()
+	if inventories_by_player_id.is_empty():
+		inventories_by_player_id[_get_inventory_store_key(DEFAULT_PLAYER_INVENTORY_ID)] = _build_single_inventory_save_data([], null)
+	_apply_bound_inventory_view()
+
+
+func bind_player(player_node: Node) -> void:
+	boot_initialize()
+	_persist_current_bound_inventory_view()
+	bound_player = player_node if player_node != null and is_instance_valid(player_node) else null
+	bound_player_id = _resolve_inventory_player_id(bound_player)
+	_apply_bound_inventory_view()
+
+
+func get_bound_player() -> Node:
+	if bound_player != null and is_instance_valid(bound_player):
+		return bound_player
+	return null
+
+
+func get_bound_player_id() -> int:
+	bound_player_id = _resolve_inventory_player_id(get_bound_player())
+	return bound_player_id
 
 
 func get_persistent_save_id() -> String:
@@ -67,45 +94,68 @@ func get_persistent_save_id() -> String:
 
 
 func export_save_data() -> Dictionary:
-	var entries: Array = []
-	for entry_obj in items:
-		var entry: InventoryEntry = entry_obj as InventoryEntry
-		if entry == null or entry.item_data == null:
-			continue
-		entries.append({
-			"item_id": String(entry.item_data.id),
-			"count": entry.count,
-		})
+	_persist_current_bound_inventory_view()
+	var exported_inventories: Dictionary = {}
+	for key_variant in inventories_by_player_id.keys():
+		var key: String = str(key_variant)
+		var inventory_data: Dictionary = inventories_by_player_id.get(key_variant, {}) as Dictionary
+		exported_inventories[key] = inventory_data.duplicate(true)
 	return {
-		"entries": entries,
-		"selected_item_id": "" if selected_item_data == null else String(selected_item_data.id),
+		"inventories_by_player_id": exported_inventories,
+		"bound_player_id": get_bound_player_id(),
 	}
 
 
 func import_save_data(data: Dictionary) -> void:
 	boot_initialize()
-	items.clear()
-	selected_item_data = null
+	inventories_by_player_id.clear()
 
-	var entries: Array = data.get("entries", []) as Array
-	for row_obj in entries:
-		if typeof(row_obj) != TYPE_DICTIONARY:
-			continue
-		var row: Dictionary = row_obj as Dictionary
-		var item_id: String = String(row.get("item_id", "")).strip_edges()
-		var count: int = int(row.get("count", 0))
-		if item_id.is_empty() or count <= 0:
-			continue
-		var item_data: ItemData = item_map.get(item_id, null) as ItemData
-		if item_data == null:
-			continue
-		items.append(InventoryEntry.new(item_data, count))
+	if data.has("inventories_by_player_id"):
+		var saved_inventories: Dictionary = data.get("inventories_by_player_id", {}) as Dictionary
+		for key_variant in saved_inventories.keys():
+			var key: String = str(key_variant)
+			var inventory_data: Dictionary = saved_inventories.get(key_variant, {}) as Dictionary
+			inventories_by_player_id[key] = _normalize_single_inventory_save_data(inventory_data)
+	else:
+		# 旧形式互換
+		inventories_by_player_id[_get_inventory_store_key(DEFAULT_PLAYER_INVENTORY_ID)] = _normalize_single_inventory_save_data(data)
 
-	var selected_id: String = String(data.get("selected_item_id", "")).strip_edges()
-	if not selected_id.is_empty():
-		selected_item_data = item_map.get(selected_id, null) as ItemData
+	if inventories_by_player_id.is_empty():
+		inventories_by_player_id[_get_inventory_store_key(DEFAULT_PLAYER_INVENTORY_ID)] = _build_single_inventory_save_data([], null)
 
-	refresh()
+	var saved_bound_player_id: int = max(int(data.get("bound_player_id", DEFAULT_PLAYER_INVENTORY_ID)), DEFAULT_PLAYER_INVENTORY_ID)
+	if bound_player == null or not is_instance_valid(bound_player):
+		bound_player_id = saved_bound_player_id
+	else:
+		bound_player_id = _resolve_inventory_player_id(bound_player)
+
+	_apply_bound_inventory_view()
+
+
+func get_player_inventory_save_data(player_id: int) -> Dictionary:
+	_persist_current_bound_inventory_view()
+	var inventory_key: String = _get_inventory_store_key(player_id)
+	if not inventories_by_player_id.has(inventory_key):
+		return _build_single_inventory_save_data([], null)
+	return (inventories_by_player_id[inventory_key] as Dictionary).duplicate(true)
+
+
+func apply_player_inventory_save_data(player_id: int, inventory_save_data: Dictionary, update_visible: bool = true, request_network_sync: bool = false) -> void:
+	boot_initialize()
+	var inventory_key: String = _get_inventory_store_key(player_id)
+	inventories_by_player_id[inventory_key] = _normalize_single_inventory_save_data(inventory_save_data)
+
+	if update_visible and inventory_key == _get_inventory_store_key(get_bound_player_id()):
+		var previous_suppress: bool = _suppress_inventory_network_sync
+		_suppress_inventory_network_sync = true if not request_network_sync else previous_suppress
+		_load_bound_inventory_view_from_data(inventories_by_player_id[inventory_key] as Dictionary)
+		refresh()
+		_suppress_inventory_network_sync = previous_suppress
+
+
+func has_player_inventory_save_data(player_id: int) -> bool:
+	var inventory_key: String = _get_inventory_store_key(player_id)
+	return inventories_by_player_id.has(inventory_key)
 
 
 func _load_items_from_folders() -> void:
@@ -118,6 +168,7 @@ func _load_items_from_folders() -> void:
 
 	for folder_path in item_data_folders:
 		_load_item_data_from_folder_recursive(folder_path, loaded_by_id)
+
 
 func _load_item_data_from_folder_recursive(folder_path: String, loaded_by_id: Dictionary) -> void:
 	var dir: DirAccess = DirAccess.open(folder_path)
@@ -166,6 +217,7 @@ func _update_grid_size() -> void:
 	var height: int = SLOT_SIZE * GRID_ROWS + v_sep * max(GRID_ROWS - 1, 0)
 	grid.custom_minimum_size = Vector2(width, height)
 
+
 func _rebuild_item_map() -> void:
 	item_map.clear()
 
@@ -173,6 +225,7 @@ func _rebuild_item_map() -> void:
 		if item == null:
 			continue
 		item_map[item.id] = item
+
 
 func refresh() -> void:
 	grid.columns = GRID_COLUMNS
@@ -242,8 +295,11 @@ func refresh() -> void:
 	if selected_item_data != null and not selection_exists:
 		selected_item_data = null
 
+	_persist_current_bound_inventory_view()
 	_sync_player_selected_item()
 	_update_tooltip_for_selection()
+	_request_bound_player_inventory_network_sync()
+
 
 func _can_stack_item(entry_item: ItemData, incoming_item: ItemData) -> bool:
 	if entry_item == null or incoming_item == null:
@@ -255,8 +311,8 @@ func _can_stack_item(entry_item: ItemData, incoming_item: ItemData) -> bool:
 		if entry_id != incoming_id:
 			return false
 	else:
-		var entry_path: String = String(entry_item.resource_path)
-		var incoming_path: String = String(incoming_item.resource_path)
+		var entry_path: String = str(entry_item.resource_path)
+		var incoming_path: String = str(incoming_item.resource_path)
 		if entry_path != incoming_path and entry_item != incoming_item:
 			return false
 
@@ -284,6 +340,7 @@ func add_item(item_data: ItemData, amount: int = 1) -> bool:
 	refresh()
 	return true
 
+
 func add_item_by_id(item_id: StringName, amount: int = 1) -> bool:
 	if not item_map.has(item_id):
 		push_error("item_id が見つからない: " + str(item_id))
@@ -291,6 +348,7 @@ func add_item_by_id(item_id: StringName, amount: int = 1) -> bool:
 		return false
 
 	return add_item(item_map[item_id], amount)
+
 
 func remove_item(item_data: ItemData, amount: int = 1) -> bool:
 	if item_data == null:
@@ -317,6 +375,7 @@ func remove_item(item_data: ItemData, amount: int = 1) -> bool:
 			return true
 
 	return false
+
 
 func remove_item_by_id(item_id: StringName, amount: int = 1) -> bool:
 	if not item_map.has(item_id):
@@ -348,6 +407,7 @@ func remove_item_by_id(item_id: StringName, amount: int = 1) -> bool:
 	refresh()
 	return remaining <= 0
 
+
 func has_item(item_id: StringName) -> bool:
 	if not item_map.has(item_id):
 		return false
@@ -358,6 +418,7 @@ func has_item(item_id: StringName) -> bool:
 			return true
 
 	return false
+
 
 func get_item_count(item_id: StringName) -> int:
 	if not item_map.has(item_id):
@@ -370,6 +431,7 @@ func get_item_count(item_id: StringName) -> int:
 			total_count += entry.count
 
 	return total_count
+
 
 func get_item_count_by_data(item_data: ItemData) -> int:
 	if item_data == null:
@@ -481,7 +543,7 @@ func _sort_inventory_entries_by_quality_desc(a: InventoryEntry, b: InventoryEntr
 		return a_item.get_quality() > b_item.get_quality()
 	if a_item.get_rank() != b_item.get_rank():
 		return a_item.get_rank() > b_item.get_rank()
-	return String(a_item.resource_path) < String(b_item.resource_path)
+	return str(a_item.resource_path) < str(b_item.resource_path)
 
 
 func _is_better_quality_item(candidate: ItemData, current_best: ItemData) -> bool:
@@ -493,16 +555,21 @@ func _is_better_quality_item(candidate: ItemData, current_best: ItemData) -> boo
 		return candidate.get_quality() > current_best.get_quality()
 	if candidate.get_rank() != current_best.get_rank():
 		return candidate.get_rank() > current_best.get_rank()
-	return String(candidate.resource_path) < String(current_best.resource_path)
+	return str(candidate.resource_path) < str(current_best.resource_path)
+
 
 func get_selected_item_data() -> ItemData:
 	return selected_item_data
 
+
 func clear_selection() -> void:
 	selected_item_data = null
 	_update_selected_slot_visuals()
+	_persist_current_bound_inventory_view()
 	_sync_player_selected_item()
 	_update_tooltip_for_selection()
+	_request_bound_player_inventory_network_sync()
+
 
 func _on_slot_gui_input(event: InputEvent, item_data: ItemData) -> void:
 	if not (event is InputEventMouseButton):
@@ -517,11 +584,14 @@ func _on_slot_gui_input(event: InputEvent, item_data: ItemData) -> void:
 		_update_selected_slot_visuals()
 
 		var count: int = get_item_count_by_data(item_data)
-		var player: Node = get_tree().get_first_node_in_group("player")
+		var player: Node = _get_bound_player_for_selection()
 		if player != null and player.has_method("set_selected_item"):
 			player.call("set_selected_item", item_data, count)
 
+		_persist_current_bound_inventory_view()
 		_update_tooltip_for_selection()
+		_request_bound_player_inventory_network_sync()
+
 
 func _update_selected_slot_visuals() -> void:
 	for child in grid.get_children():
@@ -535,8 +605,9 @@ func _update_selected_slot_visuals() -> void:
 
 		child.call("set_selected", is_selected)
 
+
 func _sync_player_selected_item() -> void:
-	var player: Node = get_tree().get_first_node_in_group("player")
+	var player: Node = _get_bound_player_for_selection()
 	if player == null:
 		_update_tooltip_for_selection()
 		return
@@ -565,6 +636,7 @@ func _sync_player_selected_item() -> void:
 
 	_update_tooltip_for_selection()
 
+
 func _update_tooltip_for_selection() -> void:
 	if tooltip == null:
 		return
@@ -589,11 +661,13 @@ func _update_tooltip_for_selection() -> void:
 
 	_call_reposition_tooltip()
 
+
 func _call_reposition_tooltip() -> void:
 	if tooltip == null or panel == null:
 		return
 
 	call_deferred("_reposition_tooltip_top")
+
 
 func _reposition_tooltip_left_of_panel() -> void:
 	if tooltip == null or panel == null:
@@ -612,6 +686,7 @@ func _reposition_tooltip_left_of_panel() -> void:
 
 	tooltip.position = Vector2(x, y)
 
+
 func _hide_tooltip_immediately() -> void:
 	if tooltip == null:
 		return
@@ -620,6 +695,7 @@ func _hide_tooltip_immediately() -> void:
 		tooltip.call("hide_tooltip")
 	else:
 		tooltip.visible = false
+
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_VISIBILITY_CHANGED:
@@ -630,6 +706,7 @@ func _notification(what: int) -> void:
 	elif what == NOTIFICATION_RESIZED:
 		if tooltip != null and tooltip.visible:
 			_call_reposition_tooltip()
+
 
 func _apply_inventory_theme() -> void:
 	var panel_style := StyleBoxFlat.new()
@@ -650,6 +727,7 @@ func _apply_inventory_theme() -> void:
 	grid.columns = GRID_COLUMNS
 	grid.add_theme_constant_override("h_separation", 8)
 	grid.add_theme_constant_override("v_separation", 8)
+
 
 func _reposition_tooltip_top() -> void:
 	if tooltip == null or panel == null:
@@ -683,8 +761,133 @@ func _reposition_tooltip_top() -> void:
 	var y: float = panel.position.y - tooltip_size.y - margin
 	tooltip.position = Vector2(x, y)
 
+
+func _get_bound_player_for_selection() -> Node:
+	var player: Node = get_bound_player()
+	if player != null:
+		return player
+	return get_tree().get_first_node_in_group("player") as Node
+
+
+func _resolve_inventory_player_id(player_node: Node = null) -> int:
+	var target: Node = player_node
+	if target == null or not is_instance_valid(target):
+		target = bound_player
+
+	if target != null and is_instance_valid(target):
+		if target.has_method("get_player_id"):
+			var player_id: int = int(target.call("get_player_id"))
+			if player_id > 0:
+				return player_id
+		if target.has_method("get_peer_id"):
+			var peer_id: int = int(target.call("get_peer_id"))
+			if peer_id > 0:
+				return peer_id
+		if target.has_method("get_network_peer_id"):
+			var network_peer_id: int = int(target.call("get_network_peer_id"))
+			if network_peer_id > 0:
+				return network_peer_id
+
+	return max(bound_player_id, DEFAULT_PLAYER_INVENTORY_ID)
+
+
+func _get_inventory_store_key(player_id: int) -> String:
+	return str(max(player_id, DEFAULT_PLAYER_INVENTORY_ID))
+
+
+func _build_single_inventory_save_data(source_items: Array, source_selected_item: ItemData) -> Dictionary:
+	var entries: Array = []
+	for entry_obj in source_items:
+		var entry: InventoryEntry = entry_obj as InventoryEntry
+		if entry == null or entry.item_data == null:
+			continue
+		entries.append({
+			"item_id": str(entry.item_data.id),
+			"count": entry.count,
+		})
+	return {
+		"entries": entries,
+		"selected_item_id": "" if source_selected_item == null else str(source_selected_item.id),
+	}
+
+
+func _normalize_single_inventory_save_data(data: Dictionary) -> Dictionary:
+	var normalized_entries: Array = []
+	var raw_entries: Array = data.get("entries", []) as Array
+	for row_obj in raw_entries:
+		if typeof(row_obj) != TYPE_DICTIONARY:
+			continue
+		var row: Dictionary = row_obj as Dictionary
+		var item_id: String = str(row.get("item_id", "")).strip_edges()
+		var count: int = max(int(row.get("count", 0)), 0)
+		if item_id.is_empty() or count <= 0:
+			continue
+		normalized_entries.append({
+			"item_id": item_id,
+			"count": count,
+		})
+	return {
+		"entries": normalized_entries,
+		"selected_item_id": str(data.get("selected_item_id", "")).strip_edges(),
+	}
+
+
+func _persist_current_bound_inventory_view() -> void:
+	var inventory_key: String = _get_inventory_store_key(get_bound_player_id())
+	inventories_by_player_id[inventory_key] = _build_single_inventory_save_data(items, selected_item_data)
+
+
+func _apply_bound_inventory_view() -> void:
+	var inventory_key: String = _get_inventory_store_key(get_bound_player_id())
+	if not inventories_by_player_id.has(inventory_key):
+		inventories_by_player_id[inventory_key] = _build_single_inventory_save_data([], null)
+
+	var previous_suppress: bool = _suppress_inventory_network_sync
+	_suppress_inventory_network_sync = true
+	_load_bound_inventory_view_from_data(inventories_by_player_id[inventory_key] as Dictionary)
+	refresh()
+	_suppress_inventory_network_sync = previous_suppress
+
+
+func _load_bound_inventory_view_from_data(data: Dictionary) -> void:
+	items.clear()
+	selected_item_data = null
+
+	var entries: Array = data.get("entries", []) as Array
+	for row_obj in entries:
+		if typeof(row_obj) != TYPE_DICTIONARY:
+			continue
+		var row: Dictionary = row_obj as Dictionary
+		var item_id: String = str(row.get("item_id", "")).strip_edges()
+		var count: int = int(row.get("count", 0))
+		if item_id.is_empty() or count <= 0:
+			continue
+		var item_data: ItemData = item_map.get(item_id, null) as ItemData
+		if item_data == null:
+			continue
+		items.append(InventoryEntry.new(item_data, count))
+
+	var selected_id: String = str(data.get("selected_item_id", "")).strip_edges()
+	if not selected_id.is_empty():
+		selected_item_data = item_map.get(selected_id, null) as ItemData
+
+
+func _request_bound_player_inventory_network_sync() -> void:
+	if _suppress_inventory_network_sync:
+		return
+	var player_id: int = get_bound_player_id()
+	if player_id <= 0:
+		return
+	var world: Node = get_tree().current_scene
+	if world == null:
+		return
+	if world.has_method("request_networked_player_inventory_sync"):
+		world.call("request_networked_player_inventory_sync", player_id, get_player_inventory_save_data(player_id))
+
+
 func _get_message_log() -> Node:
 	return get_node_or_null("/root/MessageLog")
+
 
 func _log_error(text: String) -> void:
 	var log_node: Node = _get_message_log()
