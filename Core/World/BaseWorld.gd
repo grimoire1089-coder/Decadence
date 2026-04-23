@@ -1,0 +1,1 @@
+extends "res://BaseWorld.gd"
