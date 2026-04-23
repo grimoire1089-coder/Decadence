@@ -27,7 +27,7 @@
 [ext_resource type="PackedScene" uid="uid://dnovnatyiscdl" path="res://UI/BuffStatusUI.tscn" id="25_buff_status"]
 [ext_resource type="PackedScene" path="res://UI/Targeting/TargetInfoUI.tscn" id="26_target_info"]
 [ext_resource type="PackedScene" uid="uid://cv123k8nsa277" path="res://Data/Object/UniversalCooker/RecipeJsonEditor.tscn" id="27_recipe_json_editor"]
-[ext_resource type="Script" uid="uid://cvk8m0r20bml2" path="res://Scripts/System/MapTransitionManager.gd" id="28_map_transition_manager"]
+[ext_resource type="Script" uid="uid://cvk8m0r20bml2" path="res://Core/World/MapTransitionManager.gd" id="28_map_transition_manager"]
 
 [node name="BaseWorld" type="Node2D" unique_id=1330020109]
 script = ExtResource("1_baseworld")
