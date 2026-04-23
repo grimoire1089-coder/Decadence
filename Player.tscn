@@ -1,6 +1,6 @@
 [gd_scene format=3]
 
-[ext_resource type="Script" uid="uid://dymegn6c7shvl" path="res://Player.gd" id="1_ux4uq"]
+[ext_resource type="Script" uid="uid://dymegn6c7shvl" path="res://Gameplay/Player/Player.gd" id="1_ux4uq"]
 [ext_resource type="Texture2D" uid="uid://ds21da0vhr7bf" path="res://Image/Player/Robin_Game_002.png" id="2_ux4uq"]
 [ext_resource type="Texture2D" uid="uid://dctnicvhwohuv" path="res://Image/Player/Robin_Game_004.png" id="3_tqq74"]
 [ext_resource type="Texture2D" uid="uid://bb4d84om17c41" path="res://Image/Player/Robin_Game_003.png" id="4_rxaeq"]
