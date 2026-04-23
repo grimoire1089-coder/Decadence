@@ -15,7 +15,7 @@
 [ext_resource type="PackedScene" path="res://Data/Object/VendingMachine/VendingMachineUI.tscn" id="13_vending_machine_ui"]
 [ext_resource type="PackedScene" uid="uid://c8a2ctiwk8xu5" path="res://Data/Object/ShopDeliveryBox/ShopDeliveryBoxUI.tscn" id="14_shop_delivery_box_ui"]
 [ext_resource type="PackedScene" path="res://Data/Object/UniversalCooker/UniversalCookerUI.tscn" id="15_universal_cooker_ui"]
-[ext_resource type="PackedScene" uid="uid://charqd8qx3ros" path="res://InventoryUI.tscn" id="16_inventory_ui"]
+[ext_resource type="PackedScene" uid="uid://kinte63o35c7" path="res://UI/Inventory/InventoryUI.tscn" id="16_inventory_ui"]
 [ext_resource type="PackedScene" uid="uid://bydaxmu4ucuwa" path="res://UI/Skills/SkillUI.tscn" id="17_skill_ui"]
 [ext_resource type="PackedScene" path="res://UI/PauseMenuUI.tscn" id="18_pause_menu"]
 [ext_resource type="PackedScene" uid="uid://b7a2lxylygc5i" path="res://UI/BgmNowPlayingPanel.tscn" id="19_bgm_now_playing"]
@@ -27,7 +27,7 @@
 [ext_resource type="PackedScene" uid="uid://dnovnatyiscdl" path="res://UI/BuffStatusUI.tscn" id="25_buff_status"]
 [ext_resource type="PackedScene" path="res://UI/Targeting/TargetInfoUI.tscn" id="26_target_info"]
 [ext_resource type="PackedScene" uid="uid://cv123k8nsa277" path="res://Data/Object/UniversalCooker/RecipeJsonEditor.tscn" id="27_recipe_json_editor"]
-[ext_resource type="Script" uid="uid://cvk8m0r20bml2" path="res://Scripts/System/MapTransitionManager.gd" id="28_map_transition_manager"]
+[ext_resource type="Script" uid="uid://cvk8m0r20bml2" path="res://Core/World/MapTransitionManager.gd" id="28_map_transition_manager"]
 
 [node name="BaseWorld" type="Node2D" unique_id=1330020109]
 script = ExtResource("1_baseworld")

@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://charqd8qx3ros"]
+[gd_scene format=3]
 
 [ext_resource type="PackedScene" path="res://UI/Inventory/InventoryUI.tscn" id="1_actual"]
 
