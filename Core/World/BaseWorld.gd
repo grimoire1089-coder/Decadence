@@ -9,6 +9,8 @@ const NETWORK_HELPER_SCRIPT_PATH: String = "res://Core/Network/BaseWorldNetworkH
 const WORLD_TIME_SYNC_MODULE_SCRIPT_PATH: String = "res://Core/World/BaseWorldTimeSyncModule.gd"
 const WORLD_INTERACTION_MODULE_SCRIPT_PATH: String = "res://Core/World/BaseWorldInteractionModule.gd"
 const WORLD_PLAYER_REGISTRY_SCRIPT_PATH: String = "res://Core/World/BaseWorldPlayerRegistry.gd"
+const WORLD_INVENTORY_SYNC_MODULE_SCRIPT_PATH: String = "res://Core/World/BaseWorldInventorySyncModule.gd"
+const WORLD_SHARED_CREDITS_MODULE_SCRIPT_PATH: String = "res://Core/World/BaseWorldSharedCreditsModule.gd"
 
 @export_file("*.tscn") var default_map_scene_path: String = "res://Maps/TownMap_MainExtract.tscn"
 
@@ -48,6 +50,8 @@ var _network_helper: BaseWorldNetworkHelper = null
 var _time_sync_module: BaseWorldTimeSyncModule = null
 var _interaction_module: BaseWorldInteractionModule = null
 var _player_registry: BaseWorldPlayerRegistry = null
+var _inventory_sync_module: BaseWorldInventorySyncModule = null
+var _shared_credits_module: BaseWorldSharedCreditsModule = null
 
 
 func _ready() -> void:
@@ -56,6 +60,8 @@ func _ready() -> void:
 	_ensure_network_helper()
 	_ensure_time_sync_module()
 	_ensure_interaction_module()
+	_ensure_inventory_sync_module()
+	_ensure_shared_credits_module()
 	_ensure_map_transition_manager()
 	_connect_shared_credits_signal()
 	if map_transition_manager != null and map_transition_manager.has_method("set_default_map_scene_path"):
@@ -295,6 +301,10 @@ func _register_local_player_if_possible() -> void:
 
 
 func _bind_local_inventory_ui() -> void:
+	_ensure_inventory_sync_module()
+	if _inventory_sync_module != null:
+		_inventory_sync_module.bind_inventory_ui_to_local_player()
+		return
 	if inventory_ui == null or not is_instance_valid(inventory_ui):
 		return
 	if not inventory_ui.has_method("bind_player"):
@@ -325,6 +335,10 @@ func _apply_player_inventory_state_local(player_id: int, inventory_save_data: Di
 
 
 func request_networked_player_inventory_sync(player_id: int, inventory_save_data: Dictionary) -> void:
+	_ensure_inventory_sync_module()
+	if _inventory_sync_module != null:
+		_inventory_sync_module.request_player_inventory_sync(player_id, inventory_save_data)
+		return
 	var resolved_player_id: int = max(player_id, 1)
 	var normalized_inventory: Dictionary = inventory_save_data.duplicate(true)
 	if not _is_network_online():
@@ -337,6 +351,10 @@ func request_networked_player_inventory_sync(player_id: int, inventory_save_data
 
 
 func request_saved_player_inventory_sync() -> void:
+	_ensure_inventory_sync_module()
+	if _inventory_sync_module != null:
+		_inventory_sync_module.request_saved_inventory_from_authority_if_needed()
+		return
 	if not _is_network_online():
 		return
 	if _can_accept_network_gameplay_requests():
@@ -436,6 +454,40 @@ func _ensure_interaction_module() -> void:
 	if module_instance is BaseWorldInteractionModule:
 		_interaction_module = module_instance as BaseWorldInteractionModule
 		_interaction_module.setup(self)
+
+
+func _ensure_inventory_sync_module() -> void:
+	if _inventory_sync_module != null:
+		return
+	if not ResourceLoader.exists(WORLD_INVENTORY_SYNC_MODULE_SCRIPT_PATH):
+		return
+
+	var module_script: Script = load(WORLD_INVENTORY_SYNC_MODULE_SCRIPT_PATH) as Script
+	if module_script == null:
+		push_warning("BaseWorld: BaseWorldInventorySyncModule.gd を読み込めません")
+		return
+
+	var module_instance: Variant = module_script.new()
+	if module_instance is BaseWorldInventorySyncModule:
+		_inventory_sync_module = module_instance as BaseWorldInventorySyncModule
+		_inventory_sync_module.setup(self)
+
+
+func _ensure_shared_credits_module() -> void:
+	if _shared_credits_module != null:
+		return
+	if not ResourceLoader.exists(WORLD_SHARED_CREDITS_MODULE_SCRIPT_PATH):
+		return
+
+	var module_script: Script = load(WORLD_SHARED_CREDITS_MODULE_SCRIPT_PATH) as Script
+	if module_script == null:
+		push_warning("BaseWorld: BaseWorldSharedCreditsModule.gd を読み込めません")
+		return
+
+	var module_instance: Variant = module_script.new()
+	if module_instance is BaseWorldSharedCreditsModule:
+		_shared_credits_module = module_instance as BaseWorldSharedCreditsModule
+		_shared_credits_module.setup(self)
 
 
 func _ensure_map_transition_manager() -> void:
@@ -685,6 +737,10 @@ func _rpc_request_shared_credits_sync() -> void:
 func _rpc_request_player_inventory_sync(player_id: int, inventory_save_data: Dictionary) -> void:
 	if not _can_accept_network_gameplay_requests():
 		return
+	_ensure_inventory_sync_module()
+	if _inventory_sync_module != null:
+		_inventory_sync_module.on_request_player_inventory_sync(player_id, inventory_save_data)
+		return
 	var sender_peer_id: int = multiplayer.get_remote_sender_id()
 	if sender_peer_id <= 0:
 		return
@@ -698,6 +754,10 @@ func _rpc_request_saved_player_inventory_sync() -> void:
 		return
 	var sender_peer_id: int = multiplayer.get_remote_sender_id()
 	if sender_peer_id <= 0:
+		return
+	_ensure_inventory_sync_module()
+	if _inventory_sync_module != null:
+		_inventory_sync_module.on_request_saved_player_inventory(sender_peer_id)
 		return
 	var saved_inventory: Dictionary = _get_inventory_save_data_for_player(sender_peer_id)
 	rpc_id(sender_peer_id, "_rpc_apply_player_inventory_sync", sender_peer_id, saved_inventory)
@@ -761,6 +821,10 @@ func _on_network_peer_joined(peer_id: int) -> void:
 		_network_helper.spawn_remote_network_player_for_peer(peer_id)
 	if _time_sync_module != null:
 		_time_sync_module.on_network_peer_joined(peer_id)
+	_ensure_shared_credits_module()
+	if _shared_credits_module != null:
+		_shared_credits_module.on_network_peer_joined(peer_id)
+		return
 	if _can_accept_network_gameplay_requests():
 		_push_shared_credits_to_peer(peer_id)
 
@@ -780,9 +844,12 @@ func _on_network_connected_to_session() -> void:
 		_network_helper.send_local_player_snapshot_now()
 	if _time_sync_module != null:
 		_time_sync_module.on_network_connected_to_session()
-	if _is_network_online() and not _can_accept_network_gameplay_requests():
-		rpc_id(1, "_rpc_request_shared_credits_sync")
-		request_saved_player_inventory_sync()
+	_ensure_inventory_sync_module()
+	if _inventory_sync_module != null:
+		_inventory_sync_module.on_network_connected()
+	_ensure_shared_credits_module()
+	if _shared_credits_module != null:
+		_shared_credits_module.on_network_connected()
 
 
 func _on_network_disconnected_from_session() -> void:
@@ -793,6 +860,9 @@ func _on_network_disconnected_from_session() -> void:
 	_bind_local_inventory_ui()
 	if _time_sync_module != null:
 		_time_sync_module.on_network_disconnected_from_session()
+	_ensure_inventory_sync_module()
+	if _inventory_sync_module != null:
+		_inventory_sync_module.on_network_disconnected()
 
 
 func _on_network_local_peer_id_changed(_peer_id: int) -> void:
@@ -805,6 +875,9 @@ func _on_network_local_peer_id_changed(_peer_id: int) -> void:
 		_network_helper.send_local_player_snapshot_now()
 	if _time_sync_module != null:
 		_time_sync_module.on_network_local_peer_id_changed()
+	_ensure_inventory_sync_module()
+	if _inventory_sync_module != null:
+		_inventory_sync_module.on_network_local_peer_id_changed()
 
 
 func _on_network_hosting_started(_port: int, _max_clients: int) -> void:
@@ -817,6 +890,9 @@ func _on_network_hosting_started(_port: int, _max_clients: int) -> void:
 		_network_helper.send_local_player_snapshot_now()
 	if _time_sync_module != null:
 		_time_sync_module.on_network_hosting_started()
+	_ensure_inventory_sync_module()
+	if _inventory_sync_module != null:
+		_inventory_sync_module.on_network_hosting_started()
 
 
 func _apply_pending_boot_spawn_if_needed() -> void:
@@ -888,6 +964,10 @@ func _close_loading_overlay() -> void:
 
 
 func _connect_shared_credits_signal() -> void:
+	_ensure_shared_credits_module()
+	if _shared_credits_module != null:
+		_shared_credits_module.connect_signal()
+		return
 	if CurrencyManager == null:
 		return
 	if CurrencyManager.has_signal("credits_changed") and not CurrencyManager.credits_changed.is_connected(_on_shared_credits_changed):
@@ -895,6 +975,10 @@ func _connect_shared_credits_signal() -> void:
 
 
 func _on_shared_credits_changed(_value: int) -> void:
+	_ensure_shared_credits_module()
+	if _shared_credits_module != null:
+		_shared_credits_module.push_shared_credits_to_remote_peers()
+		return
 	if not _is_network_online():
 		return
 	if not _can_accept_network_gameplay_requests():
@@ -903,12 +987,19 @@ func _on_shared_credits_changed(_value: int) -> void:
 
 
 func _get_shared_credits() -> int:
+	_ensure_shared_credits_module()
+	if _shared_credits_module != null:
+		return _shared_credits_module.get_shared_credits()
 	if CurrencyManager != null and CurrencyManager.has_method("get_credits"):
 		return int(CurrencyManager.get_credits())
 	return 0
 
 
 func _set_shared_credits_local(value: int) -> void:
+	_ensure_shared_credits_module()
+	if _shared_credits_module != null:
+		_shared_credits_module.sync_shared_credits_local(value)
+		return
 	var clamped_value: int = max(value, 0)
 	if CurrencyManager != null and CurrencyManager.has_method("set_credits"):
 		CurrencyManager.set_credits(clamped_value)
@@ -944,12 +1035,20 @@ func _spend_shared_credits(amount: int) -> bool:
 
 
 func _push_shared_credits_to_remote_peers() -> void:
+	_ensure_shared_credits_module()
+	if _shared_credits_module != null:
+		_shared_credits_module.push_shared_credits_to_remote_peers()
+		return
 	if not _is_network_online():
 		return
 	rpc("_rpc_sync_shared_credits", _get_shared_credits())
 
 
 func _push_shared_credits_to_peer(peer_id: int) -> void:
+	_ensure_shared_credits_module()
+	if _shared_credits_module != null:
+		_shared_credits_module.push_shared_credits_to_peer(peer_id)
+		return
 	var target_peer_id: int = max(peer_id, 1)
 	if not _is_network_online():
 		return
