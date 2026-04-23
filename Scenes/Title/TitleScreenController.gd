@@ -3,7 +3,7 @@ class_name TitleScreenController
 
 const BOOT_SCENE_PATH: String = "res://Scenes/System/Boot.tscn"
 const DEFAULT_SLOT_NAME: String = "slot_01"
-const DEFAULT_NEW_GAME_SCENE_PATH: String = "res://BaseWorld.tscn"
+const DEFAULT_NEW_GAME_SCENE_PATH: String = "res://Content/World/BaseWorld.tscn"
 const BGM_SETTINGS_MANAGER_SCRIPT_NAME: String = "BgmSettingsManager.gd"
 
 @export var slot_name: String = DEFAULT_SLOT_NAME

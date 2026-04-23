@@ -8,8 +8,8 @@ const NETWORK_BOOT_MODE_DISABLED: String = "disabled"
 const NETWORK_BOOT_MODE_HOST: String = "host"
 const NETWORK_BOOT_MODE_CLIENT: String = "client"
 
-@export_file("*.tscn") var default_game_scene_path: String = "res://BaseWorld.tscn"
-@export_file("*.tscn") var new_game_scene_path: String = "res://BaseWorld.tscn"
+@export_file("*.tscn") var default_game_scene_path: String = "res://Content/World/BaseWorld.tscn"
+@export_file("*.tscn") var new_game_scene_path: String = "res://Content/World/BaseWorld.tscn"
 @export var slot_name: String = "slot_01"
 @export var threaded_load_poll_interval_sec: float = 0.03
 @export var auto_start_boot: bool = true

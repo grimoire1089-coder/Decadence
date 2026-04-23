@@ -1,6 +1,6 @@
 extends Node2D
 
-@export_file("*.tscn") var redirect_scene_path: String = "res://BaseWorld.tscn"
+@export_file("*.tscn") var redirect_scene_path: String = "res://Content/World/BaseWorld.tscn"
 @export var auto_redirect: bool = true
 
 var _redirect_started: bool = false
